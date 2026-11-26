@@ -142,7 +142,7 @@ h1, h2, h3, p { margin: 0; }
   scroll-snap-type: x proximity;
 }
 .pills::-webkit-scrollbar { display: none; }
-.pills-flat { padding-left: 16px; padding-right: 16px; margin-bottom: 12px; }
+.pills-flat { padding-left: 16px; padding-right: 16px; margin: 12px 0 2px; }
 .pill {
   flex: 0 0 auto; scroll-snap-align: start;
   display: inline-flex; align-items: center; gap: 5px;

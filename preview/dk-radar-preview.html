@@ -160,7 +160,7 @@ h1, h2, h3, p { margin: 0; }
   scroll-snap-type: x proximity;
 }
 .pills::-webkit-scrollbar { display: none; }
-.pills-flat { padding-left: 16px; padding-right: 16px; margin-bottom: 12px; }
+.pills-flat { padding-left: 16px; padding-right: 16px; margin: 12px 0 2px; }
 .pill {
   flex: 0 0 auto; scroll-snap-align: start;
   display: inline-flex; align-items: center; gap: 5px;
@@ -663,12 +663,12 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
         <h2 class="panel-title">대회 기록</h2>
         <p class="meta">2026 시즌 기준 공개 기록이에요. 오른쪽 숫자는 세트 승·패입니다.</p>
       </div>
+      <div class="pills pills-flat" id="pillsRecords" role="tablist" aria-label="선수 선택"></div>
       <section class="card">
         <div class="section-eyebrow">2026 SEASON</div>
         <h3 class="card-title" id="recordsWho">도란 · 2026 시즌</h3>
         <ul class="records" id="recordsList"></ul>
       </section>
-      <div class="pills pills-flat" id="pillsRecords" role="tablist" aria-label="선수 선택"></div>
       <section class="card">
         <div class="section-eyebrow">ALL PLAYERS</div>
         <h3 class="card-title">2026 월즈 결과</h3>
