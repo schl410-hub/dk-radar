@@ -12,15 +12,44 @@ const CACHE_TTL = 45;      /* 초 · 같은 값을 여러 기기가 동시에 �
 const MATCH_TTL = 21600;   /* 6시간 · 끝난 경기 상세는 다시 받지 않음 */
 const PUUID_TTL = 2592000; /* 30일 */
 
-async function puuidFor(player) {
-  const key = 'dk:riot:puuid:' + player.key;
-  try {
-    const hit = await store.getJSON(key);
-    if (hit && hit.puuid) return hit.puuid;
-  } catch (e) { /* 저장소가 없으면 매번 조회 */ }
+/* PUUID 는 Riot 키(앱)마다 다르게 암호화되어 발급됩니다.
+ * 키를 바꿔 끼우면 예전 키로 받아 둔 PUUID 가 'Exception decrypting' 으로 거절되므로,
+ * 캐시 키에 현재 키 지문을 넣어 키가 바뀌면 자동으로 새로 조회하게 합니다. */
+const KEY_FP = require('crypto').createHash('sha256')
+  .update(process.env.RIOT_API_KEY || 'none').digest('hex').slice(0, 10);
+
+async function puuidFor(player, forceFresh) {
+  const key = 'dk:riot:puuid:' + KEY_FP + ':' + player.key;
+  if (!forceFresh) {
+    try {
+      const hit = await store.getJSON(key);
+      if (hit && hit.puuid) return hit.puuid;
+    } catch (e) { /* 저장소가 없으면 매번 조회 */ }
+  }
   const puuid = await riot.accountPuuid(player.riotId);
   try { await store.setJSON(key, { puuid: puuid, riotId: player.riotId }, PUUID_TTL); } catch (e) {}
   return puuid;
+}
+
+/* 키 교체 직후처럼 캐시된 PUUID 가 거절되면('Exception decrypting') 한 번만 새로 받아 재시도 */
+function puuidRejected(snap) {
+  const text = String((snap && (snap.error || '')) + ' ' + (snap && (snap.leagueError || '')));
+  return /decrypting|invalid puuid|Invalid UUID/i.test(text);
+}
+
+async function snapshotWithPuuid(player) {
+  let puuid = null;
+  try { puuid = await puuidFor(player); } catch (e) { puuid = null; }
+  let snap = await riot.playerSnapshot(player, { puuid: puuid, count: 5, cache: matchCache });
+  if (puuidRejected(snap)) {
+    try {
+      const fresh = await puuidFor(player, true);
+      if (fresh && fresh !== puuid) {
+        snap = await riot.playerSnapshot(player, { puuid: fresh, count: 5, cache: matchCache });
+      }
+    } catch (e) { /* 재시도 실패는 원래 결과를 그대로 둡니다 */ }
+  }
+  return snap;
 }
 
 const matchCache = {
@@ -58,11 +87,7 @@ module.exports = async function handler(req, res) {
     } catch (e) {}
   }
 
-  const players = await Promise.all(PLAYERS.map(async function (player) {
-    let puuid = null;
-    try { puuid = await puuidFor(player); } catch (e) { puuid = null; }
-    return riot.playerSnapshot(player, { puuid: puuid, count: 5, cache: matchCache });
-  }));
+  const players = await Promise.all(PLAYERS.map(snapshotWithPuuid));
 
   const bad = players.filter(function (p) { return p.status !== 'ok'; });
   const rateLimited = players.filter(function (p) { return p.status === 'rate_limited'; });
