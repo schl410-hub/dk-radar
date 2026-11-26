@@ -285,8 +285,13 @@
       renderAll();
       if (pill.classList.contains('official-row')) switchTab('feed');
       if (pill.classList.contains('pill')) {
-        var host = pill.parentElement;
-        if (host) host.scrollTo({ left: Math.max(0, pill.offsetLeft - 16), behavior: 'smooth' });
+        setTimeout(function () {
+          $$('.pills').forEach(function (row) {
+            var active = row.querySelector('.pill.is-active');
+            if (!active) return;
+            try { active.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' }); } catch (err) {}
+          });
+        }, 30);
       }
       return;
     }
