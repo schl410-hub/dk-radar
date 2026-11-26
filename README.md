@@ -32,7 +32,7 @@ index.html            화면 뼈대
 styles.css            민트 테마 스타일
 data.js               선수·경기·대회 기록 (2026-11-26 확인)
 app.js                탭/선수 전환, 표 렌더, 알림 로직
-manifest.webmanifest  PWA 설정
+manifest.webmanifest  PWA 설정 (manifest.json 과 동일 내용)
 sw.js                 서비스 워커 (캐시 + 알림)
 icons/                앱 아이콘 (도토리 + 레이더)
 fonts/                Inter 라틴 가변폰트 (셀프호스트)
