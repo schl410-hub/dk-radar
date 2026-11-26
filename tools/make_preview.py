@@ -22,7 +22,8 @@ app = app.replace("'./icons/badge-96.png'", "'data:image/png;base64,%s'" % badge
 
 html = html.replace('<link rel="stylesheet" href="./styles.css">',
                     '<style>\n' + css + '\n</style>')
-html = html.replace('<link rel="manifest" href="./manifest.webmanifest">', '')
+html = re.sub(r'<!-- GitHub Pages[^\n]*\n', '', html)
+html = re.sub(r'<link rel="manifest"[^>]*>', '', html)
 html = html.replace('<link rel="icon" href="./icons/favicon-32.png" sizes="32x32">', '')
 html = html.replace('<link rel="icon" href="./icons/icon.svg" type="image/svg+xml">', '')
 html = html.replace('<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">',
