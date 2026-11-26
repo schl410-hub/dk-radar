@@ -1,141 +1,130 @@
-"""DK RADAR app icons - mint acorn + radar rings, drawn with Pillow."""
-import math
-from PIL import Image, ImageDraw
+"""딮기 시그널 앱 아이콘 생성.
 
-S = 2048          # supersampled canvas
-U = S / 1024.0    # scale from design units (1024) to canvas
+디플러스 기아 공식 로고(logo/dpluskia.svg)를 다크 배경 위 화이트로 얹어
+PWA 아이콘(192/512/maskable/apple-touch/favicon/badge)과 icon.svg 를 만듭니다.
+Playwright(Chromium)로 렌더링한 뒤 Pillow로 리사이즈합니다.
 
-MINT_L = (18, 223, 176)
-MINT_D = (0, 186, 145)
-INK = (9, 140, 119)
+  PLAYWRIGHT_BROWSERS_PATH=/workspace/.pw-browsers python3 tools/make_icons.py
+"""
+import asyncio
+import pathlib
+import re
 
+from PIL import Image
+from playwright.async_api import async_playwright
 
-def lerp(a, b, t):
-    return tuple(int(round(a[i] + (b[i] - a[i]) * t)) for i in range(3))
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+LOGO = ROOT / "logo" / "dpluskia.svg"
+ICONS = ROOT / "icons"
+TMP = ROOT / ".icon-build"
 
-
-def gradient(size, c1, c2):
-    img = Image.new("RGB", (size, size))
-    px = img.load()
-    for y in range(size):
-        for x in range(0, size, 4):
-            t = (x / size * 0.55 + y / size * 0.45)
-            c = lerp(c1, c2, t)
-            for dx in range(4):
-                if x + dx < size:
-                    px[x + dx, y] = c
-    return img
+DARK = "#05090F"
+MINT = "#00F5C4"
 
 
-def dome(pts, cx, top, w, h, side=1):
-    """Half-ellipse dome, built by horizontal slices (0 at top -> w at base)."""
-    steps = 90
-    rng = range(steps + 1) if side > 0 else range(steps, -1, -1)
-    for i in rng:
-        t = i / steps
-        y = top + h * t
-        half = (w / 2) * math.sqrt(max(0.0, 1 - (1 - t) ** 2))
-        pts.append((cx + side * half, y))
+def logo_paths():
+    svg = LOGO.read_text(encoding="utf-8")
+    paths = re.findall(r"<path\b[^>]*?d=\"([^\"]+)\"[^>]*?/?>", svg, re.S)
+    clean = [re.sub(r"\s+", " ", p).strip() for p in paths]
+    assert len(clean) == 3, f"expected 3 logo paths, got {len(clean)}"
+    return clean
 
 
-def egg(pts, cx, top, w, h, side=1):
-    """Egg silhouette: narrower at the top, rounded bottom."""
-    steps = 140
-    for i in range(steps + 1):
-        t = i / steps
-        y = top + h * t
-        base = math.sqrt(max(0.0, 1 - (2 * t - 1) ** 2))
-        half = (w / 2) * base * (0.80 + 0.20 * t)
-        pts.append((cx + side * half, y))
+def tile_svg(width_ratio=0.66, rounded=True, bg_rings=True, monogram=None):
+    """512 사각 아이콘 SVG."""
+    paths = logo_paths()
+    s = (512 * width_ratio) / 484.0
+    logo_w, logo_h = 484 * s, 205 * s
+    tx, ty = (512 - logo_w) / 2, (512 - logo_h) / 2
+    radius = 116 if rounded else 0
+    ring = ""
+    if bg_rings:
+        ring = (
+            '<g fill="none" stroke="#00F5C4" stroke-opacity=".16">'
+            '<circle cx="256" cy="300" r="150" stroke-width="3"/>'
+            '<circle cx="256" cy="300" r="205" stroke-width="2"/>'
+            "</g>"
+        )
+    if monogram:
+        body = (
+            f'<text x="256" y="256" fill="#FFFFFF" font-family="Pretendard, sans-serif" '
+            f'font-size="236" font-weight="800" text-anchor="middle" dominant-baseline="central" '
+            f'letter-spacing="-8">{monogram}</text>'
+        )
+    else:
+        body = (
+            f'<g transform="translate({tx:.2f} {ty:.2f}) scale({s:.5f})" fill="#FFFFFF">'
+            + "".join(f'<path d="{p}"/>' for p in paths)
+            + "</g>"
+        )
+    return f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <radialGradient id="glow" cx="86%" cy="-8%" r="82%">
+      <stop offset="0" stop-color="{MINT}" stop-opacity=".26"/>
+      <stop offset="1" stop-color="{MINT}" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="bg" x1="0" y1="0" x2="0.6" y2="1">
+      <stop offset="0" stop-color="#0A131C"/>
+      <stop offset="1" stop-color="{DARK}"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="{radius}" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="{radius}" fill="url(#glow)"/>
+  {ring}
+  {body}
+</svg>"""
 
 
-def acorn(d, cx, cy, scale=1.0, body=(255, 255, 255, 255), cap=(255, 255, 255, 255),
-          accent=INK, gap=4):
-    w = 470 * scale
-    h = 620 * scale
-    top = cy - h * 0.5
-    cap_h = h * 0.27
-    cap_w = w * 0.92
-    body_w = w * 0.86
-    body_h = h * 0.60
-    body_top = top + cap_h + gap * scale
-
-    # stem
-    sw = 44 * scale
-    d.rounded_rectangle([cx - sw / 2, top - 66 * scale, cx + sw / 2, top + 40 * scale],
-                        radius=18 * scale, fill=cap)
-
-    # body: widest just under the cap, tapering to a small tip at the bottom
-    pts = []
-    steps = 120
-    for i in range(steps + 1):
-        t = i / steps
-        base = math.sqrt(max(0.0, 1 - (2 * t - 1) ** 2))
-        half = (body_w / 2) * base * (0.74 + 0.26 * (1 - t) ** 0.7)
-        pts.append((cx + half, body_top + body_h * t))
-    for i in range(steps + 1):
-        t = i / steps
-        base = math.sqrt(max(0.0, 1 - (2 * t - 1) ** 2))
-        half = (body_w / 2) * base * (0.74 + 0.26 * (1 - t) ** 0.7)
-        pts.append((cx - half, body_top + body_h * (1 - t)))
-    d.polygon(pts, fill=body)
-
-    # cap: shallow dome, slightly wider than the body
-    pts = []
-    dome(pts, cx, top, cap_w, cap_h, side=1)
-    dome(pts, cx, top, cap_w, cap_h, side=-1)
-    d.polygon(pts, fill=cap)
-
-    # cap texture: thin mint arcs
-    if accent:
-        for k in (0.34, 0.66):
-            y = top + cap_h * (0.16 + 0.72 * k)
-            t = (y - top) / cap_h
-            half = (cap_w / 2) * math.sqrt(max(0.0, 1 - (1 - t) ** 2)) * 0.88
-            if half > 6:
-                d.line([(cx - half, y), (cx + half, y)],
-                       fill=accent + (90,), width=max(2, int(5 * scale)))
+def page_html(svg, bg="transparent"):
+    return (
+        "<!doctype html><html><head><meta charset='utf-8'><style>"
+        f"html,body{{margin:0;width:512px;height:512px;background:{bg};overflow:hidden}}"
+        "svg{display:block}</style></head><body>" + svg + "</body></html>"
+    )
 
 
-def rings(d, cx, cy, color):
-    for r, wd, al in ((300, 15, 30), (470, 13, 22), (640, 11, 16)):
-        d.ellipse([cx - r * U, cy - r * U, cx + r * U, cy + r * U],
-                  outline=color + (al,), width=int(wd * U))
+async def render(svg, out, bg="transparent"):
+    async with async_playwright() as p:
+        b = await p.chromium.launch()
+        pg = await b.new_page(viewport={"width": 512, "height": 512}, device_scale_factor=2)
+        await pg.set_content(page_html(svg, bg))
+        await pg.wait_for_timeout(120)
+        await pg.screenshot(path=str(out), clip={"x": 0, "y": 0, "width": 512, "height": 512}, omit_background=(bg == "transparent"))
+        await b.close()
 
 
-def rounded_mask(size, radius):
-    m = Image.new("L", (size, size), 0)
-    ImageDraw.Draw(m).rounded_rectangle([0, 0, size - 1, size - 1], radius=radius, fill=255)
-    return m
+def resize(src, size, dest):
+    im = Image.open(src).convert("RGBA")
+    im.resize((size * 2, size * 2), Image.LANCZOS).resize((size, size), Image.LANCZOS).save(dest, optimize=True)
 
 
-def render(path, size, rounded=False, pad=1.0):
-    base = gradient(S, MINT_L, MINT_D).convert("RGBA")
-    layer = Image.new("RGBA", (S, S), (0, 0, 0, 0))
-    d = ImageDraw.Draw(layer)
-    rings(d, 512 * U, 700 * U, (255, 255, 255))
-    acorn(d, 512 * U, 600 * U, 1.05 * pad * U)
-    base.alpha_composite(layer)
-    if rounded:
-        base.putalpha(rounded_mask(S, int(S * 0.235)))
-    base.resize((size, size), Image.LANCZOS).save(path, optimize=True)
-    print("wrote", path)
+async def main():
+    ICONS.mkdir(exist_ok=True)
+    TMP.mkdir(exist_ok=True)
+
+    main_svg = tile_svg(0.66, rounded=True)
+    mask_svg = tile_svg(0.52, rounded=False)
+    mono_svg = tile_svg(0.0, rounded=True, bg_rings=False, monogram="DK")
+    badge_svg = tile_svg(0.0, rounded=False, bg_rings=False, monogram="DK")
+
+    (ICONS / "icon.svg").write_text(main_svg, encoding="utf-8")
+
+    shots = {
+        "main": (main_svg, "transparent"),
+        "mask": (mask_svg, "transparent"),
+        "mono": (mono_svg, "transparent"),
+        "badge": (badge_svg, "transparent"),
+    }
+    for name, (svg, bg) in shots.items():
+        await render(svg, TMP / f"{name}.png", bg)
+
+    resize(TMP / "main.png", 512, ICONS / "icon-512.png")
+    resize(TMP / "main.png", 192, ICONS / "icon-192.png")
+    resize(TMP / "main.png", 180, ICONS / "apple-touch-icon.png")
+    resize(TMP / "main.png", 32, ICONS / "favicon-32.png")
+    resize(TMP / "mask.png", 512, ICONS / "icon-maskable-512.png")
+    resize(TMP / "badge.png", 96, ICONS / "badge-96.png")
+    print("icons written:", sorted(p.name for p in ICONS.glob("*.png")))
 
 
-def render_badge(path, size=96):
-    big = size * 4
-    img = Image.new("RGBA", (big, big), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    acorn(d, big * 0.5, big * 0.56, big / 1024.0 * 1.02, accent=None,
-          body=(255, 255, 255, 255), cap=(255, 255, 255, 255))
-    img.resize((size, size), Image.LANCZOS).save(path, optimize=True)
-    print("wrote", path)
-
-
-if __name__ == "__main__":
-    render("icons/icon-192.png", 192, rounded=True)
-    render("icons/icon-512.png", 512, rounded=True)
-    render("icons/icon-maskable-512.png", 512, pad=0.80)
-    render("icons/apple-touch-icon.png", 180)
-    render("icons/favicon-32.png", 32, rounded=True)
-    render_badge("icons/badge-96.png", 96)
+asyncio.run(main())

@@ -1,7 +1,7 @@
 {
-  "name": "DK 레이더 · 디플러스 기아",
-  "short_name": "DK 레이더",
-  "description": "도란과 디플러스 기아 5인의 공식 경기·솔로랭크를 한 눈에 보는 미니 대시보드",
+  "name": "딮기 시그널 · DK SIGNAL",
+  "short_name": "딮기 시그널",
+  "description": "도란과 디플러스 기아 5인의 공식 경기·솔로랭크를 한눈에 보는 딮기 시그널. 다크 네온 민트 / 소프트 민트 글래스 테마.",
   "lang": "ko",
   "dir": "ltr",
   "start_url": "./",
@@ -10,8 +10,8 @@
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait",
-  "background_color": "#F2FBF9",
-  "theme_color": "#F2FBF9",
+  "background_color": "#05090F",
+  "theme_color": "#05090F",
   "categories": ["sports", "entertainment"],
   "icons": [
     { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
@@ -20,8 +20,8 @@
     { "src": "./icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
   ],
   "shortcuts": [
-    { "name": "공식 경기", "short_name": "공식 경기", "url": "./?tab=official" },
-    { "name": "경기 기록", "short_name": "경기 기록", "url": "./?tab=solo" },
-    { "name": "대회 기록", "short_name": "대회 기록", "url": "./?tab=records" }
+    { "name": "공식일정", "short_name": "공식일정", "url": "./?tab=official" },
+    { "name": "경기로그", "short_name": "경기로그", "url": "./?tab=solo" },
+    { "name": "기록실", "short_name": "기록실", "url": "./?tab=records" }
   ]
 }

@@ -1,9 +1,12 @@
-/* DK 레이더 · v1 앱 로직 (프레임워크 없이 동작) */
+/* 딮기 시그널 · DK SIGNAL 앱 로직 (프레임워크 없이 동작) */
 (function () {
   'use strict';
 
   var $ = function (sel, root) { return (root || document).querySelector(sel); };
   var $$ = function (sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); };
+
+  var THEME_KEY = 'dk.signal.theme';
+  var CHEER_KEY = 'dk.signal.cheer.';
 
   var state = {
     player: 'doran',
@@ -13,13 +16,25 @@
   };
 
   var store = {
-    get: function (k, d) { try { var v = localStorage.getItem('dk.' + k); return v === null ? d : v; } catch (e) { return d; } },
-    set: function (k, v) { try { localStorage.setItem('dk.' + k, v); } catch (e) {} }
+    get: function (k, d) { try { var v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } },
+    set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+    del: function (k) { try { localStorage.removeItem(k); } catch (e) {} }
   };
 
-  var notifyOn = store.get('notify', '0') === '1';
+  var theme = store.get(THEME_KEY, 'dark') === 'mint' ? 'mint' : 'dark';
   var swReg = null;
 
+  /* 알림 설정: 선수별 솔랭 알림 + DK 공식 경기 알림 (각각 localStorage 저장) */
+  var OFFICIAL_KEY = 'dk.signal.official';
+  var SOLO_KEY = 'dk.signal.solo.';
+  function soloKey(k) { return SOLO_KEY + k; }
+  function isSoloOn(k) {
+    var def = k === 'doran' ? '1' : '0';
+    return store.get(soloKey(k), def) === '1';
+  }
+  var officialOn = store.get(OFFICIAL_KEY, '1') === '1';
+
+  /* ---------- 데이터 헬퍼 ---------- */
   function player(key) {
     for (var i = 0; i < PLAYERS.length; i++) if (PLAYERS[i].key === key) return PLAYERS[i];
     return PLAYERS[0];
@@ -28,12 +43,71 @@
 
   function pad(n) { return (n < 10 ? '0' : '') + n; }
   function stamp(d) {
-    return (d.getMonth() + 1) + '. ' + d.getDate() + '. ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    return d.getFullYear() + '.' + pad(d.getMonth() + 1) + '.' + pad(d.getDate()) +
+      ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
   }
-  function summary(p) {
-    var w = 0, l = 0;
-    p.matches.forEach(function (m) { m.win ? w++ : l++; });
-    return { g: p.matches.length, w: w, l: l };
+  function parseMatchDate(str) {
+    var m = /^\s*(\d{1,2})\.\s*(\d{1,2})\.\s*$/.exec(str || '');
+    if (!m) return null;
+    var d = new Date(state.checked.getFullYear(), Number(m[1]) - 1, Number(m[2]));
+    return d;
+  }
+  function relDay(str) {
+    var d = parseMatchDate(str);
+    if (!d) return '';
+    var base = new Date(2026, 10, 26);
+    var diff = Math.round((base - d) / 86400000);
+    if (diff <= 0) return '오늘';
+    if (diff === 1) return '어제';
+    if (diff <= 7) return diff + '일 전';
+    return str.replace(/\s+/g, '');
+  }
+  function recent(p, n) { return p.matches.slice(0, n || 5); }
+  function tally(list) {
+    var w = 0, l = 0, k = 0, d = 0, a = 0;
+    list.forEach(function (m) {
+      m.win ? w++ : l++;
+      var parts = m.kda.split('/').map(Number);
+      k += parts[0] || 0; d += parts[1] || 0; a += parts[2] || 0;
+    });
+    return {
+      g: list.length, w: w, l: l, k: k, d: d, a: a,
+      rate: list.length ? Math.round((w / list.length) * 100) : 0,
+      kda: d ? ((k + a) / d).toFixed(1) : '-'
+    };
+  }
+  function barHeight(m) {
+    var parts = m.kda.split('/').map(Number);
+    var involvement = (parts[0] || 0) + (parts[2] || 0);
+    return Math.max(4, Math.min(14, 4 + Math.round(involvement / 4)));
+  }
+  function relTime(ts) {
+    var diff = Date.now() - ts;
+    if (diff < 60000) return '방금';
+    if (diff < 3600000) return Math.floor(diff / 60000) + '분 전';
+    if (diff < 86400000) return Math.floor(diff / 3600000) + '시간 전';
+    if (diff < 604800000) return Math.floor(diff / 86400000) + '일 전';
+    return '이전';
+  }
+
+  /* ---------- 테마 ---------- */
+  function updateThemeUI() {
+    var mint = theme === 'mint';
+    document.documentElement.setAttribute('data-theme', theme);
+    var btn = $('#themeBtn');
+    if (btn) {
+      btn.setAttribute('aria-pressed', String(mint));
+      btn.setAttribute('aria-label', mint ? '다크 네온 민트 테마로 전환' : '소프트 민트 테마로 전환');
+    }
+    var txt = $('#themeTxt');
+    if (txt) txt.textContent = mint ? '소프트' : '다크';
+    var meta = $('#themeColor');
+    if (meta) meta.setAttribute('content', mint ? '#EFFDF8' : '#05090F');
+  }
+  function toggleTheme() {
+    theme = theme === 'dark' ? 'mint' : 'dark';
+    store.set(THEME_KEY, theme);
+    updateThemeUI();
   }
 
   /* ---------- 알림 배너 ---------- */
@@ -57,101 +131,234 @@
     banner.addEventListener('click', function (e) {
       if (e.target.closest('.pb-close')) return hideBanner();
       hideBanner();
-      if (swReg && navigator.serviceWorker) return;
       window.open(current().opgg, '_blank');
     });
-    $('#pbClose').addEventListener('click', function (e) { e.stopPropagation(); hideBanner(); });
+    var closeBtn = $('#pbClose');
+    if (closeBtn) closeBtn.addEventListener('click', function (e) { e.stopPropagation(); hideBanner(); });
   }
 
   /* ---------- 공통 뷰 ---------- */
   function pillsHTML() {
     return PLAYERS.map(function (p) {
-      return '<button class="pill' + (p.key === state.player ? ' is-active' : '') + '" role="tab" aria-selected="' +
+      return '<button class="pill' + (p.key === state.player ? ' is-active' : '') + '" type="button" role="tab" aria-selected="' +
         (p.key === state.player) + '" data-player="' + p.key + '">' + p.nameKo +
         '<span class="pos">' + p.pos + '</span></button>';
     }).join('');
   }
 
   function renderPills() {
-    ['#pills', '#pillsSolo', '#pillsRecords'].forEach(function (sel) {
+    ['#pillsSolo', '#pillsRecords'].forEach(function (sel) {
       var host = $(sel);
       if (host) host.innerHTML = pillsHTML();
     });
   }
 
-  function ringsSVG() {
-    return '<svg viewBox="0 0 240 240" aria-hidden="true">' +
-      '<g fill="none" stroke="#0AC8A2" stroke-opacity=".16" stroke-width="1.1">' +
-      '<circle cx="120" cy="120" r="30"/><circle cx="120" cy="120" r="58"/>' +
-      '<circle cx="120" cy="120" r="88"/><circle cx="120" cy="120" r="118"/></g>' +
-      '<circle cx="120" cy="120" r="2.6" fill="#0AC8A2" fill-opacity=".55"/>' +
-      '<path d="M120 120 L120 2 A118 118 0 0 1 205 60 Z" fill="#0AC8A2" fill-opacity=".06"/></svg>';
+  function dotsHTML(list) {
+    return list.map(function (m) { return '<i class="' + (m.win ? 'w' : 'l') + '"></i>'; }).join('');
   }
 
-  function renderHero() {
-    var p = current();
-    var second = p.key === 'doran'
-      ? { label: '선수 프로필', url: p.profile }
-      : { label: p.statsLabel.replace(' ↗', ''), url: p.opgg };
-    $('#hero').innerHTML =
-      '<div class="hero-rings">' + ringsSVG() + '</div>' +
-      '<div class="eyebrow">LEAGUE OF LEGENDS · ' + p.pos + '</div>' +
-      '<h1 class="hero-name">' + p.nameEn + '</h1>' +
-      '<div class="hero-sub">' + p.real + ' · 디플러스 기아</div>' +
-      '<div class="hero-links">' +
-        '<a class="hero-link" href="' + p.heroLink.url + '" target="_blank" rel="noopener">' + p.heroLink.label + ' <span class="arw">↗</span></a>' +
-        '<a class="hero-link secondary" href="' + second.url + '" target="_blank" rel="noopener">' + second.label + ' <span class="arw">↗</span></a>' +
-      '</div>';
-    $('#wsName').textContent = p.nameEn;
+  function bellBtn(key, extraClass) {
+    var on = isSoloOn(key);
+    var p = player(key);
+    return '<button class="' + (extraClass || 'bell-mini') + (on ? '' : ' is-off') + '" type="button" data-solo-toggle="' + key + '"' +
+      ' role="switch" aria-checked="' + on + '" aria-label="' + p.nameKo + ' 솔로랭크 알림 ' + (on ? '끄기' : '켜기') + '">' +
+      '<svg class="b-on" viewBox="0 0 20 20" width="13" height="13" fill="none" aria-hidden="true">' +
+        '<path d="M4.7 13.2V9.4a5.3 5.3 0 0 1 10.6 0v3.8l1.2 1.5H3.5l1.2-1.5Z" fill="currentColor" fill-opacity=".18" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>' +
+        '<path d="M8.3 16.6a1.85 1.85 0 0 0 3.4 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>' +
+      '<svg class="b-off" viewBox="0 0 20 20" width="13" height="13" fill="none" aria-hidden="true">' +
+        '<path d="M4.7 13.2V9.4a5.3 5.3 0 0 1 10.6 0v3.8l1.2 1.5H3.5l1.2-1.5Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>' +
+        '<path d="M8.3 16.6a1.85 1.85 0 0 0 3.4 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>' +
+        '<path d="M3.4 3.4l13.2 13.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button>';
   }
 
-  function renderStatus() {
+  /* ---------- 최애 포커스 배너 ---------- */
+  function renderPick() {
+    var host = $('#pickBanner');
+    if (!host) return;
     var p = current();
+    var r = recent(p, 5);
+    var t = tally(r);
     var last = p.matches[0];
-    var live = '마지막 게임 ' + last.d + ' ' + last.t;
-    $('#statusGrid').innerHTML =
-      '<article class="s-card">' +
-        '<div class="s-label">다음 공식 경기</div>' +
-        '<div class="s-value">일정 확인 필요</div>' +
-        '<div class="s-small">2027 LCK 스프링</div>' +
-        '<a class="s-link" href="https://lolesports.com/ko-KR/schedule" target="_blank" rel="noopener">LoL Esports 일정 ↗</a>' +
-      '</article>' +
-      '<article class="s-card">' +
-        '<div class="s-label">최근 공식 경기</div>' +
-        '<div class="s-value">' + p.official.team + ' ' + p.official.score.replace(' : ', ' : ') + ' ' + p.official.opp + '</div>' +
-        '<div class="s-small">' + p.official.stage + '</div>' +
-        '<a class="s-link" href="' + p.profile + '" target="_blank" rel="noopener">세트별 경기 기록 ↗</a>' +
-      '</article>' +
-      '<article class="s-card">' +
-        '<div class="s-label">솔로랭크 시작 · KR</div>' +
-        '<div class="s-value">진행 중 경기 없음</div>' +
-        '<div class="s-live"><span class="dot"></span>' + live + '</div>' +
-        '<a class="s-link" href="https://op.gg/ko/lol/spectate/list/pro-gamer" target="_blank" rel="noopener">OP.GG 관전·전적 ↗</a>' +
-        '<div class="s-actions">' +
-          '<button class="btn-mini' + (notifyOn ? ' is-on' : '') + '" id="notifyBtn">솔랭 알림 ' + (notifyOn ? '끄기' : '켜기') + '</button>' +
-          '<button class="btn-mini is-mint" id="testBtn">테스트</button>' +
+    host.innerHTML =
+      '<div class="pick-head">' +
+        '<span class="mypick"><i></i>MY PICK · 오늘의 ' + p.nameKo + '</span>' +
+        bellBtn(p.key) +
+        '<a class="pick-opgg" href="' + p.opgg + '" target="_blank" rel="noopener">' + p.statsLabel + '</a>' +
+      '</div>' +
+      '<div class="pick-main">' +
+        '<div class="pav">' + p.nameKo.charAt(0) + '<span class="badge-pos">' + p.posKo + '</span></div>' +
+        '<div class="pick-id">' +
+          '<div class="pick-name">' + p.nameKo + '<em>' + p.real + '</em></div>' +
+          '<div class="pick-tier">' + p.tier + '<span class="sep">·</span><span class="lp">' + p.lp + '</span><span class="sep">·</span>' + (p.record.split('·')[1] || '').trim() + '</div>' +
         '</div>' +
-        '<div class="s-note" id="testNote">' + (notifyOn ? '알림 켜짐 · 앱을 열어둘 때만 확인해요' : '') + '</div>' +
-      '</article>';
-    $('#testBtn').addEventListener('click', sendTest);
-    $('#notifyBtn').addEventListener('click', toggleNotify);
+        '<div class="pick-form">' +
+          '<span class="lb">최근 5경기</span>' +
+          '<span class="dots">' + dotsHTML(r) + '</span>' +
+          '<span class="rec">' + t.w + '승 ' + t.l + '패</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="pick-foot">' +
+        '<span class="riot">' + p.riotId + '</span>' +
+        '<span class="rec">' + last.d + ' ' + last.t + ' <b>' + last.champ + '</b> ' + last.kda + ' · ' + (last.win ? '승' : '패') + '</span>' +
+      '</div>';
   }
 
-  function setNote(msg, err) {
-    var el = $('#testNote');
-    if (!el) return;
-    el.textContent = msg;
-    el.classList.toggle('is-err', !!err);
+  /* ---------- 5인 상태 보드 ---------- */
+  function renderTiles() {
+    var host = $('#statusGrid');
+    if (!host) return;
+    host.innerHTML = PLAYERS.map(function (p) {
+      var active = p.key === state.player;
+      var r = recent(p, 5);
+      var t = tally(r);
+      var last = p.matches[0];
+      var bars = r.map(function (m) {
+        return '<i class="' + (m.win ? 'w' : 'l') + '" style="height:' + barHeight(m) + 'px"></i>';
+      }).join('');
+      return '<button class="tile' + (active ? ' is-active' : '') + '" type="button" data-player="' + p.key + '"' +
+        ' aria-pressed="' + active + '" aria-label="' + p.nameKo + ' 선수 전적 보기">' +
+        '<span class="t-head">' +
+          '<span class="t-pos">' + p.pos + '</span>' +
+          '<span class="t-st"><i class="' + (last.win ? 'w' : 'l') + '"></i>' + relDay(last.d) + '</span>' +
+        '</span>' +
+        '<span class="t-name">' + p.nameKo + '<em>' + p.real + '</em></span>' +
+        '<span class="t-tier">' + p.tier.replace('다이아몬드', '다이아') + '<span class="t-dot">·</span><b>' + p.lp + '</b></span>' +
+        '<span class="bars">' + bars + '</span>' +
+        (active ? '<span class="t-foot"><span class="chipk">최근 5경기 <b>' + t.w + '승 ' + t.l + '패</b></span><span class="chipk">KDA <b>' + t.kda + '</b></span></span>' : '') +
+      '</button>';
+    }).join('');
+  }
+
+  /* ---------- 최근 5경기 하이라이트 ---------- */
+  function renderHighlight() {
+    var host = $('#highlightCard');
+    if (!host) return;
+    var p = current();
+    var r = recent(p, 5);
+    var t = tally(r);
+    var games = r.map(function (m) {
+      return '<div class="g ' + (m.win ? 'w' : 'l') + '">' +
+        '<div class="gc">' + m.champ + '</div>' +
+        '<div class="gk">' + m.kda + '</div>' +
+        '<div class="gr">' + (m.win ? 'WIN' : 'LOSS') + '</div>' +
+      '</div>';
+    }).join('');
+    var first = r[r.length - 1];
+    var last = r[0];
+    host.innerHTML =
+      '<div class="hl-head">' +
+        '<span class="hl-who">' + p.nameKo + '<em>' + p.real + ' · ' + p.posKo + '</em></span>' +
+        '<span class="hl-tag">' + t.w + 'W ' + t.l + 'L</span>' +
+      '</div>' +
+      '<div class="hl-row">' +
+        '<div class="big"><span class="w">' + t.w + '</span><span class="dash">–</span><span class="l">' + t.l + '</span></div>' +
+        '<div class="hl-brate"><div class="n">' + t.rate + '<small>%</small></div><div class="t">최근 5경기 승률</div></div>' +
+      '</div>' +
+      '<div class="hl-kda">' +
+        '<span class="k"><b>' + t.kda + '</b> KDA</span>' +
+        '<span class="k">' + t.k + ' / ' + t.d + ' / ' + t.a + '</span>' +
+        '<span class="k">' + r.length + '경기 합계</span>' +
+      '</div>' +
+      '<div class="games">' + games + '</div>' +
+      '<div class="hl-foot"><span>' + first.d + ' ~ ' + last.d + ' · ' + p.riotId + '</span>' +
+        '<a href="' + p.opgg + '" target="_blank" rel="noopener">전체 전적 ↗</a></div>';
+  }
+
+  /* ---------- 한 줄 응원 ---------- */
+  function getCheers() {
+    try {
+      var raw = localStorage.getItem(CHEER_KEY + state.player);
+      var list = raw ? JSON.parse(raw) : [];
+      return Array.isArray(list) ? list : [];
+    } catch (e) { return []; }
+  }
+  function setCheers(list) {
+    store.set(CHEER_KEY + state.player, JSON.stringify(list.slice(0, 5)));
+  }
+  function renderCheer() {
+    var p = current();
+    var input = $('#cheerInput');
+    if (input) input.placeholder = p.nameKo + '에게 한 줄 응원을 남겨보세요';
+    var list = getCheers();
+    var host = $('#cheerList');
+    var empty = $('#cheerEmpty');
+    var count = $('#cheerCount');
+    if (count) count.textContent = list.length + '줄';
+    if (empty) empty.hidden = list.length > 0;
+    if (!host) return;
+    host.innerHTML = '';
+    list.forEach(function (ch, i) {
+      var li = document.createElement('li');
+      li.className = 'cheer-item';
+      var b = document.createElement('span');
+      b.className = 'cb';
+      b.textContent = p.nameKo.charAt(0);
+      var txt = document.createElement('span');
+      txt.className = 'ct';
+      txt.textContent = ch.text;
+      var when = document.createElement('span');
+      when.className = 'cd';
+      when.textContent = relTime(ch.t || Date.now());
+      var del = document.createElement('button');
+      del.className = 'cx';
+      del.type = 'button';
+      del.setAttribute('data-cheer', String(i));
+      del.setAttribute('aria-label', '응원 삭제');
+      del.textContent = '×';
+      li.appendChild(b); li.appendChild(txt); li.appendChild(when); li.appendChild(del);
+      host.appendChild(li);
+    });
+  }
+  function addCheer(text) {
+    var list = getCheers();
+    list.unshift({ t: Date.now(), text: text });
+    setCheers(list);
+    renderCheer();
+  }
+
+  /* ---------- 알림 설정 ---------- */
+  function renderNotify() {
+    var host = $('#soloNotifyList');
+    if (host) {
+      host.innerHTML = PLAYERS.map(function (p) {
+        var t = tally(recent(p, 5));
+        var on = isSoloOn(p.key);
+        return '<li class="nr">' +
+          '<span class="nr-av">' + p.nameKo.charAt(0) + '</span>' +
+          '<span class="nr-text"><b>' + p.nameKo + '<em>' + p.pos + '</em></b><span>최근 5경기 ' + t.w + '승 ' + t.l + '패</span></span>' +
+          '<button class="toggle sm" type="button" data-solo-toggle="' + p.key + '" role="switch" aria-checked="' + on + '"' +
+            ' aria-label="' + p.nameKo + ' 솔로랭크 알림 ' + (on ? '끄기' : '켜기') + '"><span></span></button>' +
+        '</li>';
+      }).join('');
+    }
+    $$('[data-official-toggle]').forEach(function (btn) {
+      btn.setAttribute('aria-checked', String(officialOn));
+      btn.setAttribute('aria-label', 'DK 공식 경기 알림 ' + (officialOn ? '끄기' : '켜기'));
+    });
+    var sum = $('#notifySummary');
+    if (sum) {
+      var n = PLAYERS.filter(function (p) { return isSoloOn(p.key); }).length + (officialOn ? 1 : 0);
+      sum.textContent = n ? n + '개 켜짐' : '모두 꺼짐';
+    }
+    setNote('');
+  }
+
+  function notifyStatusText() {
+    var p = current();
+    if (isSoloOn(p.key) && officialOn) return p.nameKo + ' 솔랭 · 경기 알림 켜짐';
+    if (isSoloOn(p.key)) return p.nameKo + ' 솔랭 알림만 켜짐';
+    if (officialOn) return '경기 알림만 켜짐';
+    return '켜진 알림이 없어요';
   }
 
   /* ---------- 솔로랭크 카드 ---------- */
   function metaText(p) {
-    var s = summary(p);
-    return p.riotId + ' · 최근 ' + s.g + '경기 ' + s.w + '승 ' + s.l + '패 · ' + stamp(state.checked) + ' 확인';
+    var r = recent(p, 5);
+    return p.riotId + ' · 최근 ' + r.length + '경기 ' + tally(r).w + '승 ' + tally(r).l + '패 · ' + stamp(state.checked).replace(' ', ' · ') + ' 확인';
   }
 
   function tierHTML(p) {
-    return '<span class="tier-chip"><span class="tier-dot"></span>' + p.tier + ' ' + p.lp + '</span>' +
+    return '<span class="tier-chip"><span class="tier-dot"></span>' + p.tier + '<span class="tc-sep">·</span>' + p.lp + '</span>' +
       '<span class="tier-meta">' + p.record + '</span>';
   }
 
@@ -178,43 +385,41 @@
 
   function renderSolo() {
     var p = current();
+    var moreLabel = p.key === 'delight' ? 'u.gg에서 전체 전적 보기 ↗' : 'OP.GG에서 전체 전적 보기 ↗';
     $('#soloMeta').textContent = metaText(p);
     $('#tierRow').innerHTML = tierHTML(p);
     $('#soloTable').innerHTML = tableHTML(p, 'all');
     $('#soloOpgg').textContent = p.statsLabel;
     $('#soloOpgg').href = p.opgg;
     $('#soloMore').href = p.opgg;
-    $('#soloMore').textContent = (p.key === 'delight' ? 'u.gg에서 전체 전적 보기 ↗' : 'OP.GG에서 전체 전적 보기 ↗');
+    $('#soloMore').textContent = moreLabel;
+    $('#soloNoteFeed').textContent = p.note || '';
 
-    // 경기 기록 탭
-    var p2 = $('#soloMeta2');
-    if (p2) {
-      p2.textContent = metaText(p);
+    var meta2 = $('#soloMeta2');
+    if (meta2) {
+      meta2.textContent = metaText(p);
       $('#soloTable2').innerHTML = tableHTML(p, state.filter);
       $('#soloOpgg2').textContent = p.statsLabel;
       $('#soloOpgg2').href = p.opgg;
       $('#soloMore2').href = p.opgg;
-      $('#soloMore2').textContent = (p.key === 'delight' ? 'u.gg에서 전체 전적 보기 ↗' : 'OP.GG에서 전체 전적 보기 ↗');
-      $('#soloPanelMeta').textContent = p.nameKo + ' 선수의 최근 ' + p.matches.length + '경기예요. 탭해서 승패만 골라 볼 수 있어요.';
+      $('#soloMore2').textContent = moreLabel;
+      $('#soloNote').textContent = p.note || '';
+      $('#soloPanelMeta').textContent = p.nameKo + ' 선수의 최근 ' + p.matches.length + '경기예요. 승·패만 골라 볼 수 있어요.';
     }
-    ['#soloNote', '#soloNoteFeed'].forEach(function (sel) {
-      var noteEl = $(sel);
-      if (noteEl) noteEl.textContent = p.note || '';
-    });
   }
 
   function renderRoster() {
     var host = $('#rosterList');
     if (!host) return;
     host.innerHTML = PLAYERS.map(function (p) {
-      return '<li><button class="roster-row' + (p.key === state.player ? ' is-active' : '') + '" data-player="' + p.key + '">' +
+      return '<li><button class="roster-row' + (p.key === state.player ? ' is-active' : '') + '" type="button" data-player="' + p.key + '">' +
         '<span class="r-pos">' + p.pos + '</span>' +
         '<span class="r-name">' + p.nameKo + ' <em>' + p.real + '</em></span>' +
         '<span class="r-note">' + (ROSTER_NOTES[p.key] || '') + '</span></button></li>';
     }).join('');
   }
 
-  /* ---------- 공식 경기 탭 ---------- */
+  /* ---------- 공식일정 탭 ---------- */
   function renderOfficial() {
     var path = $('#dkPath');
     if (path) {
@@ -229,7 +434,7 @@
     var list = $('#officialList');
     if (list) {
       list.innerHTML = PLAYERS.map(function (p) {
-        return '<li><button class="official-row" data-player="' + p.key + '">' +
+        return '<li><button class="official-row" type="button" data-player="' + p.key + '">' +
           '<span class="of-name">' + p.nameKo + '<em>' + p.pos + '</em></span>' +
           '<span class="of-match">' + p.official.team + ' <b>' + p.official.score + '</b> ' + p.official.opp + '</span>' +
           '<span class="of-stage">' + p.official.stage + ' · ' + p.official.date + '</span>' +
@@ -238,7 +443,7 @@
     }
   }
 
-  /* ---------- 대회 기록 탭 ---------- */
+  /* ---------- 기록실 탭 ---------- */
   function renderRecords() {
     var p = current();
     var who = $('#recordsWho');
@@ -268,31 +473,46 @@
   /* ---------- 전체 렌더 ---------- */
   function renderAll() {
     renderPills();
-    renderHero();
-    renderStatus();
+    renderPick();
+    renderTiles();
+    renderHighlight();
+    renderCheer();
     renderSolo();
     renderRoster();
     renderOfficial();
     renderRecords();
-    $('#checkedAt').textContent = '최근 확인 ' + stamp(state.checked);
+    renderNotify();
   }
 
   /* ---------- 이벤트 ---------- */
   document.addEventListener('click', function (e) {
-    var pill = e.target.closest('[data-player]');
-    if (pill) {
-      state.player = pill.getAttribute('data-player');
-      renderAll();
-      if (pill.classList.contains('official-row')) switchTab('feed');
-      if (pill.classList.contains('pill')) {
-        setTimeout(function () {
-          $$('.pills').forEach(function (row) {
-            var active = row.querySelector('.pill.is-active');
-            if (!active) return;
-            try { active.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' }); } catch (err) {}
-          });
-        }, 30);
-      }
+    var cheerDel = e.target.closest('[data-cheer]');
+    if (cheerDel) {
+      var list = getCheers();
+      list.splice(Number(cheerDel.getAttribute('data-cheer')), 1);
+      setCheers(list);
+      renderCheer();
+      return;
+    }
+    var soloT = e.target.closest('[data-solo-toggle]');
+    if (soloT) {
+      var key = soloT.getAttribute('data-solo-toggle');
+      store.set(soloKey(key), isSoloOn(key) ? '0' : '1');
+      renderNotify();
+      renderPick();
+      return;
+    }
+    var offT = e.target.closest('[data-official-toggle]');
+    if (offT) {
+      officialOn = !officialOn;
+      store.set(OFFICIAL_KEY, officialOn ? '1' : '0');
+      renderNotify();
+      return;
+    }
+    var who = e.target.closest('[data-player]');
+    if (who) {
+      selectPlayer(who.getAttribute('data-player'));
+      if (who.classList.contains('official-row')) switchTab('feed');
       return;
     }
     var chip = e.target.closest('[data-filter]');
@@ -306,6 +526,18 @@
     if (tab) { switchTab(tab.getAttribute('data-tab')); return; }
   });
 
+  function selectPlayer(key) {
+    state.player = key;
+    renderAll();
+    setTimeout(function () {
+      $$('.pills').forEach(function (row) {
+        var active = row.querySelector('.pill.is-active');
+        if (!active) return;
+        try { active.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' }); } catch (err) {}
+      });
+    }, 30);
+  }
+
   function switchTab(name) {
     state.tab = name;
     $$('.tab').forEach(function (t) {
@@ -318,108 +550,123 @@
       p.classList.toggle('is-active', on);
       p.hidden = !on;
     });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) { window.scrollTo(0, 0); }
   }
 
-  var refreshBtn = $('#refreshBtn');
-  if (refreshBtn) {
-    refreshBtn.addEventListener('click', function () {
-      refreshBtn.classList.remove('spin');
-      void refreshBtn.offsetWidth;
-      refreshBtn.classList.add('spin');
-      state.checked = new Date();
-      $('#checkedAt').textContent = '최근 확인 ' + stamp(state.checked);
-      $('#soloMeta').textContent = metaText(current());
-      if ($('#soloMeta2')) $('#soloMeta2').textContent = metaText(current());
+  var themeBtn = $('#themeBtn');
+  if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
+
+  var cheerForm = $('#cheerForm');
+  if (cheerForm) {
+    cheerForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var input = $('#cheerInput');
+      var text = (input.value || '').trim();
+      if (!text) { input.focus(); return; }
+      addCheer(text);
+      input.value = '';
+      input.focus();
     });
   }
 
   /* ---------- 알림 ---------- */
-  function updateNotifyBtn() {
-    var btn = $('#notifyBtn');
-    if (!btn) return;
-    btn.textContent = '솔랭 알림 ' + (notifyOn ? '끄기' : '켜기');
-    btn.classList.toggle('is-on', notifyOn);
+  function setNote(msg, err) {
+    var el = $('#testNote');
+    if (!el) return;
+    el.textContent = msg || notifyStatusText();
+    el.classList.toggle('is-err', !!err);
   }
 
-  async function toggleNotify() {
-    if (notifyOn) {
-      notifyOn = false;
-      store.set('notify', '0');
-      updateNotifyBtn();
-      setNote('솔랭 알림을 껐어요.');
-      return;
+  function alertTarget() {
+    var p = current();
+    if (isSoloOn(p.key)) {
+      return {
+        kind: 'solo',
+        title: p.nameKo + ' · 딮기 시그널',
+        body: '테스트 알림이에요. ' + p.nameKo + ' 새 솔로랭크 경기가 잡히면 이렇게 도착해요.',
+        done: p.nameKo + ' 솔랭 알림으로 테스트를 보냈어요.'
+      };
     }
-    notifyOn = true;
-    store.set('notify', '1');
-    updateNotifyBtn();
-    if (!('Notification' in window)) {
-      setNote('이 브라우저는 알림을 지원하지 않아요.', true);
-      return;
+    if (officialOn) {
+      return {
+        kind: 'official',
+        title: 'DK 공식 경기 · 딮기 시그널',
+        body: '테스트 알림이에요. DK 다음 공식 경기 일정이 잡히면 이렇게 도착해요.',
+        done: '경기 알림으로 테스트를 보냈어요.'
+      };
     }
-    if (Notification.permission === 'default') {
-      try { await Notification.requestPermission(); } catch (e) {}
-    }
-    if (Notification.permission === 'denied') {
-      setNote('브라우저에서 알림이 차단되어 있어요.', true);
-    } else if (Notification.permission === 'granted') {
-      setNote('알림 켜짐 · v2에서 실시간으로 알려드릴게요.');
-    } else {
-      setNote('알림 켜짐 · 권한을 허용하면 잠금화면에서도 와요.');
-    }
+    return null;
   }
 
-  function notifyOptions() {
+  function notifyOptions(body) {
     return {
-      body: '이 기기로 푸시를 받을 수 있어요. 실시간 솔랭 알림도 이렇게 도착해요.',
+      body: body,
       icon: './icons/icon-192.png',
       badge: './icons/badge-96.png',
-      tag: 'dk-radar-test',
+      tag: 'dk-signal-test',
       renotify: true,
       lang: 'ko',
       data: { url: './' }
     };
   }
 
-  async function sendTest() {
-    var p = current();
-    var title = p.nameKo + ' 레이더 테스트 알림';
-    var opts = notifyOptions();
-
-    if (!('Notification' in window)) {
-      showBanner(title, opts.body + ' (이 브라우저는 알림 미지원)');
-      setNote('앱 안 알림으로 대신 보여드렸어요.', true);
+  function sendTest() {
+    var target = alertTarget();
+    if (!target) {
+      showBanner('딮기 시그널', '켜진 알림이 없어요. 알림 설정에서 켜고 테스트해 보세요.');
+      setNote('켜진 알림이 없어요. 먼저 알림을 켜 주세요.', true);
       return;
     }
+    var opts = notifyOptions(target.body);
+
+    var fallback = function () {
+      showBanner(target.title, opts.body);
+      setNote('앱 안 알림으로 대신 보여드렸어요.', true);
+    };
+
+    if (!('Notification' in window)) {
+      fallback();
+      return;
+    }
+
+    var proceed = function (granted) {
+      if (!granted) return fallback();
+      var finish = function (reg) {
+        try {
+          if (reg && reg.showNotification) {
+            reg.showNotification(target.title, opts).then(function () {
+              setNote(target.done + ' 잠금화면에서 확인해 보세요.');
+            }).catch(fallback);
+          } else {
+            new Notification(target.title, opts);
+            setNote(target.done);
+          }
+        } catch (err) { fallback(); }
+      };
+      if (swReg) return finish(swReg);
+      if (!window.__DK_PREVIEW__ && 'serviceWorker' in navigator && (location.protocol === 'https:' || location.protocol === 'http:')) {
+        navigator.serviceWorker.getRegistration().then(function (r) {
+          if (r) { swReg = r; return finish(r); }
+          navigator.serviceWorker.register('./sw.js').then(function (nr) { swReg = nr; finish(nr); })
+            .catch(function () { finish(null); });
+        }).catch(function () { finish(null); });
+        return;
+      }
+      finish(null);
+    };
+
     var perm = Notification.permission;
     if (perm === 'default') {
-      try { perm = await Notification.requestPermission(); } catch (e) {}
-    }
-    if (perm === 'granted') {
       try {
-        var reg = swReg;
-        if (!reg && 'serviceWorker' in navigator) {
-          reg = await navigator.serviceWorker.getRegistration();
-          if (!reg) reg = await navigator.serviceWorker.register('./sw.js');
-          swReg = reg;
-        }
-        if (reg && reg.showNotification) {
-          await reg.showNotification(title, opts);
-        } else {
-          new Notification(title, opts);
-        }
-        setNote('테스트 푸시를 보냈어요.');
-      } catch (err) {
-        showBanner(title, opts.body);
-        setNote('앱 안 알림으로 대신 보여드렸어요.', true);
-      }
-    } else {
-      showBanner(title, opts.body);
-      setNote(perm === 'denied'
-        ? '브라우저 알림이 차단되어 앱 안에서만 보여드렸어요.'
-        : '알림 권한을 허용하면 잠금화면에서도 받을 수 있어요.', true);
+        Notification.requestPermission().then(function (v) { proceed(v === 'granted'); });
+      } catch (e) { fallback(); }
+      return;
     }
+    proceed(perm === 'granted');
   }
+
+  var testBtn = $('#testBtn');
+  if (testBtn) testBtn.addEventListener('click', sendTest);
 
   /* ---------- PWA ---------- */
   var installPrompt = null;
@@ -431,20 +678,23 @@
   });
   var installBtn = $('#installBtn');
   if (installBtn) {
-    installBtn.addEventListener('click', async function () {
-      if (!installPrompt) { showBanner('홈 화면에 추가', '브라우저 메뉴의 "홈 화면에 추가"를 눌러도 설치할 수 있어요.'); return; }
+    installBtn.addEventListener('click', function () {
+      if (!installPrompt) {
+        showBanner('홈 화면에 추가', '브라우저 메뉴의 "홈 화면에 추가"를 눌러도 설치할 수 있어요.');
+        return;
+      }
       installPrompt.prompt();
-      try { await installPrompt.userChoice; } catch (e) {}
-      installPrompt = null;
-      installBtn.hidden = true;
+      installPrompt.userChoice.then(function () {
+        installPrompt = null;
+        installBtn.hidden = true;
+      }).catch(function () {});
     });
   }
 
-  if ('serviceWorker' in navigator) {
+  if (!window.__DK_PREVIEW__ && 'serviceWorker' in navigator && (location.protocol === 'https:' || location.protocol === 'http:')) {
     window.addEventListener('load', function () {
       navigator.serviceWorker.register('./sw.js').then(function (reg) {
         swReg = reg;
-        reg.addEventListener('updatefound', function () {});
       }).catch(function () {});
       navigator.serviceWorker.ready.then(function (reg) { swReg = reg; }).catch(function () {});
     });
@@ -453,6 +703,7 @@
   window.addEventListener('online', function () { setNote('다시 연결됐어요.'); });
 
   /* ---------- 시작 ---------- */
+  updateThemeUI();
   renderAll();
 
   try {

@@ -1,5 +1,5 @@
-/* DK 레이더 서비스 워커 · 오프라인 캐시 + 로컬 알림 */
-const CACHE = 'dk-radar-v1';
+/* 딮기 시그널 서비스 워커 · 오프라인 캐시 + 로컬 알림 */
+const CACHE = 'dk-signal-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -8,12 +8,13 @@ const ASSETS = [
   './app.js',
   './manifest.webmanifest',
   './manifest.json',
+  './logo/dpluskia.svg',
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/icon-maskable-512.png',
   './icons/badge-96.png',
   './icons/favicon-32.png',
-  './fonts/inter-var-latin.woff2'
+  './fonts/pretendard-subset.woff2'
 ];
 
 self.addEventListener('install', (event) => {
@@ -68,16 +69,16 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-/* v2에서 서버 푸시를 붙이면 이 핸들러로 알림이 옵니다. */
+/* v2 서버 푸시를 붙이면 이 핸들러로 알림이 옵니다. (선수별·경기 알림 구독은 서버에서 구분) */
 self.addEventListener('push', (event) => {
-  let payload = { title: 'DK 레이더', body: '새 소식이 있어요.' };
+  let payload = { title: '딮기 시그널', body: '새 소식이 있어요.' };
   try { payload = Object.assign(payload, event.data.json()); } catch (e) {}
   event.waitUntil(
     self.registration.showNotification(payload.title, {
       body: payload.body,
       icon: './icons/icon-192.png',
       badge: './icons/badge-96.png',
-      tag: payload.tag || 'dk-radar',
+      tag: payload.tag || 'dk-signal',
       lang: 'ko',
       data: { url: payload.url || './' }
     })

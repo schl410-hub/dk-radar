@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>MINT LOG — 시안 3 (소프트 민트 글래스)</title>
+<style>
+@font-face{font-family:'Pretendard';src:url(fonts/PretendardVariable.woff2) format('woff2');font-weight:45 920;font-style:normal;font-display:block}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-font-smoothing:antialiased}
+:root{
+  --mint:#12B98C; --mint-d:#0A8F6C; --mint-l:#7FE7CB; --ink:#12332C; --ink2:#4A6C64; --mut:#88A69E;
+  --glass:rgba(255,255,255,.62); --gline:rgba(255,255,255,.85);
+}
+html,body{width:390px;height:844px}
+body{font-family:Pretendard,sans-serif;color:var(--ink);overflow:hidden;letter-spacing:-.012em}
+.num{font-variant-numeric:tabular-nums}
+.screen{width:390px;height:844px;position:relative;overflow:hidden;
+  background:linear-gradient(170deg,#DFFAF1 0%,#EFFDF8 34%,#F6FFFC 62%,#E8FBF4 100%)}
+.blob{position:absolute;border-radius:50%;filter:blur(46px);pointer-events:none}
+.b1{width:280px;height:280px;left:-90px;top:-70px;background:rgba(0,214,168,.34)}
+.b2{width:240px;height:240px;right:-80px;top:120px;background:rgba(126,231,203,.40)}
+.b3{width:300px;height:300px;left:-60px;bottom:-120px;background:rgba(168,240,220,.45)}
+.b4{width:180px;height:180px;right:20px;bottom:-60px;background:rgba(255,224,178,.35)}
+.b5{width:230px;height:230px;right:-80px;bottom:200px;background:rgba(64,222,178,.40)}
+
+/* status */
+.status{position:relative;z-index:5;height:44px;display:flex;align-items:flex-end;justify-content:space-between;
+  padding:0 24px 6px;font-size:13px;font-weight:600;color:#12332C}
+.status .ico{display:flex;align-items:center;gap:5px}
+
+/* header */
+.hd{position:relative;z-index:5;display:flex;align-items:center;justify-content:space-between;padding:10px 20px 0}
+.brand{display:flex;align-items:center;gap:11px}
+.dk{width:66px;display:block}
+.logo{width:32px;height:32px;border-radius:11px;display:grid;place-items:center;
+  background:linear-gradient(145deg,#FFFFFF,#DFF9F1);box-shadow:0 8px 18px rgba(10,143,108,.16),0 0 0 1px rgba(255,255,255,.9) inset}
+.wm{font-size:17.5px;font-weight:800;letter-spacing:-.045em;line-height:1}
+.wm em{font-style:normal;font-weight:600;color:var(--mint)}
+.tag{margin-top:3px;font-size:9.5px;font-weight:600;color:#6E918A;letter-spacing:0}
+.me{width:34px;height:34px;border-radius:50%;background:linear-gradient(150deg,#CFF8EB,#9FE6D2);
+  display:grid;place-items:center;font-size:11px;font-weight:800;color:#0A8F6C;position:relative;
+  box-shadow:0 6px 14px rgba(10,143,108,.18),0 0 0 2px rgba(255,255,255,.9)}
+
+/* glass base */
+.glass{background:var(--glass);backdrop-filter:blur(18px) saturate(1.6);-webkit-backdrop-filter:blur(18px) saturate(1.6);
+  border:1px solid var(--gline);box-shadow:0 14px 34px rgba(12,86,68,.10), 0 1px 0 rgba(255,255,255,.9) inset}
+
+/* my pick banner */
+.pick{margin:16px 16px 0;border-radius:26px;padding:15px 16px 14px;position:relative;z-index:4;overflow:hidden}
+.pick::after{content:'';position:absolute;width:150px;height:150px;right:-50px;top:-60px;border-radius:50%;
+  background:radial-gradient(circle,rgba(0,214,168,.22),rgba(0,214,168,0) 70%)}
+.ph{display:flex;align-items:center;justify-content:space-between;position:relative}
+.mypick{display:flex;align-items:center;gap:5px;font-size:9px;font-weight:800;letter-spacing:.16em;color:var(--mint-d)}
+.mypick i{width:5px;height:5px;border-radius:50%;background:var(--mint)}
+.bell-on{display:flex;align-items:center;gap:5px;height:22px;padding:0 8px 0 6px;border-radius:999px;
+  background:rgba(255,255,255,.75);border:1px solid rgba(18,185,140,.22);font-size:9px;font-weight:700;color:var(--mint-d);letter-spacing:0}
+.pmain{display:flex;align-items:center;gap:12px;margin-top:13px;position:relative}
+.pav{width:56px;height:56px;border-radius:50%;flex:none;position:relative;
+  background:linear-gradient(150deg,#7FE7CB 0%,#2FC59B 60%,#0A8F6C 100%);
+  display:grid;place-items:center;font-size:20px;font-weight:800;color:#fff;
+  box-shadow:0 10px 22px rgba(10,143,108,.28), 0 0 0 3px rgba(255,255,255,.85), 0 0 0 5px rgba(18,185,140,.28)}
+.pav .badge{position:absolute;right:-2px;bottom:-2px;width:19px;height:19px;border-radius:50%;
+  background:#fff;display:grid;place-items:center;font-size:8px;font-weight:800;color:var(--mint-d);
+  box-shadow:0 2px 6px rgba(10,143,108,.22)}
+.pname{font-size:19px;font-weight:800;letter-spacing:-.045em;line-height:1.15}
+.pname em{font-style:normal;font-size:11px;font-weight:600;color:var(--ink2);margin-left:5px;letter-spacing:0}
+.ptier{margin-top:4px;font-size:10.5px;font-weight:700;color:var(--mint-d)}
+.ptier span{color:#7FA79E;font-weight:600}
+.pform{margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.pform .lb{font-size:8.5px;font-weight:700;color:#7FA79E;letter-spacing:.04em}
+.dots{display:flex;gap:3px}
+.dots i{width:6px;height:6px;border-radius:50%;background:#D6EAE4}
+.dots i.w{background:var(--mint)}
+.dots i.l{background:#F7BDB4}
+.pfoot{display:flex;align-items:center;gap:6px;margin-top:13px;padding-top:11px;border-top:1px solid rgba(18,185,140,.13);position:relative}
+.riot{font-size:9.5px;font-weight:700;color:#5F847B;letter-spacing:0}
+.pfoot .rec{margin-left:auto;display:flex;align-items:center;gap:4px;font-size:9.5px;font-weight:800;color:var(--mint-d)}
+.pfoot .rec b{color:var(--ink)}
+
+/* quick switch */
+.qs{position:relative;z-index:4;padding:17px 20px 9px;display:flex;align-items:baseline;justify-content:space-between}
+.qs b{font-size:12.5px;font-weight:800}
+.qs span{font-size:9.5px;font-weight:600;color:#7FA79E}
+.switch{display:flex;gap:6px;padding:0 16px;position:relative;z-index:4}
+.sw{flex:1;border-radius:15px;padding:9px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:5px;
+  background:rgba(255,255,255,.48);border:1px solid rgba(255,255,255,.8);backdrop-filter:blur(10px)}
+.sw .a{width:27px;height:27px;border-radius:50%;display:grid;place-items:center;font-size:9.5px;font-weight:800;
+  color:#4E7D72;background:linear-gradient(150deg,#EAFBF6,#CFEFE6)}
+.sw span{font-size:9.5px;font-weight:700;color:#4A6C64;letter-spacing:-.02em}
+.sw.on{background:linear-gradient(160deg,#FFFFFF,#E6FBF3);border-color:rgba(18,185,140,.35);
+  box-shadow:0 10px 22px rgba(10,143,108,.16), 0 0 0 1.5px rgba(18,185,140,.45) inset}
+.sw.on .a{background:linear-gradient(150deg,#28CC9F,#0A8F6C);color:#fff}
+.sw.on span{color:var(--mint-d)}
+
+/* feed */
+.feed{position:relative;z-index:4;padding:17px 20px 9px;display:flex;align-items:baseline;justify-content:space-between}
+.feed b{font-size:12.5px;font-weight:800}
+.feed span{font-size:9.5px;font-weight:600;color:#7FA79E}
+.cards{padding:0 16px;display:flex;flex-direction:column;gap:9px;position:relative;z-index:4}
+.c{border-radius:20px;padding:13px 14px;position:relative;overflow:hidden}
+.c .ch{display:flex;align-items:center;gap:7px}
+.kind{font-size:8.5px;font-weight:800;letter-spacing:.1em;color:var(--mint-d);background:rgba(18,185,140,.12);
+  border-radius:6px;padding:3px 7px}
+.kind.sch{color:#8A6A2A;background:rgba(255,199,102,.28)}
+.kind.memo{color:#2E7C63;background:rgba(126,231,203,.34)}
+.inputrow{margin-top:10px;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.75);border:1px solid rgba(18,185,140,.18);
+  border-radius:13px;padding:8px 8px 8px 12px}
+.inputrow .ph{font-size:10.5px;font-weight:600;color:#9CB8B0}
+.inputrow .send{margin-left:auto;width:26px;height:26px;border-radius:9px;display:grid;place-items:center;
+  background:linear-gradient(150deg,#2ACFA2,#0A8F6C);box-shadow:0 4px 10px rgba(10,143,108,.28)}
+.when{margin-left:auto;font-size:9px;font-weight:600;color:#8AA8A0;letter-spacing:0}
+.q{margin-top:8px;font-size:12.5px;font-weight:700;line-height:1.42;letter-spacing:-.02em}
+.q em{font-style:normal;color:var(--mint-d)}
+.by{margin-top:8px;display:flex;align-items:center;gap:6px;font-size:9px;font-weight:600;color:#8AA8A0}
+.by .b{width:16px;height:16px;border-radius:50%;background:linear-gradient(150deg,#DFF7F0,#B7E9DA);display:grid;place-items:center;
+  font-size:7.5px;font-weight:800;color:#4E7D72}
+.srow{display:flex;align-items:center;gap:10px;margin-top:8px}
+.sic{width:35px;height:35px;border-radius:12px;flex:none;display:grid;place-items:center;
+  background:linear-gradient(150deg,#FFF3DB,#FFE3B0);color:#A5791F}
+.stx .t{font-size:12.5px;font-weight:800;letter-spacing:-.02em}
+.stx .s{margin-top:2px;font-size:9.5px;font-weight:600;color:#7FA79E}
+
+/* nav */
+.nav{position:absolute;left:12px;right:12px;bottom:12px;height:66px;border-radius:22px;z-index:6;
+  display:flex;align-items:center;justify-content:space-around;padding:0 6px;
+  background:rgba(255,255,255,.72);backdrop-filter:blur(22px) saturate(1.7);
+  border:1px solid rgba(255,255,255,.9);box-shadow:0 16px 34px rgba(12,86,68,.14)}
+.n{display:flex;flex-direction:column;align-items:center;gap:3px;width:58px;color:#8AA8A0}
+.n span{font-size:8.5px;font-weight:700;letter-spacing:0}
+.n.on{color:var(--mint-d)}
+.fab{width:44px;height:44px;border-radius:15px;display:grid;place-items:center;
+  background:linear-gradient(150deg,#2ACFA2,#0A8F6C);box-shadow:0 10px 20px rgba(10,143,108,.32)}
+</style>
+</head>
+<body>
+<div class="screen">
+  <div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="blob b4"></div><div class="blob b5"></div>
+
+  <div class="status">
+    <span class="num">21:12</span>
+    <span class="ico">
+      <svg width="17" height="11" viewBox="0 0 17 11" fill="none"><rect x="0" y="7" width="3" height="4" rx="1" fill="#12332C"/><rect x="4.5" y="5" width="3" height="6" rx="1" fill="#12332C"/><rect x="9" y="2.5" width="3" height="8.5" rx="1" fill="#12332C"/><rect x="13.5" y="0" width="3" height="11" rx="1" fill="#12332C"/></svg>
+      <svg width="15" height="11" viewBox="0 0 15 11" fill="none"><path d="M7.5 9.6 5.2 7.3a3.3 3.3 0 0 1 4.6 0L7.5 9.6Z" fill="#12332C"/><path d="M3.1 5.2a6.2 6.2 0 0 1 8.8 0" stroke="#12332C" stroke-width="1.4" stroke-linecap="round"/><path d="M.9 3a9.4 9.4 0 0 1 13.2 0" stroke="#12332C" stroke-width="1.4" stroke-linecap="round" opacity=".45"/></svg>
+      <svg width="22" height="11" viewBox="0 0 22 11" fill="none"><rect x="0.5" y="0.5" width="18" height="10" rx="3" stroke="#12332C" opacity=".3"/><rect x="2" y="2" width="13" height="7" rx="1.8" fill="#12332C"/><path d="M20 4v3.2a1.9 1.9 0 0 0 0-3.2Z" fill="#12332C" opacity=".5"/></svg>
+    </span>
+  </div>
+
+  <div class="hd">
+    <div class="brand">
+      <img class="dk" src="logo/dpluskia.svg" alt="Dplus KIA">
+      <div>
+        <div class="wm">MINT<em>LOG</em></div>
+        <div class="tag">도란과 DK 5인의 하루를 기록</div>
+      </div>
+    </div>
+    <div class="me">수아</div>
+  </div>
+
+  <!-- 최애 포커스 -->
+  <div class="pick glass">
+    <div class="ph">
+      <div class="mypick"><i></i>MY PICK · 오늘의 도란</div>
+      <div class="bell-on">
+        <svg width="9" height="9" viewBox="0 0 20 20" fill="none"><path d="M4.7 13.2V9.4a5.3 5.3 0 0 1 10.6 0v3.8l1.2 1.5H3.5l1.2-1.5Z" stroke="#0A8F6C" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        솔랭 알림 켜짐
+      </div>
+    </div>
+    <div class="pmain">
+      <div class="pav">도<span class="badge">탑</span></div>
+      <div>
+        <div class="pname">도란<em>최현준</em></div>
+        <div class="ptier">다이아몬드 1 <span>· 65 LP</span></div>
+      </div>
+      <div class="pform">
+        <span class="lb">최근 5경기</span>
+        <span class="dots"><i class="w"></i><i class="w"></i><i class="w"></i><i class="w"></i><i class="l"></i></span>
+        <span class="lb" style="color:#0A8F6C;font-weight:800">4승 1패</span>
+      </div>
+    </div>
+    <div class="pfoot">
+      <span class="riot">어리고싶다#KR1</span>
+      <span class="rec">21:04 <b>레넥톤</b> 5/9/0 · 패</span>
+    </div>
+  </div>
+
+  <!-- 5인 퀵스위치 -->
+  <div class="qs"><b>5인 로스터</b><span>탭해서 바로 바꾸기</span></div>
+  <div class="switch">
+    <div class="sw on"><div class="a">탑</div><span>도란</span></div>
+    <div class="sw"><div class="a">정글</div><span>카나비</span></div>
+    <div class="sw"><div class="a">미드</div><span>쇼메이커</span></div>
+    <div class="sw"><div class="a">원딜</div><span>스매쉬</span></div>
+    <div class="sw"><div class="a">서폿</div><span>딜라이트</span></div>
+  </div>
+
+  <!-- 감성 피드 -->
+  <div class="feed"><b>오늘의 민트 로그</b><span>11월 26일 목요일</span></div>
+  <div class="cards">
+    <div class="c glass">
+      <div class="ch"><span class="kind">SOLO RANK</span><span class="when num">21:04</span></div>
+      <div class="q">오늘 새벽까지 <em>4연승</em>, 마지막 한 판은 아쉽게.<br>레넥톤으로 5/9/0, 다음 판 기대할게요.</div>
+      <div class="by"><span class="b">숲</span>도토리단 · 3분 전</div>
+    </div>
+    <div class="c glass">
+      <div class="ch"><span class="kind sch">SCHEDULE</span><span class="when">D-?</span></div>
+      <div class="srow">
+        <span class="sic">
+          <svg width="17" height="17" viewBox="0 0 18 18" fill="none"><rect x="2.2" y="3.4" width="13.6" height="12.4" rx="3.4" stroke="#A5791F" stroke-width="1.5"/><path d="M2.2 7.2h13.6M6 1.9v2.8M12 1.9v2.8" stroke="#A5791F" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </span>
+        <span class="stx">
+          <div class="t">다음 공식 경기 · 미정</div>
+          <div class="s">Worlds 2026 8강 종료 · 새 일정 나오면 알려드려요</div>
+        </span>
+      </div>
+    </div>
+    <div class="c glass note">
+      <div class="ch"><span class="kind memo">한 줄 응원</span><span class="when">도토리단 128명 참여</span></div>
+      <div class="inputrow">
+        <span class="ph">도란에게 한 줄 남기기</span>
+        <span class="send">
+          <svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M3.6 10.2 16 4.4l-3.4 11.2-3-3.8-6 .6 3.2-2.4-3.2-1.8Z" fill="#fff"/></svg>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="nav">
+    <div class="n on">
+      <svg width="19" height="19" viewBox="0 0 22 22" fill="none"><path d="M5.4 3.6h8.2l3.2 3.2v11.6H5.4z" stroke="#12B98C" stroke-width="1.7" stroke-linejoin="round"/><path d="M8.2 9.4h6M8.2 12.6h6M8.2 15.4h3.6" stroke="#12B98C" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <span>로그</span>
+    </div>
+    <div class="n">
+      <svg width="19" height="19" viewBox="0 0 22 22" fill="none"><circle cx="8.2" cy="8.2" r="3.1" stroke="#8AA8A0" stroke-width="1.6"/><circle cx="15.1" cy="9.5" r="2.3" stroke="#8AA8A0" stroke-width="1.5"/><path d="M3.2 18c.6-2.8 2.6-4.3 5-4.3s4.4 1.5 5 4.3" stroke="#8AA8A0" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <span>로스터</span>
+    </div>
+    <div class="fab">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><path d="M10 4.4v11.2M4.4 10h11.2" stroke="#fff" stroke-width="2.1" stroke-linecap="round"/></svg>
+    </div>
+    <div class="n">
+      <svg width="19" height="19" viewBox="0 0 22 22" fill="none"><rect x="4" y="5" width="14" height="13" rx="3.4" stroke="#8AA8A0" stroke-width="1.6"/><path d="M4 9.2h14" stroke="#8AA8A0" stroke-width="1.6"/></svg>
+      <span>일정</span>
+    </div>
+    <div class="n">
+      <svg width="19" height="19" viewBox="0 0 22 22" fill="none"><circle cx="11" cy="8" r="3.2" stroke="#8AA8A0" stroke-width="1.6"/><path d="M4.6 18c.7-3.1 3-4.8 6.4-4.8s5.7 1.7 6.4 4.8" stroke="#8AA8A0" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <span>MY</span>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
