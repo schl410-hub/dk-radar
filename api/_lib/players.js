@@ -6,7 +6,7 @@ const PLAYERS = [
   { key: 'kanavi', nameKo: '카나비', pos: 'JUNGLE', posKo: '정글', riotId: 'vinaka#KR1' },
   { key: 'showmaker', nameKo: '쇼메이커', pos: 'MIDDLE', posKo: '미드', riotId: 'DK ShowMaker#KR1' },
   { key: 'smash', nameKo: '스매쉬', pos: 'BOTTOM', posKo: '원딜', riotId: 'DK Smash#KR7' },
-  { key: 'delight', nameKo: '딜라이트', pos: 'SUPPORT', posKo: '서폿', riotId: '플레이리스트겨울#KR1' }
+  { key: 'delight', nameKo: '딜라이트', pos: 'SUPPORT', posKo: '서폿', riotId: '죽각딜#KR02' }
 ];
 
 const POS_KO = {

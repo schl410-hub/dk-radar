@@ -419,11 +419,11 @@ const SNAPSHOT = {
   {
    "key": "delight",
    "nameKo": "딜라이트",
-   "riotId": "플레이리스트겨울#KR1",
+   "riotId": "죽각딜#KR02",
    "tier": "마스터",
    "lp": "873 LP",
    "record": "439승 381패 · 승률 54%",
-   "opgg": "https://u.gg/lol/profile/kr/%ED%94%8C%EB%A0%88%EC%9D%B4%EB%A6%AC%EC%8A%A4%ED%8A%B8%EA%B2%A8%EC%9A%B8-kr1/overview",
+   "opgg": "https://u.gg/lol/profile/kr/%EC%A3%BD%EA%B0%81%EB%94%9C-kr02/overview",
    "matches": [
     {
      "d": "10. 17.",
