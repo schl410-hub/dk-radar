@@ -58,6 +58,23 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  /* 앱 코드·데이터·스타일은 네트워크 우선: 새 버전이 바로 보이게. (실패하면 캐시) */
+  const fresh = ['script', 'style', 'document', 'worker'].indexOf(req.destination) > -1;
+  if (fresh) {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          if (res && res.ok) {
+            const copy = res.clone();
+            caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+          }
+          return res;
+        })
+        .catch(() => caches.match(req))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(req).then((hit) => {
       if (hit) return hit;
