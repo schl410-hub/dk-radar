@@ -332,6 +332,10 @@ async function main() {
   const run3 = await call(checkFn, { url: '/api/check?token=smoke-secret' });
   check('check run3 no duplicate push', run3.json.pushed === 0, run3.json.pushed);
 
+  const testPush = await call(checkFn, { url: '/api/check?token=smoke-secret&test=1&dry=1' });
+  check('check test push targets subscriber', !!testPush.json.test && testPush.json.test.targets === 1, testPush.json.test && testPush.json.test.targets);
+  check('check test push payload', !!testPush.json.test && /테스트 푸시/.test(testPush.json.test.preview.title), testPush.json.test && testPush.json.test.preview.title);
+
   /* --- 7. 푸시 암호화(VAPID) --- */
   const webpush = require('web-push');
   const vapid = webpush.generateVAPIDKeys();

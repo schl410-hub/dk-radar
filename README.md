@@ -41,7 +41,7 @@
 | `GET /api/solo` | 5인 티어·LP·전적·인게임·최근 5경기 (Riot API, 45초 캐시) · 키 없으면 스냅샷 |
 | `GET /api/config` | 프론트가 쓰는 공개 상태값(푸시 공개키·저장소·솔로 소스·마지막 점검) |
 | `POST /api/subscribe` | 기기 푸시 구독 + 알림 설정 저장 (`DELETE` 해지, `GET ?endpoint=` 확인) |
-| `GET /api/check` | 주기 점검 — 새 랭크 게임 / 새 일정 / 시작 임박 감지 후 푸시 (`?dry=1` 미리보기) |
+| `GET /api/check` | 주기 점검 — 새 랭크 게임 / 새 일정 / 시작 임박 감지 후 푸시 (`?dry=1` 미리보기, `?test=1` 구독 기기로 테스트 푸시) |
 
 ```bash
 BASE=https://dk-signal.vercel.app
@@ -49,6 +49,7 @@ curl -s $BASE/api/official | head -c 400
 curl -s $BASE/api/solo | head -c 300
 curl -s $BASE/api/config
 curl -s "$BASE/api/check?dry=1&token=$CHECK_SECRET"
+curl -s "$BASE/api/check?test=1&token=$CHECK_SECRET"   # 잠금화면 알림 확인
 ```
 
 ## 환경변수 (Vercel → Settings → Environment Variables)

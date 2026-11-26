@@ -205,6 +205,7 @@ module.exports = async function handler(req, res) {
 
   const dry = url.searchParams.get('dry') === '1';
   const only = url.searchParams.get('only') || '';
+  const test = url.searchParams.get('test') || '';
   const started = Date.now();
 
   let state = null;
@@ -217,6 +218,20 @@ module.exports = async function handler(req, res) {
     official: subs.filter(function (s) { return s.prefs && s.prefs.official !== false; }).length,
     solo: subs.reduce(function (n, s) { return n + ((s.prefs && Array.isArray(s.prefs.solo)) ? s.prefs.solo.length : 0); }, 0)
   };
+
+  /* 구독 기기로 테스트 푸시 보내기 (?test=1) — 잠금화면 알림이 실제로 도착하는지 확인용 */
+  let testResult = null;
+  if (test) {
+    const payload = {
+      title: '딮기 시그널 · 테스트 푸시',
+      body: '이 알림이 왔다면 잠금화면 알림 준비 완료! 새 전적과 경기 소식을 이렇게 보내드릴게요.',
+      tag: 'dk-test-' + Date.now(),
+      url: './',
+      kind: 'test'
+    };
+    const t = await broadcast(subs, function () { return true; }, payload, dry);
+    testResult = Object.assign({ event: 'test' }, t);
+  }
 
   const official = (only === 'solo') ? { status: 'skipped' } : await checkOfficial(state, subs, dry).catch(function (e) {
     return { status: 'error', error: String(e && e.message ? e.message : e) };
@@ -245,6 +260,7 @@ module.exports = async function handler(req, res) {
     pruned: pruned,
     targets: targets,
     pushReady: push.ready(),
+    test: testResult,
     official: { status: official.status, next: official.next || null, pushes: official.pushes || [] },
     solo: { status: solo.status, players: (solo.players || []).map(function (p) {
       return { key: p.key, status: p.status, latestId: p.latestId || null, isNew: !!p.isNew };
