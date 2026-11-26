@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DK 레이더 · 디플러스 기아 민트 레이더</title>
+<meta name="description" content="도란과 디플러스 기아 5인의 공식 경기·솔로랭크를 한 눈에 보는 미니 대시보드.">
+<meta name="theme-color" content="#F2FBF9">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="DK 레이더">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icons/favicon-32.png" sizes="32x32">
+<link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<div class="push-banner" id="pushBanner" role="status" aria-live="polite" hidden>
+  <div class="pb-icon"><img src="./icons/icon-192.png" alt=""></div>
+  <div class="pb-body">
+    <div class="pb-top"><span class="pb-app">DK 레이더</span><span class="pb-time">지금</span></div>
+    <div class="pb-title" id="pbTitle">도란 레이더 테스트 알림</div>
+    <div class="pb-text" id="pbText">이 기기로 푸시를 받을 수 있어요.</div>
+  </div>
+  <button class="pb-close" id="pbClose" aria-label="알림 닫기">
+    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+  </button>
+</div>
+
+<div class="app">
+  <header class="appbar">
+    <div class="brand-row">
+      <span class="logo" aria-hidden="true">
+        <svg viewBox="0 0 64 64" width="22" height="22">
+          <path d="M32 6c1.8 0 3.2 1.4 3.2 3.2V14h-6.4V9.2C28.8 7.4 30.2 6 32 6z" fill="#fff"/>
+          <path d="M13 26c0-7.2 8.5-13 19-13s19 5.8 19 13v3H13v-3z" fill="#fff"/>
+          <path d="M32 33c8.3 0 14 7.6 14 15.2C46 56 39.7 60 32 60s-14-4-14-11.8C18 40.6 23.7 33 32 33z" fill="#fff"/>
+        </svg>
+      </span>
+      <div class="brand-text">
+        <span class="brand-name">DK RADAR</span>
+        <span class="brand-sub">디플러스 기아 민트 레이더</span>
+      </div>
+      <button class="install-btn" id="installBtn" hidden>앱 설치</button>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="화면 선택">
+      <button class="tab is-active" role="tab" aria-selected="true" data-tab="feed">
+        <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><rect x="3" y="3" width="7.5" height="7.5" rx="2" stroke="currentColor" stroke-width="1.8" fill="none"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2" stroke="currentColor" stroke-width="1.8" fill="none"/><rect x="3" y="13.5" width="7.5" height="7.5" rx="2" stroke="currentColor" stroke-width="1.8" fill="none"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2" stroke="currentColor" stroke-width="1.8" fill="none"/></svg>
+        전체 피드
+      </button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="official">
+        <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M3.5 10h17M8 3.5v3M16 3.5v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        공식 경기
+      </button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="solo">
+        <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d="M4 19.5V13M9.3 19.5V8.5M14.7 19.5v-7M20 19.5V5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        경기 기록
+      </button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="records">
+        <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path d="M8 4h8v2.5a4 4 0 0 1-8 0V4z" stroke="currentColor" stroke-width="1.7" fill="none"/><path d="M8 5H5v1.5A3.5 3.5 0 0 0 8.5 10M16 5h3v1.5A3.5 3.5 0 0 1 15.5 10" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round"/><path d="M12 10.5V15M9 19.5h6M10.5 15h3l.6 4.5h-4.2L10.5 15z" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linejoin="round"/></svg>
+        대회 기록
+      </button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="panel is-active" id="panel-feed" role="tabpanel" aria-label="전체 피드">
+      <div class="workspace-head">
+        <div class="ws-title"><span class="ws-name" id="wsName">DORAN</span><span class="ws-slash">/</span>WORKSPACE</div>
+        <div class="ws-right">
+          <span id="checkedAt">최근 확인 --</span>
+          <button class="refresh" id="refreshBtn" aria-label="새로고침" title="새로고침">
+            <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.6-5.9M20 4v4.5h-4.5" stroke="currentColor" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="pills" id="pills" role="tablist" aria-label="선수 선택"></div>
+      <section class="hero" id="hero" aria-live="polite"></section>
+      <div class="status-grid" id="statusGrid"></div>
+      <section class="card solo-card">
+        <div class="card-head">
+          <div>
+            <div class="section-eyebrow">RANKED SOLO / DUO</div>
+            <h2 class="section-title">최근 솔로랭크 전적</h2>
+          </div>
+          <a class="opgg-btn" id="soloOpgg" href="#" target="_blank" rel="noopener">OP.GG ↗</a>
+        </div>
+        <p class="meta" id="soloMeta"></p>
+        <p class="solo-note" id="soloNoteFeed"></p>
+        <div class="tier-row" id="tierRow"></div>
+        <div class="table-wrap" id="soloTable"></div>
+        <a class="table-more" id="soloMore" href="#" target="_blank" rel="noopener">OP.GG에서 전체 전적 보기 ↗</a>
+      </section>
+
+      <section class="card roster-card">
+        <div class="section-eyebrow">DPLUS KIA · 2027 ROSTER</div>
+        <h2 class="section-title">도카쇼스딜</h2>
+        <p class="meta">2027 시즌 디플러스 기아 로스터 5인. 이름을 눌러 선수를 바꿀 수 있어요.</p>
+        <ul class="roster" id="rosterList"></ul>
+      </section>
+
+      <footer class="foot">
+        <p><b>v1 프로토타입</b> · 공식 경기·솔로랭크 기록은 2026-11-26에 확인한 공개 데이터(KO.LOL·OP.GG)를 담았어요. 실시간 자동 갱신은 v2에서 붙일 예정입니다.</p>
+        <p class="foot-dim">이 앱은 팬이 만든 비공식 대시보드이며 디플러스 기아·라이엇 게임즈와 무관합니다.</p>
+      </footer>
+    </section>
+
+    <section class="panel" id="panel-official" role="tabpanel" aria-label="공식 경기" hidden>
+      <div class="panel-head">
+        <div class="section-eyebrow">OFFICIAL MATCH</div>
+        <h2 class="panel-title">공식 경기</h2>
+        <p class="meta">다음 일정과 최근 공식 경기를 모아 봤어요.</p>
+      </div>
+      <section class="card next-match">
+        <div class="next-top">
+          <span class="tag">NEXT</span>
+          <span class="next-date">2027 LCK 스프링</span>
+        </div>
+        <h3 class="next-title">일정 확인 필요</h3>
+        <p class="meta">2026 시즌이 끝나 2027 시즌 개막 일정이 아직 발표되지 않았어요. 발표되면 이 카드에 DK 첫 경기를 바로 띄울게요.</p>
+        <div class="next-teams"><span class="team dk">DK</span><span class="vs">VS</span><span class="team">TBD</span></div>
+        <a class="wide-btn" href="https://lolesports.com/ko-KR/schedule" target="_blank" rel="noopener">LoL Esports 일정 확인 ↗</a>
+      </section>
+      <section class="card">
+        <div class="section-eyebrow">DK · WORLDS 2026</div>
+        <h3 class="card-title">월즈 2026 여정</h3>
+        <ul class="path" id="dkPath"></ul>
+      </section>
+      <section class="card">
+        <div class="section-eyebrow">LAST OFFICIAL GAME</div>
+        <h3 class="card-title">선수별 최근 공식 경기</h3>
+        <ul class="official-list" id="officialList"></ul>
+      </section>
+      <footer class="foot"><p>경기 일정·결과는 LoL Esports와 공개 기록 기준입니다.</p></footer>
+    </section>
+
+    <section class="panel" id="panel-solo" role="tabpanel" aria-label="경기 기록" hidden>
+      <div class="panel-head">
+        <div class="section-eyebrow">MATCH LOG</div>
+        <h2 class="panel-title">경기 기록</h2>
+        <p class="meta" id="soloPanelMeta">선수를 고르면 솔로랭크 최근 경기가 바뀌어요.</p>
+      </div>
+      <div class="pills pills-flat" id="pillsSolo" role="tablist" aria-label="선수 선택"></div>
+      <section class="card solo-card">
+        <div class="card-head">
+          <div>
+            <div class="section-eyebrow">RANKED SOLO / DUO</div>
+            <h2 class="section-title" id="soloTitle">최근 솔로랭크 전적</h2>
+          </div>
+          <a class="opgg-btn" id="soloOpgg2" href="#" target="_blank" rel="noopener">OP.GG ↗</a>
+        </div>
+        <p class="meta" id="soloMeta2"></p>
+        <p class="solo-note" id="soloNote"></p>
+        <div class="chip-row" id="filterRow">
+          <button class="chip is-active" data-filter="all">전체</button>
+          <button class="chip" data-filter="win">승리</button>
+          <button class="chip" data-filter="lose">패배</button>
+        </div>
+        <div class="table-wrap" id="soloTable2"></div>
+        <a class="table-more" id="soloMore2" href="#" target="_blank" rel="noopener">OP.GG에서 전체 전적 보기 ↗</a>
+      </section>
+      <footer class="foot"><p>솔로랭크 기록은 각 선수 계정의 공개 전적을 2026-11-26에 확인한 값이에요. 이후 경기는 OP.GG에서 확인해 주세요.</p></footer>
+    </section>
+
+    <section class="panel" id="panel-records" role="tabpanel" aria-label="대회 기록" hidden>
+      <div class="panel-head">
+        <div class="section-eyebrow">TOURNAMENT RECORD</div>
+        <h2 class="panel-title">대회 기록</h2>
+        <p class="meta">2026 시즌 기준 공개 기록이에요. 오른쪽 숫자는 세트 승·패입니다.</p>
+      </div>
+      <section class="card">
+        <div class="section-eyebrow">2026 SEASON</div>
+        <h3 class="card-title" id="recordsWho">도란 · 2026 시즌</h3>
+        <ul class="records" id="recordsList"></ul>
+      </section>
+      <div class="pills pills-flat" id="pillsRecords" role="tablist" aria-label="선수 선택"></div>
+      <section class="card">
+        <div class="section-eyebrow">ALL PLAYERS</div>
+        <h3 class="card-title">2026 월즈 결과</h3>
+        <ul class="worlds-list" id="worldsList"></ul>
+      </section>
+      <footer class="foot"><p>2026 시즌 대회 기록은 KO.LOL 공개 데이터를 옮겼어요. 우승·준우승 표기는 확인된 대회만 적었습니다.</p></footer>
+    </section>
+  </main>
+</div>
+
+<script src="./data.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>
