@@ -325,19 +325,67 @@ html[data-theme="mint"] .tab.is-active svg { color: var(--accent); }
   border-radius: 50%; pointer-events: none;
   background: radial-gradient(circle, var(--accent-soft), transparent 68%);
 }
-.pick-head { display: flex; align-items: center; gap: 8px; position: relative; z-index: 1; }
+.pick-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; row-gap: 6px; position: relative; z-index: 1; }
 .mypick {
   display: flex; align-items: center; gap: 5px;
   font-size: 8.5px; font-weight: 800; letter-spacing: .14em; color: var(--accent);
 }
 .mypick i { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+.mypick .st { flex: none; }
+.mypick.is-preview { color: var(--muted); letter-spacing: .1em; }
+.mypick.is-preview i { background: var(--muted-2); box-shadow: none; }
+.pick-tools { margin-left: auto; display: flex; align-items: center; gap: 5px; }
+
+/* 내 최애 고정 버튼 */
+.pin-btn {
+  flex: none; display: inline-flex; align-items: center; gap: 4px;
+  height: 26px; padding: 0 8px; border-radius: 8px;
+  font-size: 9px; font-weight: 800; letter-spacing: -.01em; white-space: nowrap;
+  color: var(--accent); background: var(--accent-soft);
+  border: 1px solid var(--accent-line);
+  transition: background .2s ease, color .2s ease, border-color .2s ease, transform .15s ease;
+}
+.pin-btn .st { flex: none; }
+.pin-btn.is-on {
+  color: var(--accent-ink); border-color: transparent;
+  background: linear-gradient(140deg, var(--accent), var(--accent-2));
+  box-shadow: 0 8px 18px -14px var(--accent);
+}
+.pin-btn:active { transform: scale(.95); }
+
+/* 배너 안 선수 퀵 스위처 */
+.pick-switch { position: relative; z-index: 1; display: flex; gap: 4px; margin-top: 10px; }
+.psw {
+  flex: 1 1 0; min-width: 0;
+  display: inline-flex; align-items: center; justify-content: center; gap: 3px;
+  padding: 6px 2px; border-radius: 9px;
+  font-size: 10px; font-weight: 700; letter-spacing: -.01em; color: var(--ink-2);
+  background: var(--chip-bg); border: 1px solid var(--line);
+  white-space: nowrap;
+  transition: color .18s ease, background .2s ease, border-color .2s ease, transform .15s ease;
+}
+.psw span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.psw .st { flex: none; }
+.psw.is-fav { color: var(--accent); }
+.psw.is-active {
+  color: var(--accent-ink); border-color: transparent;
+  background: linear-gradient(140deg, var(--accent), var(--accent-2));
+  box-shadow: 0 8px 18px -14px var(--accent);
+}
+.psw:active { transform: scale(.96); }
+.psw:focus-visible, .pin-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.pick-hint {
+  position: relative; z-index: 1;
+  margin-top: 8px; font-size: 8.5px; font-weight: 600; line-height: 1.5; color: var(--muted);
+}
+.pick-hint b { color: var(--accent); font-weight: 800; }
 .pick-opgg {
   margin-left: 0;
   font-size: 9px; font-weight: 800; color: var(--accent);
   background: var(--accent-soft); border: 1px solid var(--accent-line);
   padding: 4px 8px; border-radius: 999px;
 }
-.pick-head .bell-mini { margin-left: auto; }
+.pick-head .bell-mini { margin-left: 0; }
 .pick-main { display: flex; align-items: center; gap: 11px; margin-top: 11px; position: relative; z-index: 1; }
 .pav {
   position: relative; flex: none;
@@ -420,6 +468,11 @@ html[data-theme="mint"] .pav .badge-pos { background: #fff; }
 .tile.is-active::before { opacity: 1; }
 .t-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; position: relative; }
 .t-pos { font-size: 8px; font-weight: 800; letter-spacing: .13em; color: var(--muted); }
+.t-pos .t-fav {
+  display: inline-flex; align-items: center; gap: 2px; vertical-align: 1px;
+  margin-left: 4px; font-size: 7px; font-weight: 800; letter-spacing: .04em; color: var(--accent);
+}
+.t-pos .t-fav .st { width: 7px; height: 7px; }
 .tile.is-active .t-pos { color: var(--accent); }
 .t-st { display: inline-flex; align-items: center; gap: 3px; font-size: 8px; font-weight: 600; color: var(--muted); letter-spacing: 0; white-space: nowrap; }
 .t-st i { width: 4.5px; height: 4.5px; border-radius: 50%; background: var(--muted-2); flex: none; }
@@ -449,6 +502,8 @@ html[data-theme="mint"] .pav .badge-pos { background: #fff; }
   white-space: nowrap;
 }
 .chipk b { color: var(--accent); font-weight: 800; }
+.chipk-fav { color: var(--accent); gap: 3px; }
+.chipk-fav .st { width: 8px; height: 8px; }
 
 /* ---------- 하이라이트 카드 ---------- */
 .hl-card {
@@ -899,6 +954,26 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
   display: grid; place-items: center; color: var(--muted-2); background: var(--chip-bg);
 }
 
+/* ---------- 확인 토스트 ---------- */
+.toast {
+  position: fixed; z-index: 90;
+  left: 50%; bottom: calc(20px + env(safe-area-inset-bottom));
+  transform: translate(-50%, 12px);
+  max-width: min(340px, calc(100% - 36px));
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--banner-bg);
+  border: 1px solid var(--banner-line);
+  box-shadow: 0 18px 40px -18px rgba(0, 0, 0, .55);
+  color: var(--ink); font-size: 11px; font-weight: 700; letter-spacing: -.015em; line-height: 1.45;
+  text-align: center;
+  opacity: 0; pointer-events: none;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  transition: opacity .22s ease, transform .22s ease;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+
 /* ---------- 푸터 ---------- */
 .foot { padding: 18px 20px 6px; }
 .foot p { font-size: 8.5px; line-height: 1.7; color: var(--muted-2); letter-spacing: -.01em; }
@@ -917,6 +992,14 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
   .c-champ { width: 30%; }
   .brand-name { font-size: 12px; }
   .theme-btn span { display: none; }
+  .psw { font-size: 9px; }
+}
+
+@media (max-width: 340px) {
+  .pin-btn span { display: none; }
+  .pin-btn { width: 26px; padding: 0; justify-content: center; }
+  .pick-head .mypick { letter-spacing: .08em; }
+  .pick-opgg { padding: 4px 6px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

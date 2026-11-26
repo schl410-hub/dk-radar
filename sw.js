@@ -1,5 +1,5 @@
 /* 딮기 시그널 서비스 워커 · 오프라인 캐시 + 로컬 알림 */
-const CACHE = 'dk-signal-v2';
+const CACHE = 'dk-signal-v3';
 const ASSETS = [
   './',
   './index.html',

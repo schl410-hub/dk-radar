@@ -11,7 +11,12 @@
 - **실시간 테마 전환**: 헤더 우측 `다크 / 소프트` 버튼. 선택은 `localStorage`에 저장되고 첫 페인트 전에 적용됩니다. 두 테마 모두 글래스 카드·보더·글자색이 따로 튜닝되어 있습니다.
 - **탭 4개**: 홈 / 공식일정 / 경기로그 / 기록실
 - **5인 상태 보드**: 도란 · 카나비 · 쇼메이커 · 스매쉬 · 딜라이트 타일을 누르면 최애 포커스 배너·하이라이트·전적표가 함께 바뀝니다. 타일에는 티어/LP, 최근 5경기 승패 바, 마지막 경기 시점이 표시됩니다.
-- **최애 포커스 배너**: 선택 선수의 티어·LP·최근 5경기·마지막 경기, 솔랭 알림 벨
+- **최애 포커스 배너 + MY PICK 고정**
+  - 배너 안 **선수 퀵 스위처**(도란·카나비·쇼메이커·스매쉬·딜라이트 칩)로 바로 선수를 바꿔 볼 수 있습니다.
+  - **★ 최애 고정** 버튼을 누르면 그 선수가 **내 최애(MY PICK)** 로 `localStorage`(`dk.signal.mypick`)에 저장됩니다. 고정된 선수 칩과 5인 보드 타일에는 별과 `내 최애` 표시가 붙습니다.
+  - 앱을 새로고침하거나 다시 열면 **저장된 MY PICK 선수가 첫 화면**에 뜨고, 기본값은 도란입니다(저장값이 없거나 알 수 없는 값일 때).
+  - 다른 선수를 구경하는 동안에는 배너가 `미리보기 · 카나비` 처럼 표시되고, 그 상태에서 별을 누르면 그 선수가 새 MY PICK이 됩니다. 저장·변경 시 화면 아래에 확인 문구가 잠깐 뜹니다.
+  - 선택 선수의 티어·LP·최근 5경기·마지막 경기, OP.GG/u.gg 링크, **솔랭 알림 벨**
 - **최근 5경기 하이라이트**: 대형 W–L, 승률, KDA(합계·평균), 경기별 챔피언/ KDA 카드
 - **알림 설정 (localStorage 저장)**
   - **선수별 솔랭 알림**: 5명 각각 ON/OFF. 기본값은 도란만 ON.
@@ -45,7 +50,7 @@
 index.html            화면 뼈대 (테마 부트스트랩 포함)
 styles.css            듀얼 테마 토큰 + 컴포넌트 스타일
 data.js               선수·경기·대회 기록 (2026-11-26 확인)
-app.js                탭/선수 전환, 테마, 알림 설정, 표 렌더, 응원 저장
+app.js                탭/선수·MY PICK 전환·고정, 테마, 알림 설정, 표 렌더, 응원 저장
 manifest.json         PWA 설정 (manifest.webmanifest 와 동일 내용)
 sw.js                 서비스 워커 (캐시 + 알림)
 logo/dpluskia.svg     디플러스 기아 공식 로고
@@ -63,7 +68,8 @@ tools/verify.py       390×844 브라우저 검증 + 스크린샷
 
 ```bash
 python3 -m http.server 8765 &
-PLAYWRIGHT_BROWSERS_PATH=/workspace/.pw-browsers python3 tools/verify.py
+LD_LIBRARY_PATH=/workspace/.libs/usr/lib/x86_64-linux-gnu PLAYWRIGHT_BROWSERS_PATH=/workspace/.pw-browsers python3 tools/verify.py
 ```
 
-48개 항목(4탭, 5인 전환, 테마 저장, 선수별/경기 알림 동기화·저장, 테스트 푸시, 응원 저장, 콘솔 에러)을 확인하고 `downloads/dk-radar/signal-*.png` 를 갱신합니다.
+79개 항목(4탭, 5인 전환, 테마 저장, MY PICK 선택·고정·새로고침 유지, 선수별/경기 알림 동기화·저장, 테스트 푸시, 응원 저장, 콘솔 에러)을 확인하고 `downloads/dk-radar/signal-*.png` 를 갱신합니다.
+MY PICK 관련 스크린샷: `signal-mypick-browse-dark.png`(미리보기), `signal-mypick-pinned-dark.png`(고정+토스트), `signal-mypick-reload-dark.png`(새로고침 유지), `signal-mypick-mint.png`(소프트 테마).

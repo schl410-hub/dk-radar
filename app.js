@@ -7,6 +7,8 @@
 
   var THEME_KEY = 'dk.signal.theme';
   var CHEER_KEY = 'dk.signal.cheer.';
+  var MYPICK_KEY = 'dk.signal.mypick';
+  var DEFAULT_PICK = 'doran';
 
   var state = {
     player: 'doran',
@@ -23,6 +25,14 @@
 
   var theme = store.get(THEME_KEY, 'dark') === 'mint' ? 'mint' : 'dark';
   var swReg = null;
+
+  /* 내 최애(MY PICK): 저장된 선수를 첫 화면 기본값으로 씁니다. 없거나 알 수 없는 값이면 도란. */
+  var myPick = (function () {
+    var saved = store.get(MYPICK_KEY, DEFAULT_PICK);
+    for (var i = 0; i < PLAYERS.length; i++) if (PLAYERS[i].key === saved) return saved;
+    return DEFAULT_PICK;
+  })();
+  state.player = myPick; /* 새로고침·다시 열어도 저장된 최애가 첫 화면에 뜨도록 */
 
   /* 알림 설정: 선수별 솔랭 알림 + DK 공식 경기 알림 (각각 localStorage 저장) */
   var OFFICIAL_KEY = 'dk.signal.official';
@@ -174,19 +184,95 @@
   }
 
   /* ---------- 최애 포커스 배너 ---------- */
+  var STAR_ON = '<svg class="st" viewBox="0 0 20 20" width="10" height="10" aria-hidden="true"><path d="M10 2.3l2.4 4.86 5.36.78-3.88 3.78.92 5.34L10 14.53l-4.8 2.53.92-5.34L2.24 7.94l5.36-.78L10 2.3Z" fill="currentColor"/></svg>';
+  var STAR_OFF = '<svg class="st" viewBox="0 0 20 20" width="10" height="10" aria-hidden="true"><path d="M10 2.3l2.4 4.86 5.36.78-3.88 3.78.92 5.34L10 14.53l-4.8 2.53.92-5.34L2.24 7.94l5.36-.78L10 2.3Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>';
+
+  function objParticle(name) {
+    var c = name.charCodeAt(name.length - 1);
+    return (c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 !== 0) ? '을' : '를';
+  }
+  function topicParticle(name) {
+    var c = name.charCodeAt(name.length - 1);
+    return (c >= 0xAC00 && c <= 0xD7A3 && (c - 0xAC00) % 28 !== 0) ? '은' : '는';
+  }
+
+  /* 화면 아래에 잠깐 뜨는 확인 문구 */
+  var toastTimer = null;
+  function toast(msg) {
+    var el = document.getElementById('appToast');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'appToast';
+      el.className = 'toast';
+      el.setAttribute('role', 'status');
+      el.setAttribute('aria-live', 'polite');
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    el.classList.remove('show');
+    void el.offsetWidth;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.classList.remove('show'); }, 2600);
+  }
+
+  /* 배너 안 선수 퀵 스위처 (내 최애 칩에는 별 표시) */
+  function pickSwitchHTML() {
+    return '<div class="pick-switch" role="tablist" aria-label="MY PICK 선수 빠른 선택">' +
+      PLAYERS.map(function (pp) {
+        var on = pp.key === state.player;
+        var fav = pp.key === myPick;
+        return '<button class="psw' + (on ? ' is-active' : '') + (fav ? ' is-fav' : '') + '" type="button" role="tab"' +
+          ' aria-selected="' + on + '" data-player="' + pp.key + '"' +
+          ' aria-label="' + pp.nameKo + ' 보기' + (fav ? ' (내 최애)' : '') + '">' +
+          (fav ? STAR_ON : '') + '<span>' + pp.nameKo + '</span></button>';
+      }).join('') +
+    '</div>';
+  }
+
+  function pinBtnHTML(pinned) {
+    return '<button class="pin-btn' + (pinned ? ' is-on' : '') + '" type="button" data-pin="1"' +
+      ' aria-pressed="' + pinned + '"' +
+      ' aria-label="' + (pinned ? '내 최애로 고정됨' : '이 선수를 내 최애로 고정') + '"' +
+      ' title="' + (pinned ? '내 최애로 고정됨' : '이 선수를 내 최애로 고정') + '">' +
+      (pinned ? STAR_ON : STAR_OFF) + '<span>' + (pinned ? '내 최애' : '최애 고정') + '</span></button>';
+  }
+
+  /* 선택한 선수를 내 최애로 고정 (localStorage 저장) */
+  function pinPlayer(key) {
+    var p = player(key);
+    if (key === myPick) {
+      toast('★ ' + p.nameKo + topicParticle(p.nameKo) + ' 이미 내 최애로 고정돼 있어요.');
+      return;
+    }
+    myPick = key;
+    store.set(MYPICK_KEY, key);
+    state.player = key;
+    renderAll();
+    toast('★ ' + p.nameKo + objParticle(p.nameKo) + ' 내 최애(MY PICK)로 고정했어요.');
+  }
+
   function renderPick() {
     var host = $('#pickBanner');
     if (!host) return;
     var p = current();
+    var pinned = p.key === myPick;
+    var fav = player(myPick);
     var r = recent(p, 5);
     var t = tally(r);
     var last = p.matches[0];
     host.innerHTML =
       '<div class="pick-head">' +
-        '<span class="mypick"><i></i>MY PICK · 오늘의 ' + p.nameKo + '</span>' +
-        bellBtn(p.key) +
-        '<a class="pick-opgg" href="' + p.opgg + '" target="_blank" rel="noopener">' + p.statsLabel + '</a>' +
+        (pinned
+          ? '<span class="mypick">' + STAR_ON + 'MY PICK · 오늘의 ' + p.nameKo + '</span>'
+          : '<span class="mypick is-preview"><i></i>미리보기 · ' + p.nameKo + '</span>') +
+        '<div class="pick-tools">' +
+          pinBtnHTML(pinned) +
+          bellBtn(p.key) +
+          '<a class="pick-opgg" href="' + p.opgg + '" target="_blank" rel="noopener">' + p.statsLabel + '</a>' +
+        '</div>' +
       '</div>' +
+      pickSwitchHTML() +
       '<div class="pick-main">' +
         '<div class="pav">' + p.nameKo.charAt(0) + '<span class="badge-pos">' + p.posKo + '</span></div>' +
         '<div class="pick-id">' +
@@ -203,6 +289,12 @@
         '<span class="riot">' + p.riotId + '</span>' +
         '<span class="rec">' + last.d + ' ' + last.t + ' <b>' + last.champ + '</b> ' + last.kda + ' · ' + (last.win ? '승' : '패') + '</span>' +
       '</div>';
+    if (!pinned) {
+      var hint = document.createElement('p');
+      hint.className = 'pick-hint';
+      hint.innerHTML = '내 최애는 <b>' + fav.nameKo + '</b> · 별을 누르면 <b>' + p.nameKo + '</b>' + objParticle(p.nameKo) + ' 최애로 고정해요';
+      host.appendChild(hint);
+    }
   }
 
   /* ---------- 5인 상태 보드 ---------- */
@@ -218,15 +310,16 @@
         return '<i class="' + (m.win ? 'w' : 'l') + '" style="height:' + barHeight(m) + 'px"></i>';
       }).join('');
       return '<button class="tile' + (active ? ' is-active' : '') + '" type="button" data-player="' + p.key + '"' +
-        ' aria-pressed="' + active + '" aria-label="' + p.nameKo + ' 선수 전적 보기">' +
+        ' aria-pressed="' + active + '" aria-label="' + p.nameKo + ' 선수 전적 보기' + (p.key === myPick ? ' (내 최애)' : '') + '">' +
         '<span class="t-head">' +
-          '<span class="t-pos">' + p.pos + '</span>' +
+          '<span class="t-pos">' + p.pos + (p.key === myPick ? '<span class="t-fav">' + STAR_ON + '내 최애</span>' : '') + '</span>' +
           '<span class="t-st"><i class="' + (last.win ? 'w' : 'l') + '"></i>' + relDay(last.d) + '</span>' +
         '</span>' +
         '<span class="t-name">' + p.nameKo + '<em>' + p.real + '</em></span>' +
         '<span class="t-tier">' + p.tier.replace('다이아몬드', '다이아') + '<span class="t-dot">·</span><b>' + p.lp + '</b></span>' +
         '<span class="bars">' + bars + '</span>' +
-        (active ? '<span class="t-foot"><span class="chipk">최근 5경기 <b>' + t.w + '승 ' + t.l + '패</b></span><span class="chipk">KDA <b>' + t.kda + '</b></span></span>' : '') +
+        (active ? '<span class="t-foot"><span class="chipk">최근 5경기 <b>' + t.w + '승 ' + t.l + '패</b></span><span class="chipk">KDA <b>' + t.kda + '</b></span>' +
+          (p.key === myPick ? '<span class="chipk chipk-fav">' + STAR_ON + '내 최애</span>' : '') + '</span>' : '') +
       '</button>';
     }).join('');
   }
@@ -496,6 +589,8 @@
       renderCheer();
       return;
     }
+    var pin = e.target.closest('[data-pin]');
+    if (pin) { pinPlayer(state.player); return; }
     var soloT = e.target.closest('[data-solo-toggle]');
     if (soloT) {
       var key = soloT.getAttribute('data-solo-toggle');

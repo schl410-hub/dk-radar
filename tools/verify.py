@@ -2,8 +2,8 @@
 
   (python3 -m http.server 8765 &) ; python3 tools/verify.py
 
-390x844 모바일 뷰포트에서 4개 탭, 선수 전환, 테마 전환(다크/소프트),
-선수별·경기 알림 토글, 테스트 푸시, 응원 저장을 확인하고
+390x844 모바일 뷰포트에서 4개 탭, 선수 전환, MY PICK 선택·고정·새로고침 유지,
+테마 전환(다크/소프트), 선수별·경기 알림 토글, 테스트 푸시, 응원 저장을 확인하고
 downloads/dk-radar/*.png 로 스크린샷을 남깁니다.
 """
 import asyncio
@@ -222,6 +222,124 @@ async def main():
         await page.goto(BASE + "?tab=records", wait_until="networkidle")
         await page.wait_for_timeout(400)
         check("deep link tab", await page.is_visible("#panel-records"))
+
+        # ---- MY PICK 선택 · 최애 고정 ----
+        await page.goto(BASE, wait_until="networkidle")
+        await page.evaluate("localStorage.removeItem('dk.signal.mypick')")
+        await page.reload(wait_until="networkidle")
+        await page.wait_for_timeout(600)
+        pick_text = await page.inner_text("#pickBanner")
+        check("mypick default doran", "MY PICK · 오늘의 도란" in pick_text, pick_text.splitlines()[0])
+        check("mypick chips = 5", await page.eval_on_selector_all("#pickBanner .psw", "e=>e.length") == 5)
+        check("mypick pin pressed by default",
+              await page.get_attribute("#pickBanner .pin-btn", "aria-pressed") == "true")
+        check("mypick fav star on doran chip",
+              await page.eval_on_selector_all("#pickBanner .psw.is-fav", "e=>e.map(x=>x.dataset.player)") == ["doran"])
+        check("no horizontal overflow after mypick",
+              await page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1"),
+              await page.evaluate("[document.documentElement.scrollWidth, innerWidth]"))
+        check("pick banner content fits",
+              await page.evaluate("""(()=>{const b=document.getElementById('pickBanner');const r=b.getBoundingClientRect();return [...b.children].every(el=>el.getBoundingClientRect().right<=r.right-1+1)})()"""),
+              await page.evaluate("""(()=>{const b=document.getElementById('pickBanner');const r=b.getBoundingClientRect();return [...b.children].map(el=>[String(el.className),Math.round(el.getBoundingClientRect().right),Math.round(r.right)])})()"""))
+        check("pick switch not scrollable",
+              await page.evaluate("(()=>{const s=document.querySelector('.pick-switch');return s.scrollWidth<=s.clientWidth+1})()"),
+              await page.evaluate("(()=>{const s=document.querySelector('.pick-switch');return [s.scrollWidth,s.clientWidth]})()"))
+
+        # 배너 안 퀵 스위처로 카나비 보기 (아직 최애는 도란)
+        await page.click('#pickBanner .psw[data-player="kanavi"]')
+        await page.wait_for_timeout(280)
+        pick_text = await page.inner_text("#pickBanner")
+        check("chip selects kanavi", "미리보기 · 카나비" in pick_text, pick_text.splitlines()[0])
+        check("browsing keeps saved mypick",
+              await page.evaluate("localStorage.getItem('dk.signal.mypick')") is None,
+              await page.evaluate("localStorage.getItem('dk.signal.mypick')"))
+        check("pin invites while browsing",
+              await page.get_attribute("#pickBanner .pin-btn", "aria-pressed") == "false"
+              and await page.is_visible("#pickBanner .pick-hint"))
+        check("tile follows banner chip",
+              await page.eval_on_selector_all(".tile.is-active", "e=>e.map(x=>x.dataset.player)") == ["kanavi"])
+        check("banner player data switched", "서진혁" in await page.inner_text("#pickBanner"))
+        await page.screenshot(path=str(OUT / "signal-mypick-browse-dark.png"))
+
+        # 최애로 고정
+        await page.click("#pickBanner .pin-btn")
+        await page.wait_for_timeout(400)
+        check("pin saves kanavi",
+              await page.evaluate("localStorage.getItem('dk.signal.mypick')") == "kanavi",
+              await page.evaluate("localStorage.getItem('dk.signal.mypick')"))
+        check("pinned label", "MY PICK · 오늘의 카나비" in await page.inner_text("#pickBanner"))
+        check("pin button on", await page.get_attribute("#pickBanner .pin-btn", "aria-pressed") == "true")
+        check("pin toast shown",
+              "show" in (await page.get_attribute("#appToast", "class") or "")
+              and "고정했어요" in await page.inner_text("#appToast"),
+              await page.inner_text("#appToast"))
+        await page.screenshot(path=str(OUT / "signal-mypick-pinned-dark.png"))
+
+        # 5인 보드 타일로 다른 선수 구경 후 그 선수를 고정
+        await page.click('.tile[data-player="showmaker"]')
+        await page.wait_for_timeout(280)
+        check("tile browse shows preview", "미리보기 · 쇼메이커" in await page.inner_text("#pickBanner"))
+        check("browsed tile shows pin invite", await page.is_visible("#pickBanner .pick-hint"))
+        await page.click("#pickBanner .pin-btn")
+        await page.wait_for_timeout(350)
+        check("pin from tile browse",
+              await page.evaluate("localStorage.getItem('dk.signal.mypick')") == "showmaker",
+              await page.evaluate("localStorage.getItem('dk.signal.mypick')"))
+
+        # 새로고침해도 저장된 최애가 첫 화면
+        await page.reload(wait_until="networkidle")
+        await page.wait_for_timeout(600)
+        check("mypick first screen after reload",
+              "MY PICK · 오늘의 쇼메이커" in await page.inner_text("#pickBanner"),
+              (await page.inner_text("#pickBanner")).splitlines()[0])
+        check("mypick fav chip after reload",
+              await page.eval_on_selector_all("#pickBanner .psw.is-fav", "e=>e.map(x=>x.dataset.player)") == ["showmaker"])
+        check("mypick pin pressed after reload",
+              await page.get_attribute("#pickBanner .pin-btn", "aria-pressed") == "true")
+        check("mypick saved value after reload",
+              await page.evaluate("localStorage.getItem('dk.signal.mypick')") == "showmaker")
+        await page.screenshot(path=str(OUT / "signal-mypick-reload-dark.png"))
+
+        # 민트 테마에서도 같은 화면
+        await page.click("#themeBtn")
+        await page.wait_for_timeout(700)
+        check("mypick in mint theme",
+              await page.is_visible("#pickBanner .pick-switch .psw.is-active")
+              and await page.is_visible("#pickBanner .pin-btn"))
+        check("mypick mint no overflow",
+              await page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1"))
+        await page.screenshot(path=str(OUT / "signal-mypick-mint.png"))
+        await page.screenshot(path=str(OUT / "signal-home-mint.png"))
+
+        # 이미 최애인 선수의 별을 다시 누르면 안내만
+        await page.click("#pickBanner .pin-btn")
+        await page.wait_for_timeout(300)
+        check("already pinned toast", "이미 내 최애" in await page.inner_text("#appToast"),
+              await page.inner_text("#appToast"))
+        check("already pinned keeps value",
+              await page.evaluate("localStorage.getItem('dk.signal.mypick')") == "showmaker")
+
+        # 알 수 없는 저장값은 기본값(도란)으로
+        await page.evaluate("localStorage.setItem('dk.signal.mypick','nobody')")
+        await page.reload(wait_until="networkidle")
+        await page.wait_for_timeout(500)
+        check("invalid mypick falls back to doran",
+              "MY PICK · 오늘의 도란" in await page.inner_text("#pickBanner"))
+
+        # 도란으로 되돌리고 다크 테마 기본 화면
+        await page.evaluate("localStorage.setItem('dk.signal.mypick','doran')")
+        await page.reload(wait_until="networkidle")
+        await page.wait_for_timeout(500)
+        check("doran pinned again", "MY PICK · 오늘의 도란" in await page.inner_text("#pickBanner"))
+        check("theme persists across mypick reload",
+              await page.get_attribute("html", "data-theme") == "mint")
+        await page.click("#themeBtn")
+        await page.wait_for_timeout(700)
+        check("back to dark after mypick", await page.get_attribute("html", "data-theme") == "dark")
+        await page.evaluate("window.scrollTo(0, 0)")
+        await page.wait_for_timeout(300)
+        await page.screenshot(path=str(OUT / "signal-home-dark.png"))
+        await page.screenshot(path=str(OUT / "signal-home-dark-full.png"), full_page=True)
 
         # 콘솔
         bad = [l for l in logs if l[0] in ("error", "pageerror")]
