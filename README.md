@@ -52,6 +52,19 @@ curl -s "$BASE/api/check?dry=1&token=$CHECK_SECRET"
 curl -s "$BASE/api/check?test=1&token=$CHECK_SECRET"   # 잠금화면 알림 확인
 ```
 
+## 배포 상태 (2026-11-26 기준)
+
+| 항목 | 상태 |
+| --- | --- |
+| 공식 경기 자동 수집 (`/api/official`) | **켜짐** — LoL Esports에서 실제 응답 확인 |
+| 솔로랭크 실시간 (`/api/solo`) | **꺼짐** — `RIOT_API_KEY` 없음 → data.js 스냅샷 표시 |
+| 웹 푸시 VAPID 키 | **등록됨** (Production) — `/api/config` 의 `push.ready: true` |
+| 푸시 구독 저장소 | **미연결** — Upstash Redis 를 붙여야 구독 저장·발송이 켜짐 |
+| `/api/check` 보호 토큰 | **켜짐** (`CHECK_SECRET`·`CRON_SECRET`) — 토큰 없이 부르면 401 |
+| Vercel Cron | 하루 1회(07:00 KST) `/api/check` |
+
+`curl -s https://dk-signal.vercel.app/api/config` 로 언제든 현재 상태를 확인할 수 있습니다.
+
 ## 환경변수 (Vercel → Settings → Environment Variables)
 
 | 이름 | 필수 | 설명 |
@@ -66,6 +79,8 @@ curl -s "$BASE/api/check?test=1&token=$CHECK_SECRET"   # 잠금화면 알림 확
 
 `vercel.json` 의 Cron 은 **하루 1회**(무료 플랜 한도) `/api/check` 를 부릅니다. 실시간에 가깝게 돌리려면 무료 외부 크론(cron-job.org 등)에서 5분 간격으로
 `https://dk-signal.vercel.app/api/check?token=<CHECK_SECRET>` 를 호출하세요.
+
+로컬 사본: 저장소에 커밋되지 않는 `.env.local` 에 위 값이 들어 있습니다(비밀키 백업용).
 
 ## 데이터
 
