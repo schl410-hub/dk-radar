@@ -90,6 +90,9 @@
 
   function renderHero() {
     var p = current();
+    var second = p.key === 'doran'
+      ? { label: '선수 프로필', url: p.profile }
+      : { label: p.statsLabel.replace(' ↗', ''), url: p.opgg };
     $('#hero').innerHTML =
       '<div class="hero-rings">' + ringsSVG() + '</div>' +
       '<div class="eyebrow">LEAGUE OF LEGENDS · ' + p.pos + '</div>' +
@@ -97,7 +100,7 @@
       '<div class="hero-sub">' + p.real + ' · 디플러스 기아</div>' +
       '<div class="hero-links">' +
         '<a class="hero-link" href="' + p.heroLink.url + '" target="_blank" rel="noopener">' + p.heroLink.label + ' <span class="arw">↗</span></a>' +
-        '<a class="hero-link secondary" href="' + p.profile + '" target="_blank" rel="noopener">선수 프로필 <span class="arw">↗</span></a>' +
+        '<a class="hero-link secondary" href="' + second.url + '" target="_blank" rel="noopener">' + second.label + ' <span class="arw">↗</span></a>' +
       '</div>';
     $('#wsName').textContent = p.nameEn;
   }
