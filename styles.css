@@ -718,6 +718,7 @@ html[data-theme="mint"] .pav .badge-pos { background: #fff; }
   padding: 6px 10px; white-space: nowrap;
 }
 .meta { font-size: 9.5px; color: var(--muted); line-height: 1.55; margin-top: 8px; letter-spacing: -.01em; }
+.meta b { color: var(--ink-2); font-weight: 800; }
 .solo-note { font-size: 8.5px; color: var(--muted-2); margin-top: 7px; line-height: 1.5; }
 
 .tier-row { display: flex; align-items: center; gap: 7px; margin-top: 9px; flex-wrap: wrap; }
@@ -844,6 +845,7 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
 .next-date { font-size: 9.5px; font-weight: 700; color: var(--muted); }
 .next-title { font-size: 20px; font-weight: 800; letter-spacing: -.035em; margin: 11px 0 6px; }
 .next-sub { font-size: 9.5px; color: var(--muted); line-height: 1.55; }
+.next-sub b { color: var(--ink-2); font-weight: 800; }
 .next-teams {
   display: flex; align-items: center; gap: 9px; margin: 14px 0;
   font-size: 10px; font-weight: 800; color: var(--muted); letter-spacing: .04em;
@@ -879,6 +881,23 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
 .p-res { font-size: 8.5px; font-weight: 700; color: var(--muted-2); }
 .p-res.w { color: var(--win); }
 .p-res.l { color: var(--lose); }
+
+/* 2027 시즌 캘린더 */
+.season-path { margin-top: 10px; }
+.season-row {
+  display: grid; grid-template-columns: 24px 1fr auto; align-items: center; gap: 9px;
+  padding: 9px 0; border-top: 1px solid var(--line-soft);
+}
+.season-row:first-child { border-top: 0; }
+.s-no {
+  font-size: 8.5px; font-weight: 800; letter-spacing: 0; color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.s-body { min-width: 0; }
+.s-body b { display: block; font-size: 11px; font-weight: 800; color: var(--ink); letter-spacing: -.02em; }
+.s-body span { display: block; margin-top: 2px; font-size: 8.5px; line-height: 1.4; color: var(--muted); }
+.s-side { font-size: 8.5px; font-weight: 700; color: var(--muted-2); white-space: nowrap; }
+.season-path + .board-note { padding: 8px 0 0; }
 
 .official-list { margin-top: 8px; }
 .official-row {

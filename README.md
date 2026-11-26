@@ -25,7 +25,7 @@
 - **한 줄 응원**: 선택 선수에게 응원 한 줄을 남기고 기기에 저장(최대 5줄, 삭제 가능)
 - **솔로랭크 카드**: 티어/LP·시즌 전적·최근 경기 표(챔피언, 포지션, 승패, K/D/A, 시간, 서버 표시)
 - **경기로그 탭**: 승/패 필터
-- **공식일정 탭**: 다음 경기 카드(경기 알림 토글 포함), 월즈 2026 여정, 선수별 최근 공식 경기
+- **공식일정 탭**: 다음 경기 카드(2027 LCK 컵 · 경기 알림 토글 포함), **2027 시즌 캘린더**(LCK 컵 → First Stand: All In(중국) → LCK 정규 시즌 → MSI 2027(발레시아) → 월즈 2027(나고야·수원·서울)), 월즈 2026 여정, 선수별 최근 공식 경기
 - **기록실 탭**: 2026 시즌 대회별 세트 전적, 월즈 결과
 - **PWA**: manifest + 서비스 워커 오프라인 캐시, 디플러스 기아 공식 로고 기반 아이콘(192/512/maskable/apple-touch/favicon/badge)
 - **로컬 알림 테스트**: 서비스 워커 `showNotification`. 권한이 없거나 파일 뷰어면 앱 안 푸시 배너로 대체
@@ -33,6 +33,8 @@
 ## 데이터
 
 `data.js`의 5인 솔로랭크·대회 기록은 **2026-11-26에 확인한 KO.LOL · OP.GG · u.gg 공개 전적**입니다. 자동 갱신은 하지 않습니다.
+
+2027 시즌 표기는 2025년부터 바뀐 LCK 체제(스프링·서머 스플릿 폐지, **LCK 컵 → 단일 정규 시즌**)를 따릅니다. 국제 대회 개최지는 **LoL e스포츠 2026-11-13 발표**(First Stand: All In — 중국, MSI 2027 — 스페인 발레시아, 월즈 2027 — 일본 나고야 스위스 + 수원 8강·4강 + 서울 결승) 기준이고, LCK 2027 세부 일정은 추후 공지입니다.
 
 ## 아직 안 되는 것 (서버 과제)
 
@@ -71,5 +73,5 @@ python3 -m http.server 8765 &
 LD_LIBRARY_PATH=/workspace/.libs/usr/lib/x86_64-linux-gnu PLAYWRIGHT_BROWSERS_PATH=/workspace/.pw-browsers python3 tools/verify.py
 ```
 
-79개 항목(4탭, 5인 전환, 테마 저장, MY PICK 선택·고정·새로고침 유지, 선수별/경기 알림 동기화·저장, 테스트 푸시, 응원 저장, 콘솔 에러)을 확인하고 `downloads/dk-radar/signal-*.png` 를 갱신합니다.
+86개 항목(4탭, 5인 전환, 테마 저장, MY PICK 선택·고정·새로고침 유지, 2027 시즌 명칭·캘린더, 선수별/경기 알림 동기화·저장, 테스트 푸시, 응원 저장, 콘솔 에러)을 확인하고 `downloads/dk-radar/signal-*.png` 를 갱신합니다.
 MY PICK 관련 스크린샷: `signal-mypick-browse-dark.png`(미리보기), `signal-mypick-pinned-dark.png`(고정+토스트), `signal-mypick-reload-dark.png`(새로고침 유지), `signal-mypick-mint.png`(소프트 테마).

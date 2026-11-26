@@ -515,7 +515,20 @@
   }
 
   /* ---------- 공식일정 탭 ---------- */
+  function renderSeason() {
+    var host = $('#seasonPath');
+    if (!host) return;
+    host.innerHTML = SEASON_2027.map(function (s) {
+      return '<li class="season-row">' +
+        '<span class="s-no">' + s.no + '</span>' +
+        '<span class="s-body"><b>' + s.name + '</b><span>' + s.note + '</span></span>' +
+        '<span class="s-side">' + s.host + '</span>' +
+      '</li>';
+    }).join('');
+  }
+
   function renderOfficial() {
+    renderSeason();
     var path = $('#dkPath');
     if (path) {
       path.innerHTML = DK_PATH.map(function (g) {

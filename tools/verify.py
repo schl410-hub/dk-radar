@@ -88,6 +88,29 @@ async def main():
         await page.click('[data-tab="feed"]')
         await page.wait_for_timeout(SETTLE)
 
+        # ---- 공식일정: 2027 시즌 명칭·캘린더 ----
+        await page.click('[data-tab="official"]')
+        await page.wait_for_timeout(SETTLE)
+        official = await page.inner_text("#panel-official")
+        season_rows = await page.eval_on_selector_all(
+            "#seasonPath .season-row", "e=>e.map(x=>x.innerText.replaceAll(String.fromCharCode(10),' | '))")
+        check("next card uses 2027 LCK 컵",
+              "2027 LCK 컵" in official and "2027 LCK 스프링" not in official, official.splitlines()[:4])
+        check("season roadmap = 5 stages", len(season_rows) == 5, season_rows)
+        check("roadmap official names",
+              all(k in official for k in ["LCK 컵", "First Stand: All In", "LCK 정규 시즌", "MSI 2027", "월즈 2027"]))
+        check("roadmap hosts",
+              all(k in official for k in ["중국", "발렌시아", "나고야", "수원", "서울"]))
+        check("no spring split promo", "LCK 스프링" not in await page.inner_text("body"))
+        check("no old split labels", "Rounds" not in await page.inner_text("body"))
+        await page.click('[data-tab="records"]')
+        await page.wait_for_timeout(SETTLE)
+        check("records relabeled to 정규 라운드",
+              "LCK 2026 정규 1-2라운드" in await page.inner_text("#recordsList"),
+              await page.inner_text("#recordsList"))
+        await page.click('[data-tab="feed"]')
+        await page.wait_for_timeout(SETTLE)
+
         # ---- 필터 ----
         await page.click('[data-tab="solo"]')
         await page.wait_for_timeout(SETTLE)
@@ -309,7 +332,6 @@ async def main():
         check("mypick mint no overflow",
               await page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1"))
         await page.screenshot(path=str(OUT / "signal-mypick-mint.png"))
-        await page.screenshot(path=str(OUT / "signal-home-mint.png"))
 
         # 이미 최애인 선수의 별을 다시 누르면 안내만
         await page.click("#pickBanner .pin-btn")

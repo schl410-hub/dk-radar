@@ -40,7 +40,7 @@ const PLAYERS = [
       { event: 'Worlds 2026', result: '4강', set: '8승 5패', key: true },
       { event: 'MSI 2026', result: '', set: '15승 6패' },
       { event: 'LCK 2026 Playoffs', result: '', set: '9승 9패' },
-      { event: 'LCK 2026 Rounds 1-2', result: '', set: '30승 10패' },
+      { event: 'LCK 2026 정규 1-2라운드', result: '', set: '30승 10패' },
       { event: 'LCK Cup 2026', result: '', set: '14승 9패' },
       { event: 'EWC 2026', result: '', set: '7승 5패' }
     ],
@@ -82,7 +82,7 @@ const PLAYERS = [
       { event: 'Worlds 2026', result: '5라운드', set: '3승 4패', key: true },
       { event: 'MSI 2026', result: '우승', set: '13승 7패' },
       { event: 'LCK 2026 Playoffs', result: '준우승', set: '8승 9패' },
-      { event: 'LCK 2026 Rounds 1-2', result: '', set: '32승 11패' },
+      { event: 'LCK 2026 정규 1-2라운드', result: '', set: '32승 11패' },
       { event: 'KeSPA Cup 2026', result: '', set: '5승 3패' },
       { event: 'LCK Cup 2026', result: '', set: '5승 9패' }
     ],
@@ -124,9 +124,9 @@ const PLAYERS = [
       { event: 'Worlds 2026', result: '8강', set: '4승 3패', key: true },
       { event: 'EWC 2026', result: '', set: '11승 3패' },
       { event: 'LCK 2026 Playoffs', result: '', set: '7승 9패' },
-      { event: 'LCK 2026 Rounds 1-2', result: '', set: '24승 18패' },
+      { event: 'LCK 2026 정규 1-2라운드', result: '', set: '24승 18패' },
       { event: 'LCK Cup 2026', result: '', set: '18승 17패' },
-      { event: 'LCK 2026 Rounds 3-4', result: '', set: '11승 8패' }
+      { event: 'LCK 2026 정규 3-4라운드', result: '', set: '11승 8패' }
     ],
     worlds: { stage: '8강', line: 'BLG에 0:3 패배', date: '2026. 11. 06' }
   },
@@ -161,9 +161,9 @@ const PLAYERS = [
       { event: 'Worlds 2026', result: '8강', set: '4승 3패', key: true },
       { event: 'EWC 2026', result: '', set: '11승 3패' },
       { event: 'LCK 2026 Playoffs', result: '', set: '7승 9패' },
-      { event: 'LCK 2026 Rounds 1-2', result: '', set: '24승 18패' },
+      { event: 'LCK 2026 정규 1-2라운드', result: '', set: '24승 18패' },
       { event: 'LCK Cup 2026', result: '', set: '18승 17패' },
-      { event: 'LCK 2026 Rounds 3-4', result: '', set: '11승 8패' }
+      { event: 'LCK 2026 정규 3-4라운드', result: '', set: '11승 8패' }
     ],
     worlds: { stage: '8강', line: 'BLG에 0:3 패배', date: '2026. 11. 06' }
   },
@@ -206,7 +206,7 @@ const PLAYERS = [
       { event: 'Worlds 2026', result: '5라운드', set: '3승 4패', key: true },
       { event: 'MSI 2026', result: '우승', set: '13승 7패' },
       { event: 'LCK 2026 Playoffs', result: '준우승', set: '8승 9패' },
-      { event: 'LCK 2026 Rounds 1-2', result: '', set: '30승 10패' },
+      { event: 'LCK 2026 정규 1-2라운드', result: '', set: '30승 10패' },
       { event: 'KeSPA Cup 2026', result: '', set: '5승 3패' },
       { event: 'LCK Cup 2026', result: '', set: '5승 9패' }
     ],
@@ -228,3 +228,16 @@ const ROSTER_NOTES = {
   smash: 'DK 재계약',
   delight: 'HLE → DK'
 };
+
+/* 2027 시즌 구조
+ * LCK는 2025년부터 스프링·서머 스플릿을 폐지하고 'LCK 컵 → 단일 정규 시즌'으로 진행합니다.
+ * 2027 국제 대회 개최지는 LoL e스포츠 2026-11-13 발표(First Stand: All In 중국,
+ * MSI 스페인 발렌시아, 월즈 일본 나고야·한국 수원/서울) 기준이며 세부 일정은 추후 공지입니다.
+ */
+const SEASON_2027 = [
+  { no: '01', name: 'LCK 컵', host: '국내', note: '2027 시즌 개막 · 세부 일정 추후 공지' },
+  { no: '02', name: 'First Stand: All In', host: '중국', note: '2027 한정 확대판 · 형식과 일정은 2027년 1월 발표' },
+  { no: '03', name: 'LCK 정규 시즌', host: '국내', note: '단일 정규 시즌 · 스프링·서머 스플릿 없음' },
+  { no: '04', name: 'MSI 2027', host: '발렌시아', note: '미드 시즌 인비테이셔널 · 스페인 발렌시아' },
+  { no: '05', name: '월즈 2027', host: '일본 · 한국', note: '스위스 나고야 · 8강/4강 수원 · 결승 서울' }
+];
