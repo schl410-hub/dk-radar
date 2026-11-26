@@ -1,0 +1,27 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "trailingSlash": false,
+  "functions": {
+    "api/official.js": { "maxDuration": 20 },
+    "api/solo.js": { "maxDuration": 30 },
+    "api/check.js": { "maxDuration": 60 }
+  },
+  "crons": [
+    { "path": "/api/check", "schedule": "0 22 * * *" }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store, max-age=0" },
+        { "key": "Access-Control-Allow-Origin", "value": "*" }
+      ]
+    },
+    {
+      "source": "/sw.js",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, max-age=0, must-revalidate" }
+      ]
+    }
+  ]
+}

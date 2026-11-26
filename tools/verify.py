@@ -1,23 +1,66 @@
 """딮기 시그널 로컬 검증 + 스크린샷.
 
-  (python3 -m http.server 8765 &) ; python3 tools/verify.py
+  python3 tools/verify.py
 
+이 스크립트가 tools/dev_server.js (정적 파일 + /api/*) 를 8765 포트에 직접 띄우고,
 390x844 모바일 뷰포트에서 4개 탭, 선수 전환, MY PICK 선택·고정·새로고침 유지,
-테마 전환(다크/소프트), 선수별·경기 알림 토글, 테스트 푸시, 응원 저장을 확인하고
-downloads/dk-radar/*.png 로 스크린샷을 남깁니다.
+테마 전환(다크/소프트), 선수별·경기 알림 토글, 테스트 푸시, 응원 저장, 자동 갱신 상태 표시를
+확인하고 downloads/dk-radar/*.png 로 스크린샷을 남깁니다.
+
+  - 이미 서버가 떠 있으면 그대로 씁니다(DK_VERIFY_SERVER=external).
+  - 공식 일정은 DK_FIXTURE(기본 none)로 고정해서 씁니다.
 """
 import asyncio
 import json
+import os
 import pathlib
+import shutil
+import subprocess
+import time
 import urllib.request
 
 from playwright.async_api import async_playwright
 
-BASE = "http://127.0.0.1:8765/index.html"
+PORT = 8765
+BASE = f"http://127.0.0.1:{PORT}/index.html"
 OUT = pathlib.Path("/workspace/downloads/dk-radar")
+ROOT = pathlib.Path(__file__).resolve().parent.parent
 SETTLE = 450
 
 results = []
+
+
+def node_bin():
+    for cand in [os.environ.get("NODE_BIN"), "/workspace/.node/bin/node", shutil.which("node")]:
+        if cand and pathlib.Path(cand).exists():
+            return str(cand)
+    return "node"
+
+
+def start_server():
+    if os.environ.get("DK_VERIFY_SERVER") == "external":
+        return None
+    env = dict(os.environ)
+    env["PORT"] = str(PORT)
+    env.setdefault("DK_FIXTURE", "none")
+    env.setdefault("DK_ALLOW_MEMORY_STORE", "1")
+    env["PATH"] = os.path.dirname(node_bin()) + os.pathsep + env.get("PATH", "")
+    proc = subprocess.Popen([node_bin(), str(ROOT / "tools" / "dev_server.js")], env=env,
+                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    for _ in range(100):
+        try:
+            urllib.request.urlopen(BASE, timeout=1)
+            print(f"dev server up on :{PORT} (fixture {env['DK_FIXTURE']})")
+            return proc
+        except Exception:
+            time.sleep(0.15)
+    out = b""
+    try:
+        proc.terminate()
+        out = proc.stdout.read() if proc.stdout else b""
+    except Exception:
+        pass
+    raise SystemExit("dev server did not start: " + out.decode(errors="replace"))
 
 
 def check(name, ok, detail=""):
@@ -27,6 +70,7 @@ def check(name, ok, detail=""):
 
 async def main():
     OUT.mkdir(parents=True, exist_ok=True)
+    server = start_server()
 
     # 정적 자산 상태
     for path in ["index.html", "styles.css", "app.js", "data.js", "manifest.json",
@@ -369,9 +413,13 @@ async def main():
 
         await browser.close()
 
+    if server:
+        server.terminate()
+
     print("\n== summary ==")
     failed = [r for r in results if not r[1]]
     print(f"{len(results) - len(failed)}/{len(results)} passed")
+    pathlib.Path("/workspace/tmp").mkdir(parents=True, exist_ok=True)
     json.dump([{"name": n, "ok": o, "detail": str(d)} for n, o, d in results],
               open("/workspace/tmp/dk-verify.json", "w"), ensure_ascii=False, indent=1)
     if failed:

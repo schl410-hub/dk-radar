@@ -286,7 +286,7 @@
         '</div>' +
       '</div>' +
       '<div class="pick-foot">' +
-        '<span class="riot">' + p.riotId + '</span>' +
+        '<span class="riot">' + p.riotId + (p.inGame ? '<span class="live-in"><i></i>인게임</span>' : '') + '</span>' +
         '<span class="rec">' + last.d + ' ' + last.t + ' <b>' + last.champ + '</b> ' + last.kda + ' · ' + (last.win ? '승' : '패') + '</span>' +
       '</div>';
     if (!pinned) {
@@ -317,6 +317,7 @@
         '</span>' +
         '<span class="t-name">' + p.nameKo + '<em>' + p.real + '</em></span>' +
         '<span class="t-tier">' + p.tier.replace('다이아몬드', '다이아') + '<span class="t-dot">·</span><b>' + p.lp + '</b></span>' +
+        (p.inGame ? '<span class="t-live"><i></i>인게임</span>' : '') +
         '<span class="bars">' + bars + '</span>' +
         (active ? '<span class="t-foot"><span class="chipk">최근 5경기 <b>' + t.w + '승 ' + t.l + '패</b></span><span class="chipk">KDA <b>' + t.kda + '</b></span>' +
           (p.key === myPick ? '<span class="chipk chipk-fav">' + STAR_ON + '내 최애</span>' : '') + '</span>' : '') +
@@ -449,7 +450,8 @@
   /* ---------- 솔로랭크 카드 ---------- */
   function metaText(p) {
     var r = recent(p, 5);
-    return p.riotId + ' · 최근 ' + r.length + '경기 ' + tally(r).w + '승 ' + tally(r).l + '패 · ' + stamp(state.checked).replace(' ', ' · ') + ' 확인';
+    var src = LIVE.soloSource === 'riot' ? ' · Riot API 실시간' : ' · 스냅샷';
+    return p.riotId + ' · 최근 ' + r.length + '경기 ' + tally(r).w + '승 ' + tally(r).l + '패 · ' + stamp(state.checked).replace(' ', ' · ') + ' 확인' + src;
   }
 
   function tierHTML(p) {
@@ -529,16 +531,8 @@
 
   function renderOfficial() {
     renderSeason();
-    var path = $('#dkPath');
-    if (path) {
-      path.innerHTML = DK_PATH.map(function (g) {
-        return '<li class="path-row">' +
-          '<span class="p-round">' + g.round + '</span>' +
-          '<span class="p-teams">DK <b class="' + (g.win ? 'w' : 'l') + '">' + g.score + '</b> ' + g.opp + '</span>' +
-          '<span class="p-res ' + (g.win ? 'w' : 'l') + '">' + (g.win ? '승' : '패') + ' · ' + g.date + '</span>' +
-        '</li>';
-      }).join('');
-    }
+    renderNextCard();
+    renderOfficialRecent();
     var list = $('#officialList');
     if (list) {
       list.innerHTML = PLAYERS.map(function (p) {
@@ -578,6 +572,306 @@
     }
   }
 
+  /* ---------- 서버 실시간 연동 (공식 일정 · 솔로랭크 · 웹 푸시) ---------- */
+  var LIVE = {
+    config: null,
+    official: null,
+    solo: null,
+    soloSource: 'snapshot',
+    offline: false,
+    lastSync: 0,
+    push: { supported: false, sub: null, state: 'idle' }
+  };
+  var LIVE_INTERVAL = 90000;
+  LIVE.push.supported = ('serviceWorker' in navigator) && ('PushManager' in window) && ('Notification' in window);
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c];
+    });
+  }
+
+  function canUseApi() {
+    if (window.__DK_PREVIEW__) return false;
+    return /^https?:$/.test(location.protocol);
+  }
+
+  function apiGet(path) {
+    if (LIVE.offline || !canUseApi()) return Promise.resolve(null);
+    return fetch(path, { cache: 'no-store', headers: { Accept: 'application/json' } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .catch(function () { return null; });
+  }
+
+  function clockOf(d) { return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+
+  /* 한국 시간 표기: 12. 3. (목) 17:00 */
+  function nextWhen(next) {
+    if (!next) return '';
+    return (next.dayLabel || '') + ' ' + (next.time || '');
+  }
+
+  function renderNextCard() {
+    var body = $('#nextBody');
+    if (!body) return;
+    var data = LIVE.official;
+    var next = data && data.ok ? data.next : null;
+
+    if (next) {
+      var opp = next.opponent || {};
+      var oppName = opp.code || opp.name || 'TBD';
+      var sub = [next.league && next.league.name, next.block, next.bo ? 'Bo' + next.bo : '', next.relative]
+        .filter(Boolean).join(' · ');
+      $('#nextDate').textContent = nextWhen(next);
+      body.innerHTML =
+        '<h3 class="next-title">DK <span class="vs-inline">vs</span> ' + esc(oppName) + '</h3>' +
+        '<p class="next-sub">' + esc(sub) + '</p>' +
+        '<div class="next-teams"><span class="team dk">DK</span><span class="vs">VS</span><span class="team">' + esc(oppName) + '</span></div>';
+      return;
+    }
+
+    $('#nextDate').textContent = '2027 LCK 컵';
+    var note = '';
+    if (data && data.ok && data.status === 'no_upcoming') note = '<span class="next-empty">지금은 LoL Esports에 다음 경기가 아직 올라오지 않았어요.</span>';
+    else if (data && data.ok === false) note = '<span class="next-empty">일정을 잠시 못 받아왔어요. 화면은 마지막으로 확인된 안내로 보여드려요.</span>';
+    body.innerHTML =
+      '<h3 class="next-title">DK 2027 첫 경기</h3>' +
+      '<p class="next-sub">2027 시즌도 <b>LCK 컵</b>으로 시작해요. LCK가 2027 대회 방식과 일정을 확정하면 DK 첫 경기를 이 카드에 바로 띄울게요. ' + note + '</p>' +
+      '<div class="next-teams"><span class="team dk">DK</span><span class="vs">VS</span><span class="team">TBD</span></div>';
+  }
+
+  function renderOfficialRecent() {
+    var card = $('#officialRecentCard');
+    var host = $('#officialRecent');
+    if (!card || !host) return;
+    var data = LIVE.official;
+    var rows = data && data.ok && Array.isArray(data.recent) ? data.recent : [];
+    var note = $('#officialRecentNote');
+
+    if (!rows.length) {
+      /* 서버 연결 전에는 저장해 둔 월즈 2026 여정을 대신 보여줍니다. */
+      card.hidden = false;
+      host.innerHTML = DK_PATH.map(function (g) {
+        return '<li class="path-row">' +
+          '<span class="p-round">' + g.round + '</span>' +
+          '<span class="p-teams">DK <b class="' + (g.win ? 'w' : 'l') + '">' + g.score + '</b> ' + g.opp + '</span>' +
+          '<span class="p-res ' + (g.win ? 'w' : 'l') + '">' + (g.win ? '승' : '패') + ' · ' + g.date + '</span>' +
+        '</li>';
+      }).join('');
+      if (note) note.textContent = '서버에서 일정을 받기 전이라 마지막으로 확인한 월즈 2026 기록을 보여드려요.';
+      return;
+    }
+
+    card.hidden = false;
+    host.innerHTML = rows.slice(0, 5).map(function (g) {
+      var opp = g.opponent || {};
+      var win = g.win === true ? 'w' : (g.win === false ? 'l' : '');
+      var res = g.win === true ? '승' : (g.win === false ? '패' : '결과');
+      return '<li class="path-row">' +
+        '<span class="p-round">' + esc(g.block || g.league.name || '경기') + '</span>' +
+        '<span class="p-teams">DK <b class="' + win + '">' + esc(g.score || '-') + '</b> ' + esc(opp.code || opp.name || '') + '</span>' +
+        '<span class="p-res ' + win + '">' + res + ' · ' + esc(g.shortDate || g.dateLabel || '') + '</span>' +
+      '</li>';
+    }).join('');
+    if (note) {
+      note.textContent = 'LoL Esports 공개 일정에서 ' + (data.fetchedAt ? clockOf(new Date(data.fetchedAt)) : '?') + '에 받아온 결과예요 · 자동 수집';
+    }
+  }
+
+  function applyLiveStatus() {
+    var data = LIVE.official;
+    var okOfficial = !!(data && data.ok);
+    var liveChip = $('#liveChip');
+    if (liveChip) liveChip.hidden = !(okOfficial || LIVE.soloSource === 'riot');
+    var officialChip = $('#officialChip');
+    if (officialChip) officialChip.hidden = !okOfficial;
+
+    var sync = $('#nextSync');
+    if (sync) {
+      if (window.__DK_PREVIEW__) sync.textContent = '단일 파일 미리보기라 자동 갱신은 꺼져 있어요. 실제 앱(dk-signal.vercel.app)에서 갱신됩니다.';
+      else if (LIVE.offline) sync.textContent = '자동 갱신 서버에 연결하지 못했어요. 저장된 기록으로 보여드려요.';
+      else if (okOfficial) sync.textContent = 'LoL Esports에서 ' + clockOf(new Date(data.fetchedAt)) + ' 확인 · ' + (data.next ? '다음 경기가 잡히면 바로 바뀝니다' : '다음 경기 공개 전');
+      else if (data) sync.textContent = '일정을 불러오지 못했어요. 잠시 뒤 다시 확인합니다.';
+      else sync.textContent = 'LoL Esports 일정 확인 중…';
+    }
+
+    var board = $('#boardNote');
+    if (board) {
+      if (LIVE.soloSource === 'riot' && LIVE.solo && LIVE.solo.fetchedAt) {
+        board.textContent = '솔로랭크 · Riot API 실시간 (' + stamp(new Date(LIVE.solo.fetchedAt)) + ' 갱신)';
+      } else if (LIVE.offline) {
+        board.textContent = '최근 솔로랭크 기록 기준 · 2026-11-26 확인(오프라인)';
+      } else {
+        board.textContent = '최근 솔로랭크 기록 기준 · 2026-11-26 확인(자동 갱신 준비 중)';
+      }
+    }
+
+    var checked = $('#checkedAt');
+    if (checked) {
+      if (LIVE.soloSource === 'riot' && LIVE.solo && LIVE.solo.fetchedAt) checked.textContent = clockOf(new Date(LIVE.solo.fetchedAt)) + ' 갱신';
+      else checked.textContent = clockOf(state.checked) + ' 확인';
+    }
+
+    var feedDate = $('#feedDate');
+    if (feedDate) {
+      var d = new Date();
+      var wd = ['일', '월', '화', '수', '목', '금', '토'][d.getDay()];
+      feedDate.textContent = d.getFullYear() + '.' + pad(d.getMonth() + 1) + '.' + pad(d.getDate()) + ' (' + wd + ')';
+    }
+
+    var soloLive = $('#soloLive');
+    if (soloLive) soloLive.textContent = (LIVE.solo && LIVE.solo.message) ? LIVE.solo.message : '';
+
+    var foot = $('#soloFooter');
+    if (foot) {
+      foot.textContent = LIVE.soloSource === 'riot'
+        ? '솔로랭크 기록은 Riot API에서 ' + (LIVE.solo && LIVE.solo.fetchedAt ? clockOf(new Date(LIVE.solo.fetchedAt)) : '') + '에 받아왔어요. 최근 5경기까지 자동으로 갱신됩니다.'
+        : '솔로랭크 기록은 각 선수 계정의 공개 전적을 2026-11-26에 확인한 값이에요. 서버에 Riot API 키를 넣으면 자동 갱신됩니다.';
+    }
+
+    var pushStatus = $('#pushStatus');
+    if (pushStatus) {
+      var cfg = LIVE.config;
+      if (window.__DK_PREVIEW__) pushStatus.textContent = '미리보기 파일이라 서버 알림은 꺼져 있어요.';
+      else if (!canUseApi() || LIVE.offline) pushStatus.textContent = '자동 갱신 서버에 연결되지 않아 알림은 앱을 열었을 때만 확인돼요.';
+      else if (!cfg) pushStatus.textContent = '서버 상태 확인 중…';
+      else if (!cfg.push || !cfg.push.ready) pushStatus.textContent = '웹 푸시 준비 전(VAPID 키 미등록) · 지금은 앱을 열어 둔 동안만 자동으로 확인해요.';
+      else if (!cfg.store || !cfg.store.durable) pushStatus.textContent = '구독 저장소(Upstash Redis) 연결 전 · 저장소를 붙이면 잠금화면 알림이 켜져요.';
+      else if (LIVE.push.state === 'denied') pushStatus.textContent = '브라우저 알림 권한이 꺼져 있어요. 사이트 설정에서 알림을 허용해 주세요.';
+      else if (LIVE.push.state === 'subscribed') pushStatus.textContent = '웹 푸시 켜짐 · 앱을 닫아도 새 전적·경기 소식이 잠금화면에 도착해요.';
+      else if (LIVE.push.state === 'unsubscribed') pushStatus.textContent = '푸시 구독을 해지했어요. 알림을 다시 켜면 잠금화면으로 알려드려요.';
+      else pushStatus.textContent = '알림을 켜면 잠금화면으로도 알려드려요.';
+    }
+
+    var notifyNote = $('#notifyNote');
+    if (notifyNote) {
+      var pushOn = LIVE.config && LIVE.config.push && LIVE.config.push.ready && LIVE.config.store && LIVE.config.store.durable;
+      notifyNote.textContent = pushOn
+        ? '앱을 닫아 둬도 서버가 5분마다 확인해서 새 소식을 보내드려요.'
+        : '지금은 앱을 열어 둔 동안 자동으로 새 전적을 확인해요. 서버 푸시를 켜면 앱을 닫아도 알림이 옵니다.';
+    }
+  }
+
+  function mergeSolo(data) {
+    if (!data || !Array.isArray(data.players) || data.source !== 'riot') return;
+    data.players.forEach(function (sp) {
+      var p = null;
+      for (var i = 0; i < PLAYERS.length; i++) if (PLAYERS[i].key === sp.key) p = PLAYERS[i];
+      if (!p) return;
+      if (sp.tier) p.tier = sp.tier;
+      if (sp.lp) p.lp = sp.lp;
+      if (sp.record) p.record = sp.record;
+      p.inGame = !!sp.inGame;
+      if (Array.isArray(sp.matches) && sp.matches.length) {
+        var seen = {};
+        sp.matches.forEach(function (m) { seen[m.d + m.t + m.champ] = true; });
+        var extra = p.matches.filter(function (m) { return !seen[m.d + m.t + m.champ]; });
+        p.matches = sp.matches.concat(extra).slice(0, 15);
+      }
+    });
+    if (data.fetchedAt) state.checked = new Date(data.fetchedAt);
+  }
+
+  function refreshLive() {
+    if (!canUseApi()) {
+      LIVE.offline = true;
+      applyLiveStatus();
+      return Promise.resolve();
+    }
+    return Promise.all([
+      LIVE.config ? Promise.resolve(LIVE.config) : apiGet('./api/config'),
+      apiGet('./api/official'),
+      apiGet('./api/solo')
+    ]).then(function (res) {
+      var cfg = res[0], off = res[1], solo = res[2];
+      if (cfg && cfg.ok) LIVE.config = cfg;
+      if (!cfg && !off && !solo) {
+        LIVE.offline = true;
+        applyLiveStatus();
+        return;
+      }
+      if (off) LIVE.official = off;
+      if (solo) { LIVE.solo = solo; if (solo.source) LIVE.soloSource = solo.source; mergeSolo(solo); }
+      LIVE.lastSync = Date.now();
+      renderAll();
+      applyLiveStatus();
+      if (LIVE.config && LIVE.config.push && LIVE.config.push.ready) syncPush(false);
+    });
+  }
+
+  /* ---------- 웹 푸시 구독 ---------- */
+  function urlB64(base64) {
+    var pad = new Array(((4 - base64.length % 4) % 4) + 1).join('=');
+    var b64 = (base64 + pad).replace(/-/g, '+').replace(/_/g, '/');
+    var raw = atob(b64);
+    var out = new Uint8Array(raw.length);
+    for (var i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+    return out;
+  }
+
+  function prefsPayload() {
+    return {
+      solo: PLAYERS.filter(function (p) { return isSoloOn(p.key); }).map(function (p) { return p.key; }),
+      official: officialOn
+    };
+  }
+
+  function postSubscription() {
+    if (!LIVE.push.sub) return Promise.resolve(false);
+    return fetch('./api/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subscription: LIVE.push.sub.toJSON(), prefs: prefsPayload(), ua: navigator.userAgent })
+    }).then(function (r) { return r.ok; }).catch(function () { return false; });
+  }
+
+  function removeSubscription() {
+    if (!LIVE.push.sub) return Promise.resolve(false);
+    return fetch('./api/subscribe', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ endpoint: LIVE.push.sub.endpoint })
+    }).then(function (r) { return r.ok; }).catch(function () { return false; });
+  }
+
+  function syncPush(interactive) {
+    var cfg = LIVE.config;
+    if (!LIVE.push.supported || !cfg || !cfg.push || !cfg.push.ready || !cfg.store || !cfg.store.durable) return Promise.resolve(false);
+    var any = prefsPayload().solo.length > 0 || officialOn;
+    var perm = ('Notification' in window) ? Notification.permission : 'denied';
+
+    return navigator.serviceWorker.ready.then(function (reg) {
+      return reg.pushManager.getSubscription().then(function (existing) {
+        if (existing) return existing;
+        if (!any) return null;
+        if (perm !== 'granted' && !(interactive && perm === 'default')) return null;
+        var ask = (perm === 'default' && interactive)
+          ? Promise.resolve(Notification.requestPermission()).catch(function () { return 'denied'; })
+          : Promise.resolve(perm);
+        return ask.then(function (p) {
+          if (p !== 'granted') { LIVE.push.state = (p === 'denied') ? 'denied' : LIVE.push.state; return null; }
+          return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlB64(cfg.push.publicKey) });
+        });
+      }).then(function (sub) {
+        LIVE.push.sub = sub;
+        if (!sub) { applyLiveStatus(); return false; }
+        if (!any) {
+          return removeSubscription().then(function () {
+            LIVE.push.state = 'unsubscribed';
+            applyLiveStatus();
+            return true;
+          });
+        }
+        LIVE.push.state = 'subscribed';
+        return postSubscription().then(function (ok) {
+          if (!ok) LIVE.push.state = 'error';
+          applyLiveStatus();
+          return ok;
+        });
+      });
+    }).catch(function () { return false; });
+  }
+
   /* ---------- 전체 렌더 ---------- */
   function renderAll() {
     renderPills();
@@ -610,6 +904,7 @@
       store.set(soloKey(key), isSoloOn(key) ? '0' : '1');
       renderNotify();
       renderPick();
+      syncPush(true);
       return;
     }
     var offT = e.target.closest('[data-official-toggle]');
@@ -617,6 +912,7 @@
       officialOn = !officialOn;
       store.set(OFFICIAL_KEY, officialOn ? '1' : '0');
       renderNotify();
+      syncPush(true);
       return;
     }
     var who = e.target.closest('[data-player]');
@@ -815,9 +1111,24 @@
   /* ---------- 시작 ---------- */
   updateThemeUI();
   renderAll();
+  applyLiveStatus();
+  refreshLive();
+  setInterval(function () {
+    if (!document.hidden && !LIVE.offline) refreshLive();
+  }, LIVE_INTERVAL);
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden && Date.now() - LIVE.lastSync > LIVE_INTERVAL) refreshLive();
+  });
 
   try {
-    var initial = new URLSearchParams(location.search).get('tab');
+    var params = new URLSearchParams(location.search);
+    var initial = params.get('tab');
     if (initial && ['feed', 'official', 'solo', 'records'].indexOf(initial) > -1) switchTab(initial);
+    var startWho = params.get('player');
+    if (startWho) {
+      for (var pi = 0; pi < PLAYERS.length; pi++) {
+        if (PLAYERS[pi].key === startWho) { selectPlayer(startWho); break; }
+      }
+    }
   } catch (e) {}
 })();

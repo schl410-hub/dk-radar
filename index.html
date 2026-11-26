@@ -84,16 +84,17 @@
     <!-- ================= 홈 ================= -->
     <section class="panel is-active" id="panel-feed" role="tabpanel" aria-label="홈">
       <div class="feed-meta">
-        <b>2026.11.26 (목)</b><span class="dot2"></span>
+        <b id="feedDate">2026.11.26 (목)</b><span class="dot2"></span>
         <span>도란 · 카나비 · 쇼메이커 · 스매쉬 · 딜라이트</span>
         <span class="upd" id="checkedAt">17:07 확인</span>
+        <span class="live-chip" id="liveChip" hidden>실시간</span>
       </div>
 
       <section class="pick" id="pickBanner" aria-live="polite"></section>
 
       <div class="sec"><b>5인 상태 보드</b><span class="sec-sub">타일을 눌러 둘러보기 · 별로 최애 고정</span></div>
       <div class="tiles" id="statusGrid"></div>
-      <p class="board-note">최근 솔로랭크 기록 기준 · 2026-11-26 확인</p>
+      <p class="board-note" id="boardNote">최근 솔로랭크 기록 기준 · 2026-11-26 확인</p>
 
       <section class="hl-card" id="highlightCard" aria-live="polite"></section>
 
@@ -118,7 +119,8 @@
           <button class="test-btn" id="testBtn" type="button">테스트 알림 보내기</button>
           <span class="ping-hint" id="testNote">도란 솔랭 · 경기 알림 켜짐</span>
         </div>
-        <p class="notify-note">지금은 설정 저장과 테스트 알림만 동작해요. 실제 새 경기 감지는 서버를 붙인 뒤에 시작됩니다.</p>
+        <p class="notify-note" id="pushStatus">서버 연결 확인 중…</p>
+        <p class="notify-note" id="notifyNote">지금은 앱을 열어 둔 동안 자동으로 새 전적을 확인해요. 서버 푸시를 켜면 앱을 닫아도 알림이 옵니다.</p>
       </section>
 
       <section class="card cheer-card">
@@ -163,7 +165,7 @@
       </section>
 
       <footer class="foot">
-        <p><b>딮기 시그널</b> · 공식 경기·솔로랭크 기록은 2026-11-26에 확인한 공개 데이터(KO.LOL·OP.GG·u.gg)를 담았어요. 실시간 자동 갱신은 이후 서버 버전에서 붙일 예정입니다.</p>
+        <p><b>딮기 시그널</b> · 공식 경기는 LoL Esports에서 자동으로 받아 오고, 솔로랭크는 2026-11-26 공개 전적(KO.LOL·OP.GG·u.gg)을 기준값으로 두고 있어요. 아래 '자동 갱신' 안내를 확인해 주세요.</p>
         <p class="foot-dim">이 앱은 팬이 만든 비공식 대시보드이며 디플러스 기아·라이엇 게임즈와 무관합니다.</p>
       </footer>
     </section>
@@ -173,21 +175,30 @@
       <div class="panel-head">
         <div class="eyebrow">OFFICIAL SCHEDULE</div>
         <h2 class="panel-title">공식일정</h2>
-        <p class="panel-sub">다음 일정과 최근 공식 경기를 모아 봤어요.</p>
+        <p class="panel-sub">다음 일정과 최근 공식 경기를 모아 봤어요. <span class="live-chip" id="officialChip" hidden>자동 갱신</span></p>
       </div>
-      <section class="card next-match">
+      <section class="card next-match" id="nextCard">
         <div class="next-top">
           <span class="tag">NEXT</span>
-          <span class="next-date">2027 LCK 컵</span>
+          <span class="next-date" id="nextDate">2027 LCK 컵</span>
         </div>
-        <h3 class="next-title">DK 2027 첫 경기</h3>
-        <p class="next-sub">2027 시즌도 <b>LCK 컵</b>으로 시작해요. LCK가 2027 대회 방식과 일정을 확정하면 DK 첫 경기를 이 카드에 바로 띄울게요.</p>
-        <div class="next-teams"><span class="team dk">DK</span><span class="vs">VS</span><span class="team">TBD</span></div>
+        <div id="nextBody">
+          <h3 class="next-title">DK 2027 첫 경기</h3>
+          <p class="next-sub">2027 시즌도 <b>LCK 컵</b>으로 시작해요. LCK가 2027 대회 방식과 일정을 확정하면 DK 첫 경기를 이 카드에 바로 띄울게요.</p>
+          <div class="next-teams"><span class="team dk">DK</span><span class="vs">VS</span><span class="team">TBD</span></div>
+        </div>
+        <p class="next-sync" id="nextSync">LoL Esports 일정 확인 중…</p>
         <div class="match-alert">
           <span class="ma-text"><b>경기 알림</b><span>DK 공식 경기 일정·시작 소식</span></span>
           <button class="toggle" data-official-toggle type="button" role="switch" aria-checked="true" aria-label="DK 공식 경기 알림 끄기"><span></span></button>
         </div>
         <a class="wide-btn" href="https://lolesports.com/ko-KR/schedule" target="_blank" rel="noopener">LoL Esports 일정 확인 ↗</a>
+      </section>
+      <section class="card" id="officialRecentCard" hidden>
+        <div class="eyebrow">LATEST RESULTS</div>
+        <h3 class="card-title">최근 DK 공식 경기</h3>
+        <ul class="path" id="officialRecent"></ul>
+        <p class="board-note" id="officialRecentNote"></p>
       </section>
       <section class="card">
         <div class="eyebrow">2027 SEASON ROADMAP</div>
@@ -197,16 +208,11 @@
         <p class="board-note">2027 국제 대회 개최지는 2026-11-13 LoL e스포츠 발표 기준 · LCK 2027 세부 일정은 추후 공지</p>
       </section>
       <section class="card">
-        <div class="eyebrow">DK · WORLDS 2026</div>
-        <h3 class="card-title">월즈 2026 여정</h3>
-        <ul class="path" id="dkPath"></ul>
-      </section>
-      <section class="card">
         <div class="eyebrow">LAST OFFICIAL GAME</div>
         <h3 class="card-title">선수별 최근 공식 경기</h3>
         <ul class="official-list" id="officialList"></ul>
       </section>
-      <footer class="foot"><p>경기 일정·결과는 LoL Esports와 공개 기록 기준입니다.</p></footer>
+      <footer class="foot"><p>경기 일정·결과는 LoL Esports 공개 일정에서 자동으로 받아옵니다.</p></footer>
     </section>
 
     <!-- ================= 경기로그 ================= -->
@@ -227,6 +233,7 @@
         </div>
         <p class="meta" id="soloMeta2"></p>
         <p class="solo-note" id="soloNote"></p>
+        <p class="live-line" id="soloLive"></p>
         <div class="chip-row" id="filterRow">
           <button class="chip is-active" type="button" data-filter="all">전체</button>
           <button class="chip" type="button" data-filter="win">승리</button>
@@ -235,7 +242,7 @@
         <div class="table-wrap" id="soloTable2"></div>
         <a class="table-more" id="soloMore2" href="#" target="_blank" rel="noopener">OP.GG에서 전체 전적 보기 ↗</a>
       </section>
-      <footer class="foot"><p>솔로랭크 기록은 각 선수 계정의 공개 전적을 2026-11-26에 확인한 값이에요. 이후 경기는 OP.GG에서 확인해 주세요.</p></footer>
+      <footer class="foot"><p id="soloFooter">솔로랭크 기록은 각 선수 계정의 공개 전적을 기준으로 표시합니다.</p></footer>
     </section>
 
     <!-- ================= 기록실 ================= -->

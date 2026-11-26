@@ -1,0 +1,234 @@
+{
+ "data": {
+  "schedule": {
+   "pages": {
+    "older": null,
+    "newer": null
+   },
+   "events": [
+    {
+     "startTime": "2026-10-23T21:00:00Z",
+     "state": "completed",
+     "type": "match",
+     "blockName": "스위스",
+     "league": {
+      "name": "월드 챔피언십",
+      "slug": "worlds"
+     },
+     "match": {
+      "id": "115660540726095011",
+      "flags": [
+       "hasVod"
+      ],
+      "teams": [
+       {
+        "name": "Dplus KIA",
+        "code": "DK",
+        "image": "http://static.lolesports.com/teams/1673260049703_DPlusKIALOGO11.png",
+        "result": {
+         "outcome": "win",
+         "gameWins": 1
+        },
+        "record": {
+         "wins": 3,
+         "losses": 0
+        }
+       },
+       {
+        "name": "G2 Esports",
+        "code": "G2",
+        "image": "http://static.lolesports.com/teams/G2-FullonDark.png",
+        "result": {
+         "outcome": "loss",
+         "gameWins": 0
+        },
+        "record": {
+         "wins": 1,
+         "losses": 3
+        }
+       }
+      ],
+      "strategy": {
+       "type": "bestOf",
+       "count": 1
+      }
+     }
+    },
+    {
+     "startTime": "2026-10-24T23:00:00Z",
+     "state": "completed",
+     "type": "match",
+     "blockName": "스위스",
+     "league": {
+      "name": "월드 챔피언십",
+      "slug": "worlds"
+     },
+     "match": {
+      "id": "115660540726095027",
+      "flags": [
+       "hasVod"
+      ],
+      "teams": [
+       {
+        "name": "Dplus KIA",
+        "code": "DK",
+        "image": "http://static.lolesports.com/teams/1673260049703_DPlusKIALOGO11.png",
+        "result": {
+         "outcome": "win",
+         "gameWins": 1
+        },
+        "record": {
+         "wins": 3,
+         "losses": 0
+        }
+       },
+       {
+        "name": "T1",
+        "code": "T1",
+        "image": "http://static.lolesports.com/teams/1726801573959_539px-T1_2019_full_allmode.png",
+        "result": {
+         "outcome": "loss",
+         "gameWins": 0
+        },
+        "record": {
+         "wins": 3,
+         "losses": 1
+        }
+       }
+      ],
+      "strategy": {
+       "type": "bestOf",
+       "count": 1
+      }
+     }
+    },
+    {
+     "startTime": "2026-10-25T19:00:00Z",
+     "state": "completed",
+     "type": "match",
+     "blockName": "스위스",
+     "league": {
+      "name": "월드 챔피언십",
+      "slug": "worlds"
+     },
+     "match": {
+      "id": "115660540726095037",
+      "flags": [
+       "hasVod"
+      ],
+      "teams": [
+       {
+        "name": "Movistar KOI",
+        "code": "MKOI",
+        "image": "http://static.lolesports.com/teams/1734012609283_MKOI_FullColor_Blue.png",
+        "result": {
+         "outcome": "loss",
+         "gameWins": 0
+        },
+        "record": {
+         "wins": 2,
+         "losses": 3
+        }
+       },
+       {
+        "name": "Dplus KIA",
+        "code": "DK",
+        "image": "http://static.lolesports.com/teams/1673260049703_DPlusKIALOGO11.png",
+        "result": {
+         "outcome": "win",
+         "gameWins": 2
+        },
+        "record": {
+         "wins": 3,
+         "losses": 0
+        }
+       }
+      ],
+      "strategy": {
+       "type": "bestOf",
+       "count": 3
+      }
+     }
+    },
+    {
+     "startTime": "2026-11-05T22:00:00Z",
+     "state": "completed",
+     "type": "match",
+     "blockName": "8강",
+     "league": {
+      "name": "월드 챔피언십",
+      "slug": "worlds"
+     },
+     "match": {
+      "id": "115660540726095097",
+      "flags": [
+       "hasVod"
+      ],
+      "teams": [
+       {
+        "name": "BILIBILI GAMING",
+        "code": "BLG",
+        "image": "http://static.lolesports.com/teams/1682322954525_Bilibili_Gaming_logo_20211.png",
+        "result": {
+         "outcome": "win",
+         "gameWins": 3
+        },
+        "record": {
+         "wins": 3,
+         "losses": 0
+        }
+       },
+       {
+        "name": "Dplus KIA",
+        "code": "DK",
+        "image": "http://static.lolesports.com/teams/1673260049703_DPlusKIALOGO11.png",
+        "result": {
+         "outcome": "loss",
+         "gameWins": 0
+        },
+        "record": {
+         "wins": 0,
+         "losses": 1
+        }
+       }
+      ],
+      "strategy": {
+       "type": "bestOf",
+       "count": 5
+      }
+     }
+    },
+    {
+     "startTime": "2026-12-03T08:00:00Z",
+     "state": "unstarted",
+     "type": "match",
+     "blockName": "LCK 컵 1라운드",
+     "league": {
+      "name": "LCK",
+      "slug": "lck"
+     },
+     "match": {
+      "id": "120000000000000001",
+      "flags": [],
+      "teams": [
+       {
+        "name": "BILIBILI GAMING",
+        "code": "BLG",
+        "image": "http://static.lolesports.com/teams/1682322954525_Bilibili_Gaming_logo_20211.png"
+       },
+       {
+        "name": "Dplus KIA",
+        "code": "DK",
+        "image": "http://static.lolesports.com/teams/1673260049703_DPlusKIALOGO11.png"
+       }
+      ],
+      "strategy": {
+       "type": "bestOf",
+       "count": 5
+      }
+     }
+    }
+   ]
+  }
+ }
+}

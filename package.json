@@ -1,0 +1,18 @@
+{
+  "name": "dk-signal",
+  "version": "3.0.0",
+  "private": true,
+  "description": "딮기 시그널 · DK SIGNAL — 공식 경기 자동 수집 + 솔로랭크 + 웹 푸시 백엔드",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "node tools/dev_server.js",
+    "snapshot": "node tools/make_snapshot.js",
+    "vapid": "node tools/make_vapid.js",
+    "smoke": "node tools/api_smoke.js"
+  },
+  "dependencies": {
+    "web-push": "^3.6.7"
+  }
+}

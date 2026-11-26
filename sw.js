@@ -1,5 +1,5 @@
-/* 딮기 시그널 서비스 워커 · 오프라인 캐시 + 로컬 알림 */
-const CACHE = 'dk-signal-v3';
+/* 딮기 시그널 서비스 워커 · 오프라인 캐시 + 웹 푸시 */
+const CACHE = 'dk-signal-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -42,6 +42,9 @@ self.addEventListener('fetch', (event) => {
   try { url = new URL(req.url); } catch (e) { return; }
   if (url.origin !== self.location.origin) return;
 
+  /* 서버 API 는 항상 실시간 값을 씁니다(캐시 금지) */
+  if (url.pathname.indexOf('/api/') > -1) return;
+
   if (req.mode === 'navigate') {
     event.respondWith(
       fetch(req)
@@ -69,31 +72,55 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-/* 서버 푸시를 붙이면 이 핸들러로 알림이 옵니다. (선수별·경기 알림 구독은 서버에서 구분) */
+/* ---------- 웹 푸시 ---------- */
+/* 서버가 보내는 payload: {title, body, tag, url, kind, player} */
 self.addEventListener('push', (event) => {
   let payload = { title: '딮기 시그널', body: '새 소식이 있어요.' };
   try { payload = Object.assign(payload, event.data.json()); } catch (e) {}
-  event.waitUntil(
-    self.registration.showNotification(payload.title, {
-      body: payload.body,
-      icon: './icons/icon-192.png',
-      badge: './icons/badge-96.png',
-      tag: payload.tag || 'dk-signal',
-      lang: 'ko',
-      data: { url: payload.url || './' }
-    })
-  );
+
+  const options = {
+    body: payload.body,
+    icon: './icons/icon-192.png',
+    badge: './icons/badge-96.png',
+    tag: payload.tag || 'dk-signal',
+    renotify: true,
+    lang: 'ko',
+    data: { url: payload.url || './', kind: payload.kind || '' }
+  };
+  if (payload.kind === 'official') {
+    options.actions = [{ action: 'open', title: '일정 보기' }];
+  }
+  event.waitUntil(self.registration.showNotification(payload.title, options));
 });
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const target = (event.notification.data && event.notification.data.url) || './';
+  const data = event.notification.data || {};
+  const target = data.url || './';
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
       for (const client of list) {
-        if (client.url.indexOf(self.registration.scope) === 0 && 'focus' in client) return client.focus();
+        if (client.url.indexOf(self.registration.scope) === 0) {
+          if ('navigate' in client && target) { try { client.navigate(target); } catch (e) {} }
+          if ('focus' in client) return client.focus();
+        }
       }
       if (self.clients.openWindow) return self.clients.openWindow(target);
     })
   );
+});
+
+/* 브라우저가 구독을 갱신해야 할 때 서버에도 새 구독을 알립니다. */
+self.addEventListener('pushsubscriptionchange', (event) => {
+  event.waitUntil((async () => {
+    try {
+      const options = event.oldSubscription ? event.oldSubscription.options : { userVisibleOnly: true };
+      const sub = await self.registration.pushManager.subscribe(options);
+      await fetch('./api/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscription: sub.toJSON() })
+      });
+    } catch (e) { /* 앱을 다시 열면 재구독됩니다 */ }
+  })());
 });
