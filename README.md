@@ -52,14 +52,14 @@ curl -s "$BASE/api/check?dry=1&token=$CHECK_SECRET"
 curl -s "$BASE/api/check?test=1&token=$CHECK_SECRET"   # 잠금화면 알림 확인
 ```
 
-## 배포 상태 (2026-11-26 기준)
+## 배포 상태 (2026-11-27 기준)
 
 | 항목 | 상태 |
 | --- | --- |
 | 공식 경기 자동 수집 (`/api/official`) | **켜짐** — LoL Esports에서 실제 응답 확인 |
-| 솔로랭크 실시간 (`/api/solo`) | **꺼짐** — `RIOT_API_KEY` 없음 → data.js 스냅샷 표시 |
+| 솔로랭크 실시간 (`/api/solo`) | **켜짐** — `RIOT_API_KEY`(개발용 키) 등록 → `source: "riot"`. 개발용 키는 발급 후 24시간마다 만료되므로 만료되면 스냅샷으로 자동 대체 |
 | 웹 푸시 VAPID 키 | **등록됨** (Production) — `/api/config` 의 `push.ready: true` |
-| 푸시 구독 저장소 | **미연결** — Upstash Redis 를 붙여야 구독 저장·발송이 켜짐 |
+| 푸시 구독 저장소 | **연결됨** — Vercel Marketplace Upstash for Redis(Free) `dk-signal-kv` (iad1). 환경변수는 `KV_REST_API_URL`·`KV_REST_API_TOKEN` 으로 자동 주입 |
 | `/api/check` 보호 토큰 | **켜짐** (`CHECK_SECRET`·`CRON_SECRET`) — 토큰 없이 부르면 401 |
 | Vercel Cron | 하루 1회(07:00 KST) `/api/check` |
 
