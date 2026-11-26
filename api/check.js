@@ -18,6 +18,9 @@ const STATE_KEY = 'dk:state';
 const SUBS_KEY = 'dk:subs';
 const SOON_MS = 40 * 60 * 1000; /* 경기 시작 40분 전 알림 */
 const PUUID_TTL = 2592000;
+/* PUUID 는 Riot 키(앱)마다 다르게 암호화되어 발급됩니다 — 캐시 키에 키 지문을 넣어 자동으로 새로 조회합니다. */
+const KEY_FP = require('crypto').createHash('sha256')
+  .update(process.env.RIOT_API_KEY || 'none').digest('hex').slice(0, 10);
 
 function authorize(req, url) {
   const secret = process.env.CHECK_SECRET || process.env.CRON_SECRET || '';
@@ -59,15 +62,23 @@ async function broadcast(subs, matchPref, payload, dry) {
   return { targets: targets.length, sent: sent.length, dryRun: false, pushReady: true, gone: gone, errors: errors, preview: payload };
 }
 
-async function puuidFor(player) {
-  const key = 'dk:riot:puuid:' + player.key;
-  try {
-    const hit = await store.getJSON(key);
-    if (hit && hit.puuid) return hit.puuid;
-  } catch (e) {}
+async function puuidFor(player, forceFresh) {
+  const key = 'dk:riot:puuid:' + KEY_FP + ':' + player.key;
+  if (!forceFresh) {
+    try {
+      const hit = await store.getJSON(key);
+      if (hit && hit.puuid) return hit.puuid;
+    } catch (e) {}
+  }
   const puuid = await riot.accountPuuid(player.riotId);
   try { await store.setJSON(key, { puuid: puuid, riotId: player.riotId }, PUUID_TTL); } catch (e) {}
   return puuid;
+}
+
+/* Riot 키를 바꾸면 예전 키로 받아 둔 PUUID 가 'Exception decrypting' 으로 거절됩니다.
+ * 그때는 캐시를 건너뛰고 한 번만 새로 받아 다시 조회합니다. */
+function puuidRejected(e) {
+  return /decrypting|Invalid UUID|invalid puuid/i.test(String((e && (e.body || e.message)) || ''));
 }
 
 async function checkSolo(state, subs, dry) {
@@ -78,8 +89,15 @@ async function checkSolo(state, subs, dry) {
   const results = await Promise.all(PLAYERS.map(async function (player) {
     const rec = { key: player.key, nameKo: player.nameKo, status: 'ok', latestId: null, isNew: false };
     try {
-      const puuid = await puuidFor(player);
-      const ids = await riot.matchIds(puuid, 3);
+      let puuid = await puuidFor(player);
+      let ids;
+      try {
+        ids = await riot.matchIds(puuid, 3);
+      } catch (e) {
+        if (!puuidRejected(e)) throw e;
+        puuid = await puuidFor(player, true);
+        ids = await riot.matchIds(puuid, 3);
+      }
       if (!ids.length) { rec.status = 'empty'; return rec; }
       rec.latestId = ids[0];
       const prev = state.solo[player.key] && state.solo[player.key].latestId;
