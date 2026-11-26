@@ -1088,7 +1088,7 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
       </section>
 
       <footer class="foot">
-        <p><b>딮기 시그널 v2</b> · 공식 경기·솔로랭크 기록은 2026-11-26에 확인한 공개 데이터(KO.LOL·OP.GG·u.gg)를 담았어요. 실시간 자동 갱신은 v2 서버에서 붙일 예정입니다.</p>
+        <p><b>딮기 시그널</b> · 공식 경기·솔로랭크 기록은 2026-11-26에 확인한 공개 데이터(KO.LOL·OP.GG·u.gg)를 담았어요. 실시간 자동 갱신은 이후 서버 버전에서 붙일 예정입니다.</p>
         <p class="foot-dim">이 앱은 팬이 만든 비공식 대시보드이며 디플러스 기아·라이엇 게임즈와 무관합니다.</p>
       </footer>
     </section>
@@ -1518,6 +1518,8 @@ const ROSTER_NOTES = {
     if (txt) txt.textContent = mint ? '소프트' : '다크';
     var meta = $('#themeColor');
     if (meta) meta.setAttribute('content', mint ? '#EFFDF8' : '#05090F');
+    var iosBar = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+    if (iosBar) iosBar.setAttribute('content', mint ? 'default' : 'black-translucent');
   }
   function toggleTheme() {
     theme = theme === 'dark' ? 'mint' : 'dark';

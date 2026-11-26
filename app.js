@@ -103,6 +103,8 @@
     if (txt) txt.textContent = mint ? '소프트' : '다크';
     var meta = $('#themeColor');
     if (meta) meta.setAttribute('content', mint ? '#EFFDF8' : '#05090F');
+    var iosBar = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+    if (iosBar) iosBar.setAttribute('content', mint ? 'default' : 'black-translucent');
   }
   function toggleTheme() {
     theme = theme === 'dark' ? 'mint' : 'dark';

@@ -69,7 +69,7 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-/* v2 서버 푸시를 붙이면 이 핸들러로 알림이 옵니다. (선수별·경기 알림 구독은 서버에서 구분) */
+/* 서버 푸시를 붙이면 이 핸들러로 알림이 옵니다. (선수별·경기 알림 구독은 서버에서 구분) */
 self.addEventListener('push', (event) => {
   let payload = { title: '딮기 시그널', body: '새 소식이 있어요.' };
   try { payload = Object.assign(payload, event.data.json()); } catch (e) {}
