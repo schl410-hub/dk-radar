@@ -2098,8 +2098,8 @@ html[data-theme="mint"] .lh-chip.is-chzzk .lh-dot { background: #069B52; }
   background: var(--accent-soft); border: 1px solid var(--accent-line);
 }
 .install-card .ic-body { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-.install-card .ic-body b { font-size: 10.5px; font-weight: 800; color: var(--ink); letter-spacing: -.01em; }
-.install-card .ic-body span { font-size: 8px; line-height: 1.45; color: var(--muted); }
+.install-card .ic-body b { font-size: 11px; font-weight: 800; color: var(--ink); letter-spacing: -.01em; }
+.install-card .ic-body span { font-size: 8.5px; line-height: 1.45; color: var(--muted); }
 .install-card .ic-go {
   flex: none; margin-left: auto; height: 27px; padding: 0 10px; border-radius: 999px;
   font-size: 9px; font-weight: 800; color: var(--accent-ink);
@@ -2114,7 +2114,7 @@ html[data-theme="mint"] .lh-chip.is-chzzk .lh-dot { background: #069B52; }
 
 /* ---------- 설치 안내 시트 ---------- */
 .in-sheet { display: flex; flex-direction: column; }
-.in-lead { margin: 0 0 4px; font-size: 9px; line-height: 1.55; color: var(--muted); }
+.in-lead { margin: 0 0 5px; font-size: 9.5px; line-height: 1.6; color: var(--muted); }
 .in-device {
   margin: 0 0 9px; font-size: 8px; font-weight: 800; letter-spacing: .02em;
   color: var(--accent);
@@ -2132,7 +2132,7 @@ html[data-theme="mint"] .lh-chip.is-chzzk .lh-dot { background: #069B52; }
   box-shadow: 0 10px 22px -14px var(--accent);
 }
 .in-cta-btn:active { transform: scale(.985); }
-.in-cta-note { margin: 0; font-size: 8px; line-height: 1.5; color: var(--ink-2); }
+.in-cta-note { margin: 0; font-size: 8.5px; line-height: 1.55; color: var(--ink-2); }
 .in-done {
   display: flex; flex-direction: column; gap: 3px;
   padding: 11px 12px; margin: 0 0 10px; border-radius: 14px;
@@ -2140,7 +2140,7 @@ html[data-theme="mint"] .lh-chip.is-chzzk .lh-dot { background: #069B52; }
 }
 .in-done[hidden] { display: none; }
 .in-done b { font-size: 11px; font-weight: 800; color: var(--ink); }
-.in-done span { font-size: 8.5px; line-height: 1.5; color: var(--muted); }
+.in-done span { font-size: 9px; line-height: 1.5; color: var(--muted); }
 
 .in-sub {
   margin: 12px 0 7px; font-size: 8px; font-weight: 800; letter-spacing: .06em;
@@ -2155,15 +2155,15 @@ html[data-theme="mint"] .lh-chip.is-chzzk .lh-dot { background: #069B52; }
 .in-sec.is-warn { border-color: rgba(255, 176, 74, .40); background: rgba(255, 176, 74, .09); }
 html[data-theme="mint"] .in-sec.is-warn { border-color: rgba(190, 120, 10, .38); background: rgba(255, 196, 90, .18); }
 .in-h {
-  display: flex; align-items: center; gap: 5px; margin: 0 0 6px;
-  font-size: 10px; font-weight: 800; letter-spacing: -.01em; color: var(--ink);
+  display: flex; align-items: center; gap: 5px; margin: 0 0 7px;
+  font-size: 10.5px; font-weight: 800; letter-spacing: -.01em; color: var(--ink);
 }
 .in-h i { font-style: normal; font-size: 11px; line-height: 1; }
-.in-warn { margin: 0 0 7px; font-size: 8.5px; line-height: 1.55; color: var(--ink-2); }
+.in-warn { margin: 0 0 8px; font-size: 9px; line-height: 1.6; color: var(--ink-2); }
 .in-steps { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; counter-reset: inst; }
 .in-steps li {
   position: relative; padding-left: 22px;
-  font-size: 9px; line-height: 1.5; color: var(--ink-2);
+  font-size: 9.5px; line-height: 1.6; color: var(--ink-2);
 }
 .in-steps li::before {
   counter-increment: inst; content: counter(inst);
@@ -2173,7 +2173,7 @@ html[data-theme="mint"] .in-sec.is-warn { border-color: rgba(190, 120, 10, .38);
   font-size: 7.5px; font-weight: 800; color: var(--accent-ink);
   background: var(--accent);
 }
-.in-note { margin: 7px 0 0; font-size: 8px; line-height: 1.5; color: var(--muted-2); }
+.in-note { margin: 8px 0 0; font-size: 8.5px; line-height: 1.55; color: var(--muted-2); }
 .in-sec.is-warn .in-steps li::before { background: #FFB04A; color: #24160A; }
 
 /* ---------- 기록실: 생일·데뷔 ---------- */

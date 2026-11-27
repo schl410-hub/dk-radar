@@ -3,7 +3,7 @@
   python3 tools/make_font.py
 
 원본: concepts/fonts/PretendardVariable.woff2 (2.0MB)
-결과: fonts/pretendard-subset.woff2  (UI 텍스트 + ASCII)
+결과: fonts/pretendard-subset.woff2  (UI 텍스트 + ASCII + 5개 국어 문구)
 사용자가 직접 입력한 응원 문구 중 서브셋에 없는 글자는 시스템 한글 폰트로 자연스럽게 대체됩니다.
 """
 import pathlib
@@ -17,7 +17,7 @@ OUT = ROOT / "fonts" / "pretendard-subset.woff2"
 
 chars = set(string.printable)
 chars |= set("·–—‘’“”…→↗↑↓★☆♥♡✓×％℃")
-for name in ("index.html", "app.js", "data.js"):
+for name in ("index.html", "app.js", "data.js", "i18n.js"):
     chars |= set((ROOT / name).read_text(encoding="utf-8"))
 # 자주 쓰는 응원 문구용 글자 몇 개를 미리 넣어 둡니다.
 chars |= set("응원 화이팅 오늘도 힘내세요 최고 사랑해요 딮기 시그널 도란 카나비 쇼메이커 스매쉬 딜라이트")

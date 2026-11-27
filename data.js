@@ -349,7 +349,7 @@ const PLAYERS = [
     riotId: 'DK Smash#KR7',
     birthday: '2006-07-20',
     debut: '2025-01-24',
-    debutNote: { ko: '2025 LCK 컵 · T1 1군 데뷔 (2021 T1 아카데미 입단)', en: 'LCK Cup 2025 · T1 main-roster debut (T1 Academy since 2021)', ja: '2025 LCKカップ · T1 1軍デビュー（2021 T1アカデミー入団）', zh: '2025 LCK 杯 · T1 一队出道（2021 加入 T1 青训）', vi: 'LCK Cup 2025 · ra mắt đội chính T1 (học viện T1 từ 2021)' },
+    debutNote: { ko: '2025 LCK 컵 · T1 1군 데뷔', en: 'LCK Cup 2025 · T1 main-roster debut', ja: '2025 LCKカップ · T1 1軍デビュー', zh: '2025 LCK 杯 · T1 一队出道', vi: 'LCK Cup 2025 · ra mắt đội chính T1' },
     tier: '마스터',
     tierKey: 'MASTER',
     tierRank: '',
