@@ -1529,6 +1529,7 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
   flex: none; font-size: 7px; font-weight: 900; letter-spacing: .12em; color: var(--muted-2);
 }
 .pick-wrap .chip-row { margin-top: 0; flex: 1 1 auto; min-width: 0; }
+.pick-wrap .chip { padding: 5px 8px; font-size: 9px; }
 
 .vc-item {
   width: 100%; box-sizing: border-box;
