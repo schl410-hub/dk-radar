@@ -238,6 +238,7 @@
     </section>
 
     <!-- ================= 영상 ================= -->
+    <!-- ================= 영상 ================= -->
     <section class="panel" id="panel-video" role="tabpanel" data-i18n-attr="aria-label:tab.video" aria-label="영상" hidden>
       <div class="panel-head">
         <div class="eyebrow">VIDEO HUB</div>
@@ -259,11 +260,45 @@
         <div class="chan-grid" id="videoChannels"></div>
       </section>
 
-      <section class="card">
-        <div class="eyebrow">PLAYER STREAMS</div>
-        <h3 class="card-title" data-i18n="video.stationsTitle">선수별 개인 방송국</h3>
-        <p class="vc-sub" data-i18n="video.stationsSub">5인이 방송을 켜면 여기서 바로 볼 수 있어요.</p>
-        <ul class="station-list" id="videoStations"></ul>
+      <section class="card pl-card">
+        <div class="card-head">
+          <div>
+            <div class="eyebrow">YOUTUBE · PLAYLIST</div>
+            <h3 class="card-title" data-i18n="video.plTitle">유튜브 재생목록</h3>
+          </div>
+          <span class="src-badge" data-i18n="video.plBadge">D plus KIA · 공식</span>
+        </div>
+        <p class="vc-sub" data-i18n="video.plSub">디플러스 기아 공식 채널의 재생목록이에요. 누르면 앱 안에서 바로 이어서 재생돼요.</p>
+        <div class="pl-grid" id="plGrid"></div>
+      </section>
+
+      <section class="card video-card">
+        <div class="arc-head">
+          <div class="arc-title">
+            <span class="arc-kicker">ARCHIVE</span>
+            <h3 class="card-title" data-i18n="video.archiveTitle">영상 아카이브</h3>
+          </div>
+          <span class="vc-count" id="videoCount"></span>
+        </div>
+        <div class="hl-tools">
+          <input class="hl-search-input" id="videoSearch" type="search" autocomplete="off"
+                 placeholder="챔피언 · 대회 · 키워드로 찾기"
+                 data-i18n-attr="placeholder:video.searchPlaceholder;aria-label:video.searchAria"
+                 aria-label="영상 검색">
+          <button class="hl-search-clear" id="videoSearchClear" type="button" hidden data-i18n-attr="aria-label:video.clearSearch" aria-label="검색 지우기">✕</button>
+          <div class="hl-sort" id="videoSort" role="group" data-i18n-attr="aria-label:video.sortAria" aria-label="영상 정렬">
+            <button class="chip is-active" type="button" data-video-sort="player" data-i18n="video.sortPlayer">선수별</button>
+            <button class="chip" type="button" data-video-sort="recent" data-i18n="video.sortRecent">최신순</button>
+          </div>
+        </div>
+        <div class="chip-row champ-row is-scroll" id="videoChampChips" role="group" data-i18n-attr="aria-label:video.champAria" aria-label="추천 챔피언"></div>
+        <div class="chip-row vid-filters is-scroll" id="videoCats" role="tablist" data-i18n-attr="aria-label:video.catsAria" aria-label="영상 종류"></div>
+        <div class="pick-wrap">
+          <span class="pick-label" aria-hidden="true">PICK</span>
+          <div class="chip-row vid-filters pick-row is-scroll" id="videoFilters" role="tablist" data-i18n-attr="aria-label:video.filtersAria" aria-label="선수별 필터"></div>
+        </div>
+        <ul class="vc-list" id="videoList"></ul>
+        <p class="watch-hint" id="videoArchiveHint"></p>
       </section>
 
       <section class="card dy-card">
@@ -279,28 +314,11 @@
         <p class="board-note" id="dkYtNote"></p>
       </section>
 
-      <section class="card video-card">
-        <div class="card-head">
-          <div>
-            <div class="eyebrow">HIGHLIGHTS · ARCHIVE</div>
-            <h3 class="card-title" data-i18n="video.title">대표 하이라이트</h3>
-          </div>
-          <a class="ghost-btn" id="videoMore" href="https://www.youtube.com/@DplusKia_LOL" target="_blank" rel="noopener" data-i18n="video.more">Dplus KIA 유튜브 ↗</a>
-        </div>
-        <p class="vc-sub"><span data-i18n="video.highlightsSub">5인 대표 장면을 연도·대회별로 모은 아카이브예요.</span> <span class="vc-count" id="videoCount"></span></p>
-        <div class="chip-row vid-filters" id="videoFilters" role="tablist" data-i18n-attr="aria-label:video.filtersAria" aria-label="선수별 하이라이트 필터"></div>
-        <div class="hl-tools">
-          <input class="hl-search-input" id="videoSearch" type="search" autocomplete="off"
-                 placeholder="챔피언 · 대회 · 키워드로 찾기"
-                 data-i18n-attr="placeholder:video.searchPlaceholder;aria-label:video.searchAria"
-                 aria-label="하이라이트 검색">
-          <button class="hl-search-clear" id="videoSearchClear" type="button" hidden data-i18n-attr="aria-label:video.clearSearch" aria-label="검색 지우기">✕</button>
-          <div class="hl-sort" id="videoSort" role="group" data-i18n-attr="aria-label:video.sortAria" aria-label="하이라이트 정렬">
-            <button class="chip is-active" type="button" data-video-sort="player" data-i18n="video.sortPlayer">선수별</button>
-            <button class="chip" type="button" data-video-sort="recent" data-i18n="video.sortRecent">최신순</button>
-          </div>
-        </div>
-        <ul class="vc-list" id="videoList"></ul>
+      <section class="card">
+        <div class="eyebrow">PLAYER STREAMS</div>
+        <h3 class="card-title" data-i18n="video.stationsTitle">선수별 개인 방송국</h3>
+        <p class="vc-sub" data-i18n="video.stationsSub">5인이 방송을 켜면 여기서 바로 볼 수 있어요.</p>
+        <ul class="station-list" id="videoStations"></ul>
       </section>
 
       <section class="card">
@@ -367,6 +385,24 @@
       <footer class="foot"><p data-i18n="foot.records">2026 시즌 대회 기록은 KO.LOL 공개 데이터를 옮겼어요.</p></footer>
     </section>
   </main>
+</div>
+
+<!-- 인앱 유튜브 플레이어: 카드/재생목록을 누르면 앱 안에서 바로 재생 -->
+<div class="vp-modal" id="vpModal" hidden>
+  <div class="vp-veil" id="vpVeil"></div>
+  <div class="vp-dialog" role="dialog" aria-modal="true" aria-labelledby="vpTitle" aria-describedby="vpNote">
+    <div class="vp-head">
+      <b class="vp-title" id="vpTitle"></b>
+      <button class="vp-close" id="vpClose" type="button" data-i18n-attr="aria-label:video.close" aria-label="닫기">✕</button>
+    </div>
+    <div class="vp-frame" id="vpFrameWrap">
+      <iframe id="vpFrame" title="YouTube player" src="about:blank" loading="lazy"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+    </div>
+    <p class="vp-note" id="vpNote">영상이 안 나오면 퍼가기 제한이에요. 아래 버튼으로 유튜브에서 열어 주세요.</p>
+    <a class="vp-open" id="vpOpen" href="#" target="_blank" rel="noopener">YouTube에서 열기 ↗</a>
+  </div>
 </div>
 
 <script src="./i18n.js"></script>

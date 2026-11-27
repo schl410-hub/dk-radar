@@ -45,7 +45,17 @@ const HL_TAGS = {
   gnar: { ko: '나르', en: 'Gnar', ja: 'ナー', zh: '纳尔' },
   jayce: { ko: '제이스', en: 'Jayce', ja: 'ジェイス', zh: '杰斯' },
   azir: { ko: '아지르', en: 'Azir', ja: 'アジール', zh: '阿兹尔' },
-  leblanc: { ko: '르블랑', en: 'LeBlanc', ja: 'ルブラン', zh: '乐芙兰' }
+  leblanc: { ko: '르블랑', en: 'LeBlanc', ja: 'ルブラン', zh: '乐芙兰' },
+  ambessa: { ko: '암베사', en: 'Ambessa', ja: 'アンベッサ', zh: '安蓓萨' },
+  kaisa: { ko: '카이사', en: "Kai'Sa", ja: 'カイ＝サ', zh: '卡莎' }
+};
+
+/* 영상 카테고리 — 아카이브 칩과 카드 배지에 함께 씁니다 */
+const HL_CATS = {
+  highlight: { ko: '하이라이트', en: 'Highlights', ja: 'ハイライト', zh: '高光' },
+  madmovie: { ko: '매드무비', en: 'Montage', ja: 'マッドムービー', zh: '剪辑' },
+  behind: { ko: '딮터뷰·비하인드', en: 'Interview & behind', ja: 'インタビュー・舞台裏', zh: '专访·花絮' },
+  shorts: { ko: '쇼츠', en: 'Shorts', ja: 'ショート', zh: '短片' }
 };
 
 const PLAYERS = [
@@ -81,13 +91,22 @@ const PLAYERS = [
       { platform: 'chzzk', url: 'https://chzzk.naver.com/20e11539e1afa21fc959dd3f4ff2332c', handle: '도란도란란' }
     ],
     highlights: [
-      { id: 'uzkulCX1cvw', len: '12:13', channel: 'LCK', team: 'T1', year: 2026, match: { ko: 'T1 vs BFX · 4세트', en: 'T1 vs BFX · Game 4', ja: 'T1 vs BFX 第4試合', zh: 'T1 vs BFX · 第4局' }, event: { ko: '2026 우리은행 LCK 플레이오프', en: '2026 LCK Playoffs', ja: '2026 LCK プレーオフ', zh: '2026 LCK 季后赛' }, tags: ['playoffs', 'lck', 'top'] },
-      { id: 'zmt-dT7garg', len: '13:10', channel: 'LCK', team: 'T1', year: 2026, match: { ko: 'T1 vs DK · 2세트', en: 'T1 vs DK · Game 2', ja: 'T1 vs DK 第2試合', zh: 'T1 vs DK · 第2局' }, event: { ko: '2026 LCK', en: '2026 LCK', ja: '2026 LCK', zh: '2026 LCK' }, tags: ['lck', 'top', 'carry'] },
-      { id: 'sqjM3EJO7ng', len: '11:04', channel: 'LCK', team: 'T1', year: 2025, match: { ko: 'T1 vs HLE · 4세트', en: 'T1 vs HLE · Game 4', ja: 'T1 vs HLE 第4試合', zh: 'T1 vs HLE · 第4局' }, event: { ko: '2025 우리은행 LCK CUP 플레이오프', en: '2025 LCK Cup Playoffs', ja: '2025 LCKカップ プレーオフ', zh: '2025 LCK 杯 季后赛' }, tags: ['lckcup', 'playoffs', 'top'] },
-      { id: 'gJarHbioMEg', len: '11:00', channel: 'LCK', team: 'Gen.G', year: 2023, match: { ko: 'T1 vs GEN · 1세트', en: 'T1 vs GEN · Game 1', ja: 'T1 vs GEN 第1試合', zh: 'T1 vs GEN · 第1局' }, event: { ko: '2023 LCK 스프링 결승', en: '2023 LCK Spring Final', ja: '2023 LCK スプリング決勝', zh: '2023 LCK 春季赛决赛' }, tags: ['lck', 'final', 'top', 'carry'] },
-      { id: 'H4Tp-sRSp2Y', len: '3:02', channel: 'LoL Esports', team: 'HLE', year: 2024, match: { ko: '도란 · 나르 대형 궁', en: 'Doran · huge Gnar ult', ja: 'ドラン · ナー特大ウルト', zh: 'Doran · 纳尔巨量控制' }, event: { ko: 'LoL Esports · TOP 5 PLAYS', en: 'LoL Esports · TOP 5 PLAYS', ja: 'LoL Esports · TOP 5 PLAYS', zh: 'LoL Esports · TOP 5 PLAYS' }, tags: ['top', 'carry', 'gnar'] },
-      { id: 'q_2YoaayhFg', len: '3:29', channel: 'LoL Esports', team: 'Gen.G', year: 2023, match: { ko: 'Gen.G vs T1 · LCK 결승', en: 'Gen.G vs T1 · LCK Final', ja: 'Gen.G vs T1 · LCK決勝', zh: 'Gen.G vs T1 · LCK决赛' }, event: { ko: 'LoL Esports · Plays of the Week', en: 'LoL Esports · Plays of the Week', ja: 'LoL Esports · Plays of the Week', zh: 'LoL Esports · Plays of the Week' }, tags: ['lck', 'final', 'carry', 'comeback'] },
-      { id: 'J8XPHKlTBLM', len: '8:27', channel: 'LoL Esports', team: 'DRX', year: 2020, match: { ko: 'DRX · 월즈 그룹 스테이지', en: 'DRX · Worlds group stage', ja: 'DRX · ワールズ グループステージ', zh: 'DRX · 世界赛小组赛' }, event: { ko: 'Worlds 2020 · Lane Kingdom', en: 'Worlds 2020 · Lane Kingdom', ja: 'Worlds 2020 · Lane Kingdom', zh: 'Worlds 2020 · Lane Kingdom' }, tags: ['worlds', 'top', 'carry', 'jayce'] }
+      { id: 'FDos-nzB8HE', len: '10:04', channel: 'T1', team: 'T1', year: 2026, match: { ko: '도란 · 도베사', en: 'Doran · Ambessa', ja: 'ドラン · アンベッサ', zh: '多兰 · 安蓓萨' }, event: { ko: 'T1 공식 유튜브', en: 'T1 official YouTube', ja: 'T1 公式YouTube', zh: 'T1 官方 YouTube' }, tags: ['top', 'carry'], cat: 'highlight', champ: ['ambessa'], point: {"ko": "도베사 발견", "en": "Doran + Ambessa spotted", "ja": "ドベッサ発見", "zh": "发现“多蓓萨”"} },
+      { id: '7wZxtaNDCTI', len: '9:48', channel: 'T1', team: 'T1', year: 2025, match: { ko: '도란 · 암베사 연습', en: 'Doran · Ambessa practice', ja: 'ドラン · アンベッサ練習', zh: '多兰 · 安蓓萨练习' }, event: { ko: 'T1 공식 유튜브', en: 'T1 official YouTube', ja: 'T1 公式YouTube', zh: 'T1 官方 YouTube' }, tags: ['top'], cat: 'highlight', champ: ['ambessa'], point: {"ko": "도란의 암베사 깎기 1일차", "en": "Doran grinds Ambessa, day one", "ja": "ドランのアンベッサ仕上げ1日目", "zh": "多兰打磨安蓓萨第一天"} },
+      { id: 'uzkulCX1cvw', len: '12:13', channel: 'LCK', team: 'T1', year: 2026, match: { ko: 'T1 vs BFX · 4세트', en: 'T1 vs BFX · Game 4', ja: 'T1 vs BFX 第4試合', zh: 'T1 vs BFX · 第4局' }, event: { ko: '2026 우리은행 LCK 플레이오프', en: '2026 LCK Playoffs', ja: '2026 LCK プレーオフ', zh: '2026 LCK 季后赛' }, tags: ['playoffs', 'lck', 'top'] , cat: 'highlight', point: {"ko": "건실한 청년, 4세트를 매듭짓다", "en": "The steady hand closes out Game 4", "ja": "堅実な青年、第4試合を締める", "zh": "沉稳青年收下第4局"} },
+
+      { id: 'zmt-dT7garg', len: '13:10', channel: 'LCK', team: 'T1', year: 2026, match: { ko: 'T1 vs DK · 2세트', en: 'T1 vs DK · Game 2', ja: 'T1 vs DK 第2試合', zh: 'T1 vs DK · 第2局' }, event: { ko: '2026 LCK', en: '2026 LCK', ja: '2026 LCK', zh: '2026 LCK' }, tags: ['lck', 'top', 'carry'] , cat: 'highlight', point: {"ko": "서커스를 시작해볼까", "en": "Shall we start the circus?", "ja": "サーカスを始めようか", "zh": "来场马戏吧"} },
+
+      { id: 'sqjM3EJO7ng', len: '11:04', channel: 'LCK', team: 'T1', year: 2025, match: { ko: 'T1 vs HLE · 4세트', en: 'T1 vs HLE · Game 4', ja: 'T1 vs HLE 第4試合', zh: 'T1 vs HLE · 第4局' }, event: { ko: '2025 우리은행 LCK CUP 플레이오프', en: '2025 LCK Cup Playoffs', ja: '2025 LCKカップ プレーオフ', zh: '2025 LCK 杯 季后赛' }, tags: ['lckcup', 'playoffs', 'top'] , cat: 'highlight', point: {"ko": "짜잔, 내가 도란왔다", "en": "Ta-da — Doran has arrived", "ja": "じゃじゃーん、ドラン参上", "zh": "闪亮登场，多兰来了"} },
+
+      { id: 'gJarHbioMEg', len: '11:00', channel: 'LCK', team: 'Gen.G', year: 2023, match: { ko: 'T1 vs GEN · 1세트', en: 'T1 vs GEN · Game 1', ja: 'T1 vs GEN 第1試合', zh: 'T1 vs GEN · 第1局' }, event: { ko: '2023 LCK 스프링 결승', en: '2023 LCK Spring Final', ja: '2023 LCK スプリング決勝', zh: '2023 LCK 春季赛决赛' }, tags: ['lck', 'final', 'top', 'carry'] , cat: 'highlight', point: {"ko": "도란의 탑 단속", "en": "Doran's top-lane crackdown", "ja": "ドランのトップ取り締まり", "zh": "多兰的上路整治"} },
+
+      { id: 'H4Tp-sRSp2Y', len: '3:02', channel: 'LoL Esports', team: 'HLE', year: 2024, match: { ko: '도란 · 나르 대형 궁', en: 'Doran · huge Gnar ult', ja: 'ドラン · ナー特大ウルト', zh: 'Doran · 纳尔巨量控制' }, event: { ko: 'LoL Esports · TOP 5 PLAYS', en: 'LoL Esports · TOP 5 PLAYS', ja: 'LoL Esports · TOP 5 PLAYS', zh: 'LoL Esports · TOP 5 PLAYS' }, tags: ['top', 'carry', 'gnar'] , cat: 'highlight', champ: ['gnar'], point: {"ko": "나르 메가 궁 한 방", "en": "One huge Mega Gnar ult", "ja": "ナー メガウルト一発", "zh": "纳尔巨型形态一记大招"} },
+
+      { id: 'q_2YoaayhFg', len: '3:29', channel: 'LoL Esports', team: 'Gen.G', year: 2023, match: { ko: 'Gen.G vs T1 · LCK 결승', en: 'Gen.G vs T1 · LCK Final', ja: 'Gen.G vs T1 · LCK決勝', zh: 'Gen.G vs T1 · LCK决赛' }, event: { ko: 'LoL Esports · Plays of the Week', en: 'LoL Esports · Plays of the Week', ja: 'LoL Esports · Plays of the Week', zh: 'LoL Esports · Plays of the Week' }, tags: ['lck', 'final', 'carry', 'comeback'] , cat: 'highlight', point: {"ko": "결승에서 T1을 무너뜨린 이변", "en": "The upset that wrecked T1 in the final", "ja": "決勝でT1を崩した番狂わせ", "zh": "决赛掀翻 T1 的爆冷"} },
+
+      { id: 'J8XPHKlTBLM', len: '8:27', channel: 'LoL Esports', team: 'DRX', year: 2020, match: { ko: 'DRX · 월즈 그룹 스테이지', en: 'DRX · Worlds group stage', ja: 'DRX · ワールズ グループステージ', zh: 'DRX · 世界赛小组赛' }, event: { ko: 'Worlds 2020 · Lane Kingdom', en: 'Worlds 2020 · Lane Kingdom', ja: 'Worlds 2020 · Lane Kingdom', zh: 'Worlds 2020 · Lane Kingdom' }, tags: ['worlds', 'top', 'carry', 'jayce'] , cat: 'highlight', champ: ['jayce'], point: {"ko": "월즈 그룹 스테이지 제이스 캐리", "en": "Jayce carries the Worlds group stage", "ja": "ワールズGSのジェイスキャリー", "zh": "世界赛小组赛的杰斯带飞"} },
+
     ],
     note: { ko: '', en: '', ja: '', zh: '' },
     official: {
@@ -148,12 +167,18 @@ const PLAYERS = [
       { platform: 'chzzk', url: 'https://chzzk.naver.com/e351edbd85f1ebf4eb975c21179a4c43', handle: 'HLE Kanavi' }
     ],
     highlights: [
-      { id: 'Ws93_VsEx-s', len: '12:39', channel: 'LCK', team: 'HLE', year: 2026, match: { ko: 'HLE vs T1 · 3세트', en: 'HLE vs T1 · Game 3', ja: 'HLE vs T1 第3試合', zh: 'HLE vs T1 · 第3局' }, event: { ko: '2026 LCK 로드 투 MSI', en: '2026 LCK Road to MSI', ja: '2026 LCK ロード・トゥMSI', zh: '2026 LCK 通往 MSI' }, tags: ['lck', 'jgl', 'carry'] },
-      { id: 'fOUtkqYy1VE', len: '10:02', channel: 'LCK', team: 'HLE', year: 2026, match: { ko: 'DK vs HLE · 1세트', en: 'DK vs HLE · Game 1', ja: 'DK vs HLE 第1試合', zh: 'DK vs HLE · 第1局' }, event: { ko: '2026 LCK', en: '2026 LCK', ja: '2026 LCK', zh: '2026 LCK' }, tags: ['lck', 'jgl'] },
-      { id: 'iNQxu7iC6pU', len: '10:51', channel: 'LCK', team: 'HLE', year: 2026, match: { ko: 'HLE vs T1 · 2세트', en: 'HLE vs T1 · Game 2', ja: 'HLE vs T1 第2試合', zh: 'HLE vs T1 · 第2局' }, event: { ko: '2026 LCK', en: '2026 LCK', ja: '2026 LCK', zh: '2026 LCK' }, tags: ['lck', 'jgl', 'carry'] },
-      { id: 'OUHbIAms4F4', len: '0:25', channel: 'LoL Esports', team: 'HLE', year: 2026, match: { ko: 'HLE · G2 상대 정글 장악', en: 'HLE · jungle grip vs G2', ja: 'HLE · G2戦のジャングル掌握', zh: 'HLE · 对 G2 的野区压制' }, event: { ko: '2026 월드 챔피언십 · 스위스', en: 'Worlds 2026 · Swiss', ja: 'ワールズ2026 · スイス', zh: '2026 世界赛 · 瑞士轮' }, tags: ['worlds', 'jgl', 'carry'] },
-      { id: 'pPqJXwXuSDE', len: '0:56', channel: 'LoL Esports', team: 'JDG', year: 2023, match: { ko: '카나비 · 완벽한 각도', en: 'Kanavi · the perfect angle', ja: 'カナビ · 完璧な角度', zh: 'Kanavi · 完美角度' }, event: { ko: 'LoL Esports · 플레이 클립', en: 'LoL Esports · play clip', ja: 'LoL Esports · プレイクリップ', zh: 'LoL Esports · 精彩片段' }, tags: ['jgl', 'carry'] },
-      { id: 'SMxpnilYSyU', len: '0:09', channel: 'LoL Esports', team: 'HLE', year: 2026, match: { ko: '카나비 · 다시 정상에', en: 'Kanavi · champion again', ja: 'カナビ · 再び頂点へ', zh: 'Kanavi · 再度夺冠' }, event: { ko: 'MSI 2026', en: 'MSI 2026', ja: 'MSI 2026', zh: 'MSI 2026' }, tags: ['msi', 'champion', 'jgl'] }
+      { id: 'Ws93_VsEx-s', len: '12:39', channel: 'LCK', team: 'HLE', year: 2026, match: { ko: 'HLE vs T1 · 3세트', en: 'HLE vs T1 · Game 3', ja: 'HLE vs T1 第3試合', zh: 'HLE vs T1 · 第3局' }, event: { ko: '2026 LCK 로드 투 MSI', en: '2026 LCK Road to MSI', ja: '2026 LCK ロード・トゥMSI', zh: '2026 LCK 通往 MSI' }, tags: ['lck', 'jgl', 'carry'] , cat: 'highlight', point: {"ko": "벌처럼 날아 나비처럼 쏜다", "en": "Flies like a bee, stings like a butterfly", "ja": "蜂のように飛び、蝶のように刺す", "zh": "像蜜蜂般飞，像蝴蝶般出击"} },
+
+      { id: 'fOUtkqYy1VE', len: '10:02', channel: 'LCK', team: 'HLE', year: 2026, match: { ko: 'DK vs HLE · 1세트', en: 'DK vs HLE · Game 1', ja: 'DK vs HLE 第1試合', zh: 'DK vs HLE · 第1局' }, event: { ko: '2026 LCK', en: '2026 LCK', ja: '2026 LCK', zh: '2026 LCK' }, tags: ['lck', 'jgl'] , cat: 'highlight', point: {"ko": "LPL 유학생 출신 카정 카씨", "en": "The LPL-trained jungle thief", "ja": "LPL留学帰りのジャングル泥棒", "zh": "LPL 归来的野区小偷"} },
+
+      { id: 'iNQxu7iC6pU', len: '10:51', channel: 'LCK', team: 'HLE', year: 2026, match: { ko: 'HLE vs T1 · 2세트', en: 'HLE vs T1 · Game 2', ja: 'HLE vs T1 第2試合', zh: 'HLE vs T1 · 第2局' }, event: { ko: '2026 LCK', en: '2026 LCK', ja: '2026 LCK', zh: '2026 LCK' }, tags: ['lck', 'jgl', 'carry'] , cat: 'highlight', point: {"ko": "번개의 신, 경기를 가져오다", "en": "The god of thunder takes the game", "ja": "雷神、試合を持っていく", "zh": "雷神拿下比赛"} },
+
+      { id: 'OUHbIAms4F4', len: '0:25', channel: 'LoL Esports', team: 'HLE', year: 2026, match: { ko: 'HLE · G2 상대 정글 장악', en: 'HLE · jungle grip vs G2', ja: 'HLE · G2戦のジャングル掌握', zh: 'HLE · 对 G2 的野区压制' }, event: { ko: '2026 월드 챔피언십 · 스위스', en: 'Worlds 2026 · Swiss', ja: 'ワールズ2026 · スイス', zh: '2026 世界赛 · 瑞士轮' }, tags: ['worlds', 'jgl', 'carry'] , cat: 'shorts', point: {"ko": "G2 정글을 폭파하다", "en": "Blowing up G2’s jungle", "ja": "G2のジャングルを爆破", "zh": "炸穿 G2 野区"} },
+
+      { id: 'pPqJXwXuSDE', len: '0:56', channel: 'LoL Esports', team: 'JDG', year: 2023, match: { ko: '카나비 · 완벽한 각도', en: 'Kanavi · the perfect angle', ja: 'カナビ · 完璧な角度', zh: 'Kanavi · 完美角度' }, event: { ko: 'LoL Esports · 플레이 클립', en: 'LoL Esports · play clip', ja: 'LoL Esports · プレイクリップ', zh: 'LoL Esports · 精彩片段' }, tags: ['jgl', 'carry'] , cat: 'shorts', point: {"ko": "언제나 완벽한 각도", "en": "Always the perfect angle", "ja": "いつでも完璧な角度", "zh": "永远完美的角度"} },
+
+      { id: 'SMxpnilYSyU', len: '0:09', channel: 'LoL Esports', team: 'HLE', year: 2026, match: { ko: '카나비 · 다시 정상에', en: 'Kanavi · champion again', ja: 'カナビ · 再び頂点へ', zh: 'Kanavi · 再度夺冠' }, event: { ko: 'MSI 2026', en: 'MSI 2026', ja: 'MSI 2026', zh: 'MSI 2026' }, tags: ['msi', 'champion', 'jgl'] , cat: 'shorts', point: {"ko": "다시 정상에 선 카나비", "en": "Kanavi, back on top", "ja": "再び頂点へ、カナビ", "zh": "重返巅峰的 Kanavi"} },
+
     ],
     note: { ko: '', en: '', ja: '', zh: '' },
     official: {
@@ -216,12 +241,18 @@ const PLAYERS = [
       { platform: 'chzzk', url: 'https://chzzk.naver.com/07a040b24eb497dc36c31d82bc06ccc2', handle: 'DK 쇼메쇼메' }
     ],
     highlights: [
-      { id: 'FG8VNBFemDg', len: '10:29', channel: 'LCK', team: 'DK', year: 2026, match: { ko: 'DK vs GEN · 3세트', en: 'DK vs GEN · Game 3', ja: 'DK vs GEN 第3試合', zh: 'DK vs GEN · 第3局' }, event: { ko: '2026 LCK', en: '2026 LCK', ja: '2026 LCK', zh: '2026 LCK' }, tags: ['lck', 'mid', 'carry'] },
-      { id: 'SqKdQydiZKs', len: '7:31', channel: 'LCK', team: 'DK', year: 2026, match: { ko: 'DK vs GEN · 1세트', en: 'DK vs GEN · Game 1', ja: 'DK vs GEN 第1試合', zh: 'DK vs GEN · 第1局' }, event: { ko: '2026 LCK', en: '2026 LCK', ja: '2026 LCK', zh: '2026 LCK' }, tags: ['lck', 'mid'] },
-      { id: 'C02yoXL62UY', len: '10:49', channel: 'LCK', team: 'DK', year: 2026, match: { ko: 'DK vs GEN · 2세트', en: 'DK vs GEN · Game 2', ja: 'DK vs GEN 第2試合', zh: 'DK vs GEN · 第2局' }, event: { ko: '2026 LCK', en: '2026 LCK', ja: '2026 LCK', zh: '2026 LCK' }, tags: ['lck', 'mid', 'comeback'] },
-      { id: 'VpNVX1aKR9g', len: '8:49', channel: 'LCK', team: 'DK', year: 2021, match: { ko: 'T1 vs DK · 4세트', en: 'T1 vs DK · Game 4', ja: 'T1 vs DK 第4試合', zh: 'T1 vs DK · 第4局' }, event: { ko: '2021 월드 챔피언십 4강', en: 'Worlds 2021 Semifinals', ja: 'ワールズ2021 準決勝', zh: '2021 世界赛四强' }, tags: ['worlds', 'mid', 'carry', 'leblanc'] },
-      { id: 'DyaPoq_QAO8', len: '7:51', channel: 'LCK', team: 'DK', year: 2025, match: { ko: 'DK vs BFX · 4세트', en: 'DK vs BFX · Game 4', ja: 'DK vs BFX 第4試合', zh: 'DK vs BFX · 第4局' }, event: { ko: '2025 우리은행 LCK 플레이오프', en: '2025 LCK Playoffs', ja: '2025 LCK プレーオフ', zh: '2025 LCK 季后赛' }, tags: ['playoffs', 'lck', 'mid', 'carry'] },
-      { id: 'JT8H1izxnL8', len: '3:45', channel: 'LoL Esports', team: 'DK', year: 2024, match: { ko: '쇼메이커 · 아지르 4인 궁', en: 'ShowMaker · Azir shuffle', ja: 'ショーメーカー · アジール シャッフル', zh: 'ShowMaker · 沙皇大招' }, event: { ko: 'LoL Esports · TOP 5 PLAYS', en: 'LoL Esports · TOP 5 PLAYS', ja: 'LoL Esports · TOP 5 PLAYS', zh: 'LoL Esports · TOP 5 PLAYS' }, tags: ['mid', 'carry', 'azir'] }
+      { id: 'FG8VNBFemDg', len: '10:29', channel: 'LCK', team: 'DK', year: 2026, match: { ko: 'DK vs GEN · 3세트', en: 'DK vs GEN · Game 3', ja: 'DK vs GEN 第3試合', zh: 'DK vs GEN · 第3局' }, event: { ko: '2026 LCK', en: '2026 LCK', ja: '2026 LCK', zh: '2026 LCK' }, tags: ['lck', 'mid', 'carry'] , cat: 'highlight', point: {"ko": "쇼 메 혹 — 한 번 속아보실?", "en": "ShowMaker’s bait — fooled you", "ja": "ショメの誘い — 引っかかった？", "zh": "ShowMaker 的诱饵 — 上当了吧"} },
+
+      { id: 'SqKdQydiZKs', len: '7:31', channel: 'LCK', team: 'DK', year: 2026, match: { ko: 'DK vs GEN · 1세트', en: 'DK vs GEN · Game 1', ja: 'DK vs GEN 第1試合', zh: 'DK vs GEN · 第1局' }, event: { ko: '2026 LCK', en: '2026 LCK', ja: '2026 LCK', zh: '2026 LCK' }, tags: ['lck', 'mid'] , cat: 'highlight', point: {"ko": "북벌 페이스리프트", "en": "A facelift for the northern campaign", "ja": "北伐のフェイスリフト", "zh": "北伐改款"} },
+
+      { id: 'C02yoXL62UY', len: '10:49', channel: 'LCK', team: 'DK', year: 2026, match: { ko: 'DK vs GEN · 2세트', en: 'DK vs GEN · Game 2', ja: 'DK vs GEN 第2試合', zh: 'DK vs GEN · 第2局' }, event: { ko: '2026 LCK', en: '2026 LCK', ja: '2026 LCK', zh: '2026 LCK' }, tags: ['lck', 'mid', 'comeback'] , cat: 'highlight', point: {"ko": "1707일의 염원", "en": "A wish 1,707 days in the making", "ja": "1707日目の願い", "zh": "等待 1707 天的心愿"} },
+
+      { id: 'VpNVX1aKR9g', len: '8:49', channel: 'LCK', team: 'DK', year: 2021, match: { ko: 'T1 vs DK · 4세트', en: 'T1 vs DK · Game 4', ja: 'T1 vs DK 第4試合', zh: 'T1 vs DK · 第4局' }, event: { ko: '2021 월드 챔피언십 4강', en: 'Worlds 2021 Semifinals', ja: 'ワールズ2021 準決勝', zh: '2021 世界赛四强' }, tags: ['worlds', 'mid', 'carry', 'leblanc'] , cat: 'highlight', champ: ['leblanc'], point: {"ko": "3대 800 르블랑", "en": "The 3-vs-800 LeBlanc", "ja": "3対800のルブラン", "zh": "3 打 800 的乐芙兰"} },
+
+      { id: 'DyaPoq_QAO8', len: '7:51', channel: 'LCK', team: 'DK', year: 2025, match: { ko: 'DK vs BFX · 4세트', en: 'DK vs BFX · Game 4', ja: 'DK vs BFX 第4試合', zh: 'DK vs BFX · 第4局' }, event: { ko: '2025 우리은행 LCK 플레이오프', en: '2025 LCK Playoffs', ja: '2025 LCK プレーオフ', zh: '2025 LCK 季后赛' }, tags: ['playoffs', 'lck', 'mid', 'carry'] , cat: 'highlight', point: {"ko": "비 내리는 여름밤의 쇼메이커", "en": "ShowMaker on a rainy summer night", "ja": "雨の夏の夜のショーメイカー", "zh": "雨夜里的 ShowMaker"} },
+
+      { id: 'JT8H1izxnL8', len: '3:45', channel: 'LoL Esports', team: 'DK', year: 2024, match: { ko: '쇼메이커 · 아지르 4인 궁', en: 'ShowMaker · Azir shuffle', ja: 'ショーメーカー · アジール シャッフル', zh: 'ShowMaker · 沙皇大招' }, event: { ko: 'LoL Esports · TOP 5 PLAYS', en: 'LoL Esports · TOP 5 PLAYS', ja: 'LoL Esports · TOP 5 PLAYS', zh: 'LoL Esports · TOP 5 PLAYS' }, tags: ['mid', 'carry', 'azir'] , cat: 'highlight', champ: ['azir'], point: {"ko": "아지르 4인 궁 스쿱", "en": "Azir scoops up all four", "ja": "アジールの4人ウルト", "zh": "阿兹尔一 scoop 四人"} },
+
     ],
     note: {
       ko: '최근 경기 중 NA 표시는 북미 계정(Sonny Hayes#722)에서 치른 게임이에요.',
@@ -288,12 +319,18 @@ const PLAYERS = [
       { platform: 'chzzk', url: 'https://chzzk.naver.com/44aa27b0df5175323fac934acdff1ed5', handle: 'DK 스매쉬1' }
     ],
     highlights: [
-      { id: 'uxnXy7SFMsY', len: '7:21', channel: 'LCK', team: 'T1', year: 2025, match: { ko: 'T1 vs KT · 3세트', en: 'T1 vs KT · Game 3', ja: 'T1 vs KT 第3試合', zh: 'T1 vs KT · 第3局' }, event: { ko: '2025 LCK 컵', en: '2025 LCK Cup', ja: '2025 LCKカップ', zh: '2025 LCK 杯' }, tags: ['lckcup', 'adc'] },
-      { id: 'BxU5zVPnMiU', len: '9:33', channel: 'LCK', team: 'T1', year: 2025, match: { ko: 'T1 vs GEN · 1세트', en: 'T1 vs GEN · Game 1', ja: 'T1 vs GEN 第1試合', zh: 'T1 vs GEN · 第1局' }, event: { ko: '2025 LCK 컵 · 신인왕 등장', en: '2025 LCK Cup · rookie debut', ja: '2025 LCKカップ · 新人王登場', zh: '2025 LCK 杯 · 新人王登场' }, tags: ['lckcup', 'rookie', 'debut', 'adc'] },
-      { id: '6qYVK6DGkrU', len: '3:28', channel: 'LoL Esports', team: 'T1', year: 2025, match: { ko: '스매쉬 · T1 신인왕', en: 'Smash · T1 rookie', ja: 'スマッシュ · T1新人', zh: 'Smash · T1 新人' }, event: { ko: 'LoL Esports · TOP 5 PLAYS', en: 'LoL Esports · TOP 5 PLAYS', ja: 'LoL Esports · TOP 5 PLAYS', zh: 'LoL Esports · TOP 5 PLAYS' }, tags: ['rookie', 'adc', 'carry'] },
-      { id: '2JCbasoSUrY', len: '0:26', channel: 'LCK', team: 'DK', year: 2026, match: { ko: 'DK · 월즈 1호 펜타킬', en: 'DK · first pentakill of Worlds', ja: 'DK · ワールズ第1号ペンタキル', zh: 'DK · 世界赛首个五杀' }, event: { ko: '2026 월드 챔피언십', en: 'Worlds 2026', ja: 'ワールズ2026', zh: '2026 世界赛' }, tags: ['worlds', 'pentakill', 'adc'] },
-      { id: 'yfC5vSjiJos', len: '13:27', channel: 'LCK', team: 'DK', year: 2026, match: { ko: 'MKOI vs DK · 1세트', en: 'MKOI vs DK · Game 1', ja: 'MKOI vs DK 第1試合', zh: 'MKOI vs DK · 第1局' }, event: { ko: '2026 월드 챔피언십 · 스위스', en: 'Worlds 2026 · Swiss', ja: 'ワールズ2026 · スイス', zh: '2026 世界赛 · 瑞士轮' }, tags: ['worlds', 'adc'] },
-      { id: '99lMm4kPg0o', len: '11:54', channel: 'LCK', team: 'DK', year: 2026, match: { ko: 'BLG vs DK · 3세트', en: 'BLG vs DK · Game 3', ja: 'BLG vs DK 第3試合', zh: 'BLG vs DK · 第3局' }, event: { ko: '2026 월드 챔피언십 · 8강', en: 'Worlds 2026 · Quarterfinals', ja: 'ワールズ2026 · 準々決勝', zh: '2026 世界赛 · 八强' }, tags: ['worlds', 'adc', 'carry'] }
+      { id: 'uxnXy7SFMsY', len: '7:21', channel: 'LCK', team: 'T1', year: 2025, match: { ko: 'T1 vs KT · 3세트', en: 'T1 vs KT · Game 3', ja: 'T1 vs KT 第3試合', zh: 'T1 vs KT · 第3局' }, event: { ko: '2025 LCK 컵', en: '2025 LCK Cup', ja: '2025 LCKカップ', zh: '2025 LCK 杯' }, tags: ['lckcup', 'adc'] , cat: 'highlight', point: {"ko": "불꽃 스매쉬", "en": "Flame Smash", "ja": "炎のスマッシュ", "zh": "火焰 Smash"} },
+
+      { id: 'BxU5zVPnMiU', len: '9:33', channel: 'LCK', team: 'T1', year: 2025, match: { ko: 'T1 vs GEN · 1세트', en: 'T1 vs GEN · Game 1', ja: 'T1 vs GEN 第1試合', zh: 'T1 vs GEN · 第1局' }, event: { ko: '2025 LCK 컵 · 신인왕 등장', en: '2025 LCK Cup · rookie debut', ja: '2025 LCKカップ · 新人王登場', zh: '2025 LCK 杯 · 新人王登场' }, tags: ['lckcup', 'rookie', 'debut', 'adc'] , cat: 'highlight', point: {"ko": "신인 금재, 등장", "en": "Rookie Keum-jae has arrived", "ja": "新人クムジェ、登場", "zh": "新人金宰登场"} },
+
+      { id: '6qYVK6DGkrU', len: '3:28', channel: 'LoL Esports', team: 'T1', year: 2025, match: { ko: '스매쉬 · T1 신인왕', en: 'Smash · T1 rookie', ja: 'スマッシュ · T1新人', zh: 'Smash · T1 新人' }, event: { ko: 'LoL Esports · TOP 5 PLAYS', en: 'LoL Esports · TOP 5 PLAYS', ja: 'LoL Esports · TOP 5 PLAYS', zh: 'LoL Esports · TOP 5 PLAYS' }, tags: ['rookie', 'adc', 'carry'] , cat: 'highlight', point: {"ko": "T1 신인왕의 스머프 모드", "en": "T1's rookie goes smurf mode", "ja": "T1新人王のスマーフモード", "zh": "T1 新人王的虐菜模式"} },
+
+      { id: '2JCbasoSUrY', len: '0:26', channel: 'LCK', team: 'DK', year: 2026, match: { ko: 'DK · 월즈 1호 펜타킬', en: 'DK · first pentakill of Worlds', ja: 'DK · ワールズ第1号ペンタキル', zh: 'DK · 世界赛首个五杀' }, event: { ko: '2026 월드 챔피언십', en: 'Worlds 2026', ja: 'ワールズ2026', zh: '2026 世界赛' }, tags: ['worlds', 'pentakill', 'adc'] , cat: 'highlight', point: {"ko": "월즈 1호 펜타킬", "en": "The first pentakill of Worlds", "ja": "ワールズ第1号ペンタキル", "zh": "世界赛首记五杀"} },
+
+      { id: 'yfC5vSjiJos', len: '13:27', channel: 'LCK', team: 'DK', year: 2026, match: { ko: 'MKOI vs DK · 1세트', en: 'MKOI vs DK · Game 1', ja: 'MKOI vs DK 第1試合', zh: 'MKOI vs DK · 第1局' }, event: { ko: '2026 월드 챔피언십 · 스위스', en: 'Worlds 2026 · Swiss', ja: 'ワールズ2026 · スイス', zh: '2026 世界赛 · 瑞士轮' }, tags: ['worlds', 'adc'] , cat: 'highlight', point: {"ko": "‘한방’ 치료", "en": "The one-shot cure", "ja": "‘一発’治療", "zh": "“一针见效”"} },
+
+      { id: '99lMm4kPg0o', len: '11:54', channel: 'LCK', team: 'DK', year: 2026, match: { ko: 'BLG vs DK · 3세트', en: 'BLG vs DK · Game 3', ja: 'BLG vs DK 第3試合', zh: 'BLG vs DK · 第3局' }, event: { ko: '2026 월드 챔피언십 · 8강', en: 'Worlds 2026 · Quarterfinals', ja: 'ワールズ2026 · 準々決勝', zh: '2026 世界赛 · 八强' }, tags: ['worlds', 'adc', 'carry'] , cat: 'highlight', point: {"ko": "Thank you, DK — 8강 마지막 세트", "en": "Thank you, DK — the last set of the quarters", "ja": "Thank you, DK — 準々決勝ラストセット", "zh": "Thank you, DK — 八强最后一场"} },
+
     ],
     note: { ko: '', en: '', ja: '', zh: '' },
     official: {
@@ -350,12 +387,18 @@ const PLAYERS = [
       { platform: 'chzzk', url: 'https://chzzk.naver.com/59dd654778e3d0b64f3ed06baece805d', handle: 'HLE Delight' }
     ],
     highlights: [
-      { id: 'COviyhL_fxc', len: '8:52', channel: 'LCK', team: 'HLE', year: 2026, match: { ko: 'HLE vs DK · 2세트', en: 'HLE vs DK · Game 2', ja: 'HLE vs DK 第2試合', zh: 'HLE vs DK · 第2局' }, event: { ko: '2026 LCK · LCK 300승', en: '2026 LCK · 300th LCK win', ja: '2026 LCK · LCK通算300勝', zh: '2026 LCK · LCK 300胜' }, tags: ['lck', 'sup', 'win300'] },
-      { id: 'OT-19WY8HFI', len: '12:03', channel: 'LCK', team: 'HLE', year: 2026, match: { ko: 'HLE vs T1 · 1세트', en: 'HLE vs T1 · Game 1', ja: 'HLE vs T1 第1試合', zh: 'HLE vs T1 · 第1局' }, event: { ko: '2026 우리은행 LCK 플레이오프', en: '2026 LCK Playoffs', ja: '2026 LCK プレーオフ', zh: '2026 LCK 季后赛' }, tags: ['playoffs', 'lck', 'sup'] },
-      { id: 'c3QdrFHgxTU', len: '35:59', channel: 'LCK', team: 'HLE', year: 2026, match: { ko: 'DK vs HLE · 매치', en: 'DK vs HLE · Match', ja: 'DK vs HLE · マッチ', zh: 'DK vs HLE · 比赛' }, event: { ko: '2026 LCK 매치 123', en: '2026 LCK · Match 123', ja: '2026 LCK マッチ123', zh: '2026 LCK 第123场' }, tags: ['lck', 'sup'] },
-      { id: '2FDj-lJth1E', len: '0:20', channel: 'LoL Esports', team: 'HLE', year: 2026, match: { ko: '딜라이트 · 로봇 서폿', en: 'Delight · robot support', ja: 'ディライト · ロボットサポート', zh: 'Delight · 机器人辅助' }, event: { ko: 'MSI 2026', en: 'MSI 2026', ja: 'MSI 2026', zh: 'MSI 2026' }, tags: ['msi', 'champion', 'sup'] },
-      { id: 'PcrXCZYo_58', len: '9:37', channel: 'LCK', team: 'HLE', year: 2026, match: { ko: 'G2 vs HLE · 1세트', en: 'G2 vs HLE · Game 1', ja: 'G2 vs HLE 第1試合', zh: 'G2 vs HLE · 第1局' }, event: { ko: '2026 월드 챔피언십 · 스위스', en: 'Worlds 2026 · Swiss', ja: 'ワールズ2026 · スイス', zh: '2026 世界赛 · 瑞士轮' }, tags: ['worlds', 'sup'] },
-      { id: 'oH96rywp2L0', len: '43:39', channel: 'LCK', team: 'HLE', year: 2026, match: { ko: 'HLE vs KT · 매치', en: 'HLE vs KT · Match', ja: 'HLE vs KT · マッチ', zh: 'HLE vs KT · 比赛' }, event: { ko: '2026 LCK 매치 117', en: '2026 LCK · Match 117', ja: '2026 LCK マッチ117', zh: '2026 LCK 第117场' }, tags: ['lck', 'sup'] }
+      { id: 'COviyhL_fxc', len: '8:52', channel: 'LCK', team: 'HLE', year: 2026, match: { ko: 'HLE vs DK · 2세트', en: 'HLE vs DK · Game 2', ja: 'HLE vs DK 第2試合', zh: 'HLE vs DK · 第2局' }, event: { ko: '2026 LCK · LCK 300승', en: '2026 LCK · 300th LCK win', ja: '2026 LCK · LCK通算300勝', zh: '2026 LCK · LCK 300胜' }, tags: ['lck', 'sup', 'win300'] , cat: 'highlight', point: {"ko": "LCK 300승 달성", "en": "Reaching 300 LCK wins", "ja": "LCK通算300勝達成", "zh": "达成 LCK 300 胜"} },
+
+      { id: 'OT-19WY8HFI', len: '12:03', channel: 'LCK', team: 'HLE', year: 2026, match: { ko: 'HLE vs T1 · 1세트', en: 'HLE vs T1 · Game 1', ja: 'HLE vs T1 第1試合', zh: 'HLE vs T1 · 第1局' }, event: { ko: '2026 우리은행 LCK 플레이오프', en: '2026 LCK Playoffs', ja: '2026 LCK プレーオフ', zh: '2026 LCK 季后赛' }, tags: ['playoffs', 'lck', 'sup'] , cat: 'highlight', point: {"ko": "“기초적인 임플란트다”", "en": "“A basic implant”", "ja": "「基礎的なインプラントだ」", "zh": "“基础的种植牙”"} },
+
+      { id: 'c3QdrFHgxTU', len: '35:59', channel: 'LCK', team: 'HLE', year: 2026, match: { ko: 'DK vs HLE · 매치', en: 'DK vs HLE · Match', ja: 'DK vs HLE · マッチ', zh: 'DK vs HLE · 比赛' }, event: { ko: '2026 LCK 매치 123', en: '2026 LCK · Match 123', ja: '2026 LCK マッチ123', zh: '2026 LCK 第123场' }, tags: ['lck', 'sup'] , cat: 'highlight', point: {"ko": "DK vs HLE 매치 123", "en": "DK vs HLE, match 123", "ja": "DK vs HLE マッチ123", "zh": "DK vs HLE 第123场"} },
+
+      { id: '2FDj-lJth1E', len: '0:20', channel: 'LoL Esports', team: 'HLE', year: 2026, match: { ko: '딜라이트 · 로봇 서폿', en: 'Delight · robot support', ja: 'ディライト · ロボットサポート', zh: 'Delight · 机器人辅助' }, event: { ko: 'MSI 2026', en: 'MSI 2026', ja: 'MSI 2026', zh: 'MSI 2026' }, tags: ['msi', 'champion', 'sup'] , cat: 'shorts', point: {"ko": "로봇 서폿 출동", "en": "Robot support on duty", "ja": "ロボットサポート出動", "zh": "机器人辅助出动"} },
+
+      { id: 'PcrXCZYo_58', len: '9:37', channel: 'LCK', team: 'HLE', year: 2026, match: { ko: 'G2 vs HLE · 1세트', en: 'G2 vs HLE · Game 1', ja: 'G2 vs HLE 第1試合', zh: 'G2 vs HLE · 第1局' }, event: { ko: '2026 월드 챔피언십 · 스위스', en: 'Worlds 2026 · Swiss', ja: 'ワールズ2026 · スイス', zh: '2026 世界赛 · 瑞士轮' }, tags: ['worlds', 'sup'] , cat: 'highlight', point: {"ko": "이거 제 이모지양", "en": "That one is my emoji sheep", "ja": "これは私の絵文字羊", "zh": "这是我的表情羊"} },
+
+      { id: 'oH96rywp2L0', len: '43:39', channel: 'LCK', team: 'HLE', year: 2026, match: { ko: 'HLE vs KT · 매치', en: 'HLE vs KT · Match', ja: 'HLE vs KT · マッチ', zh: 'HLE vs KT · 比赛' }, event: { ko: '2026 LCK 매치 117', en: '2026 LCK · Match 117', ja: '2026 LCK マッチ117', zh: '2026 LCK 第117场' }, tags: ['lck', 'sup'] , cat: 'highlight', point: {"ko": "HLE vs KT 매치 117", "en": "HLE vs KT, match 117", "ja": "HLE vs KT マッチ117", "zh": "HLE vs KT 第117场"} },
+
     ],
     note: {
       ko: '닉네임이 플레이리스트겨울#KR1 에서 죽각딜#KR02 로 바뀌어 u.gg 새 주소로 연결했어요.',
@@ -626,3 +669,73 @@ const CHAMPIONS = {
   'Zoe': ['조이', 'Zoe', 'ゾーイ', '暮光星灵'],
   'Zyra': ['자이라', 'Zyra', 'ザイラ', '荆棘之兴'],
 };
+
+
+/* 디플러스 기아 공식 유튜브(@DplusKia_LOL · UCepHesz_5Lwr7qRaqjB-p1A) 재생목록
+ * 2026-11-27 채널 재생목록 페이지에서 확인한 실제 ID·편수입니다. thumb 는 목록 첫 영상 썸네일. */
+const DK_PLAYLISTS = [
+  { id: 'PLRG5G_CO1tlo', thumb: 'XEXtPYNkPWg', n: 3,
+    title: { ko: '2026 Worlds 딮터뷰', en: '2026 Worlds · DK Interview', ja: '2026 Worlds ディクインタビュー', zh: '2026 世界赛 · DK 专访' } },
+  { id: 'PLfgIi8amvN7A', thumb: 'sWtO3OSF1k4', n: 7,
+    title: { ko: 'Worlds 2026', en: 'Worlds 2026', ja: 'Worlds 2026', zh: 'Worlds 2026' } },
+  { id: 'PLqP9PZoXicPWtVT29eT2YRw2T9btvz9J7', thumb: 'xKWUGuS9Ly0', n: 28,
+    title: { ko: '2026 정규시즌 딮터뷰', en: '2026 Regular Season · DK Interview', ja: '2026 レギュラーシーズン ディクインタビュー', zh: '2026 常规赛 · DK 专访' } },
+  { id: 'PLqP9PZoXicPVvy4J6jfCqPzhmfgttDwXK', thumb: 'MZhN9B-TUF0', n: 7,
+    title: { ko: '2026 THE MOMENT', en: '2026 THE MOMENT', ja: '2026 THE MOMENT', zh: '2026 THE MOMENT' } },
+  { id: 'PLqP9PZoXicPV1mP4PJRXtqTActh2CRK8U', thumb: 'KvNvXc_b_xU', n: 12,
+    title: { ko: '2026 승리의 딮터뷰', en: '2026 Victory · DK Interview', ja: '2026 勝利のディクインタビュー', zh: '2026 胜利专访' } },
+  { id: 'PLqP9PZoXicPXPp7ovbHc5b1aB61PyARoV', thumb: '0CBrpQTp_so', n: 21,
+    title: { ko: '2025 승리의 딮터뷰', en: '2025 Victory · DK Interview', ja: '2025 勝利のディクインタビュー', zh: '2025 胜利专访' } }
+];
+
+/* 디플러스 기아 공식 채널 영상(5인과 무관한 팀 단위) — 2026-11-27 재생목록·채널에서 확인 */
+const DK_VIDEOS = [
+  { id: 'XEXtPYNkPWg', len: '8:10', cat: 'behind', channel: 'Dplus Kia', team: 'DK', year: 2026,
+    match: { ko: '딮터뷰 · vs MKOI 스위스 3R', en: 'DK Interview · vs MKOI Swiss R3', ja: 'ディクインタビュー vs MKOI スイス3R', zh: 'DK 专访 · vs MKOI 瑞士轮 3R' },
+    event: { ko: '2026 월드 챔피언십', en: 'Worlds 2026', ja: '2026 ワールズ', zh: '2026 世界赛' },
+    point: { ko: '더 높은 곳으로 — MKOI전 승리 직후', en: 'Higher still — right after beating MKOI', ja: 'もっと高い場所へ — MKOI戦勝利直後', zh: '向更高处 — 战胜 MKOI 之后' } },
+  { id: 'CPVhODNOp7E', len: '24:21', cat: 'behind', channel: 'Dplus Kia', team: 'DK', year: 2026,
+    match: { ko: '딮터뷰 · vs T1 스위스 2R', en: 'DK Interview · vs T1 Swiss R2', ja: 'ディクインタビュー vs T1 スイス2R', zh: 'DK 专访 · vs T1 瑞士轮 2R' },
+    event: { ko: '2026 월드 챔피언십', en: 'Worlds 2026', ja: '2026 ワールズ', zh: '2026 世界赛' },
+    point: { ko: '역전을 위한 최선의 수 — T1전', en: 'The best move to turn it around — vs T1', ja: '逆転のための最善手 — T1戦', zh: '逆转的最优解 — 对阵 T1' } },
+  { id: 'uZFyMa0gUek', len: '7:51', cat: 'behind', channel: 'Dplus Kia', team: 'DK', year: 2026,
+    match: { ko: '딮터뷰 · vs G2 스위스 1R', en: 'DK Interview · vs G2 Swiss R1', ja: 'ディクインタビュー vs G2 スイス1R', zh: 'DK 专访 · vs G2 瑞士轮 1R' },
+    event: { ko: '2026 월드 챔피언십', en: 'Worlds 2026', ja: '2026 ワールズ', zh: '2026 世界赛' },
+    point: { ko: '절망 속에서도 — G2전', en: 'Even in despair — vs G2', ja: '絶望の中でも — G2戦', zh: '即使在绝望中 — 对阵 G2' } },
+  { id: 'hoFn9DSsdTQ', len: '4:14', cat: 'behind', channel: 'Dplus Kia', team: 'DK', year: 2026,
+    match: { ko: '월즈 녹아웃 티저 촬영기', en: 'Worlds knockout teaser — behind the shoot', ja: 'ワールズ決勝Tティザー撮影記', zh: '世界赛淘汰赛预告拍摄记' },
+    event: { ko: '2026 월드 챔피언십', en: 'Worlds 2026', ja: '2026 ワールズ', zh: '2026 世界赛' },
+    point: { ko: '티저 한 편에 담긴 촬영 현장', en: 'The shoot behind one teaser', ja: 'ティザー1本の撮影現場', zh: '一支预告的拍摄现场' } },
+  { id: 'vPqoNL7W_HM', len: '6:29', cat: 'behind', channel: 'Dplus Kia', team: 'DK', year: 2026,
+    match: { ko: '테크체크 비하인드', en: 'Tech check behind', ja: 'テックチェック舞台裏', zh: '设备检查花絮' },
+    event: { ko: '2026 월드 챔피언십', en: 'Worlds 2026', ja: '2026 ワールズ', zh: '2026 世界赛' },
+    point: { ko: '월즈 생존신고 — 장비 점검 비하인드', en: 'Reporting live from Worlds — gear check', ja: 'ワールズ生存報告 — 機材チェック舞台裏', zh: '世界赛报到 — 装备检查花絮' } },
+  { id: 'HO5CPhBrYlM', len: '3:49', cat: 'behind', channel: 'Dplus Kia', team: 'DK', year: 2026, player: 'smash',
+    match: { ko: '텍사스는 바베큐다', en: 'Texas is barbecue', ja: 'テキサスはバーベキューだ', zh: '德州就是烧烤' },
+    event: { ko: '2026 월드 챔피언십', en: 'Worlds 2026', ja: '2026 ワールズ', zh: '2026 世界赛' },
+    point: { ko: '텍사스 바베큐 먹방 — 신금재', en: 'A Texas barbecue mukbang with Smash', ja: 'テキサスBBQモッパン — シン・クムジェ', zh: '德州烧烤吃播 — 申金宰' } },
+  { id: 'QJIaTC-p8pg', len: '7:19', cat: 'highlight', channel: 'Dplus Kia', team: 'DK', year: 2026, champ: ['kaisa'],
+    match: { ko: '카이사 올려놓기 장인', en: "A Kai'Sa carry specialist", ja: 'カイ＝サ育成の名人', zh: '卡莎带飞达人' },
+    event: { ko: 'Dplus Kia 공식 유튜브', en: 'Dplus Kia official YouTube', ja: 'Dplus Kia 公式YouTube', zh: 'Dplus Kia 官方 YouTube' },
+    point: { ko: '카이사 하나로 게임을 올려놓는 법', en: "How to lift a game on Kai'Sa alone", ja: 'カイ＝サ1本で試合を上げる方法', zh: '用卡莎一人带起全场' } },
+  { id: 'MZhN9B-TUF0', len: '6:26', cat: 'madmovie', channel: 'Dplus Kia', team: 'DK', year: 2026,
+    match: { ko: 'the Moment · vs T1', en: 'the Moment · vs T1', ja: 'the Moment · vs T1', zh: 'the Moment · vs T1' },
+    event: { ko: '2026 LCK', en: '2026 LCK', ja: '2026 LCK', zh: '2026 LCK' },
+    point: { ko: '솔리드한 원딜의 순간', en: 'The moment of a rock-solid bot laner', ja: 'ソリッドなADCの瞬間', zh: '稳健射手的瞬间' } },
+  { id: 'FkoP2DBhFTk', len: '6:48', cat: 'madmovie', channel: 'Dplus Kia', team: 'DK', year: 2026,
+    match: { ko: 'the Moment · vs GEN', en: 'the Moment · vs GEN', ja: 'the Moment · vs GEN', zh: 'the Moment · vs GEN' },
+    event: { ko: '2026 LCK', en: '2026 LCK', ja: '2026 LCK', zh: '2026 LCK' },
+    point: { ko: '악어는 협곡을 지배한다', en: 'The crocodile rules the Rift', ja: 'ワニはリフトを支配する', zh: '鳄鱼统治峡谷' } },
+  { id: 'eXx3B3BZUHw', len: '4:01', cat: 'madmovie', channel: 'Dplus Kia', team: 'DK', year: 2026, player: 'showmaker',
+    match: { ko: 'the Moment · vs BRO', en: 'the Moment · vs BRO', ja: 'the Moment · vs BRO', zh: 'the Moment · vs BRO' },
+    event: { ko: '2026 LCK', en: '2026 LCK', ja: '2026 LCK', zh: '2026 LCK' },
+    point: { ko: '허허~ 쇼메이커ㄹrrrrr', en: 'Heh — ShowMakerrrrr', ja: 'ふふ〜ショーメイカーrrrr', zh: '呵呵 — ShowMakerrrrr' } },
+  { id: 'qhC6sonTgAA', len: '6:46', cat: 'madmovie', channel: 'Dplus Kia', team: 'DK', year: 2026,
+    match: { ko: 'the Moment · vs T1 플레이오프', en: 'the Moment · vs T1 Playoffs', ja: 'the Moment · vs T1 プレーオフ', zh: 'the Moment · vs T1 季后赛' },
+    event: { ko: '2026 LCK 플레이오프', en: '2026 LCK Playoffs', ja: '2026 LCK プレーオフ', zh: '2026 LCK 季后赛' },
+    point: { ko: '루시드 = 강타의 신', en: 'Lucid = god of Smite', ja: 'ルシード＝スマイトの神', zh: 'Lucid = 惩戒之神' } },
+  { id: 'sWtO3OSF1k4', len: '3:35', cat: 'madmovie', channel: 'Dplus Kia', team: 'DK', year: 2026,
+    match: { ko: 'Worlds 2026 RECAP', en: 'Worlds 2026 RECAP', ja: 'Worlds 2026 RECAP', zh: 'Worlds 2026 RECAP' },
+    event: { ko: '2026 월드 챔피언십', en: 'Worlds 2026', ja: '2026 ワールズ', zh: '2026 世界赛' },
+    point: { ko: '2026 월즈 3분 요약', en: 'Worlds 2026 in three minutes', ja: '2026 ワールズ 3分まとめ', zh: '2026 世界赛三分钟回顾' } }
+];

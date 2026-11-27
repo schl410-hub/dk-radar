@@ -27,6 +27,8 @@
     tab: 'feed',
     filter: 'all',
     videoPlayer: 'all',
+    videoCat: 'all',
+    videoChamp: 'all',
     videoQuery: '',
     videoSort: 'player',
     checked: new Date(LAST_CHECKED)
@@ -641,11 +643,59 @@
     }).join('');
   }
 
-  /* 대표 하이라이트 아카이브: 5인 31편, 선수 필터 + 검색 */
-  function allHighlights() {
+  /* ---------- 영상 아카이브 (5인 + 디플러스 기아 공식) ----------
+   * data.js 의 PLAYERS[].highlights(5인 33편) + DK_VIDEOS(DK 공식 12편) 를 한 줄로 폅니다.
+   * 검색 · 챔피언 칩 · 종류 칩 · 선수 칩으로 걸러요. */
+  function archiveItems() {
     var out = [];
     PLAYERS.forEach(function (p) {
       (p.highlights || []).forEach(function (v) { out.push({ p: p, v: v }); });
+    });
+    (typeof DK_VIDEOS !== 'undefined' ? DK_VIDEOS : []).forEach(function (v) {
+      out.push({ p: null, v: v });
+    });
+    return out;
+  }
+
+  function videoCat(entry) { return entry.v.cat || 'highlight'; }
+  function videoChamps(entry) { return entry.v.champ || []; }
+  /* 선수 필터에 쓰는 키: 5인은 자기 키, DK 공식 영상은 v.player(있으면) 아니면 'dk' */
+  function videoWhoKey(entry) {
+    if (entry.p) return entry.p.key;
+    return entry.v.player || 'dk';
+  }
+
+  function tagText(key) {
+    var t = typeof HL_TAGS !== 'undefined' ? HL_TAGS[key] : null;
+    if (!t) return key;
+    return t[lang()] || t.ko || key;
+  }
+  function catText(key) {
+    var c = typeof HL_CATS !== 'undefined' ? HL_CATS[key] : null;
+    if (!c) return key;
+    return c[lang()] || c.ko || key;
+  }
+  function whoText(entry) {
+    if (entry.p) return pName(entry.p);
+    if (entry.v.player) {
+      for (var i = 0; i < PLAYERS.length; i++) if (PLAYERS[i].key === entry.v.player) return pName(PLAYERS[i]);
+    }
+    return T('video.teamName');
+  }
+
+  /* 추천 챔피언 칩: 아카이브에 실제로 태그된 챔피언만, 많이 나온 순서로 */
+  function champKeys() {
+    var count = {}, out = [];
+    archiveItems().forEach(function (e) {
+      videoChamps(e).forEach(function (k) {
+        if (!count[k]) { count[k] = 0; out.push(k); }
+        count[k]++;
+      });
+    });
+    var order = ['ambessa', 'gnar', 'azir', 'kaisa', 'leblanc', 'jayce'];
+    out.sort(function (a, b) {
+      if (count[b] !== count[a]) return count[b] - count[a];
+      return order.indexOf(a) - order.indexOf(b);
     });
     return out;
   }
@@ -664,21 +714,39 @@
     }).join('');
   }
 
-  function tagText(key) {
-    var t = typeof HL_TAGS !== 'undefined' ? HL_TAGS[key] : null;
-    if (!t) return key;
-    return t[lang()] || t.ko || key;
+  function renderVideoCats() {
+    var host = $('#videoCats');
+    if (!host) return;
+    var cats = ['all'].concat(Object.keys(typeof HL_CATS !== 'undefined' ? HL_CATS : { highlight: 1 }));
+    host.innerHTML = cats.map(function (key) {
+      var on = key === state.videoCat;
+      var label = key === 'all' ? T('video.filterAll') : catText(key);
+      return '<button class="chip' + (on ? ' is-active' : '') + '" type="button" role="tab" aria-selected="' + on + '"' +
+        ' data-video-cat="' + key + '">' + esc(label) + '</button>';
+    }).join('');
   }
 
-  /* 검색은 화면 언어와 상관없이 4개 국어 제목·태그·선수 이름을 모두 훑습니다. */
+  function renderVideoChamps() {
+    var host = $('#videoChampChips');
+    if (!host) return;
+    host.innerHTML = champKeys().map(function (key) {
+      var on = key === state.videoChamp;
+      return '<button class="tag-chip' + (on ? ' is-active' : '') + '" type="button" aria-pressed="' + on + '"' +
+        ' data-video-champ="' + key + '">#' + esc(tagText(key)) + '</button>';
+    }).join('');
+  }
+
+  /* 검색은 화면 언어와 상관없이 4개 국어 제목·포인트·태그·선수 이름·챔피언 이름을 모두 훑습니다. */
   function hlHaystack(entry) {
     var p = entry.p, v = entry.v;
-    var out = [p.key, p.nameKo, p.nameEn, p.nameIntl, p.nameJa, p.nameZh, p.real, v.channel, v.year, v.len];
-    [v.match, v.event].forEach(function (o) {
+    var out = [v.channel, v.year, v.len, catText(videoCat(entry))];
+    if (p) out.push(p.key, p.nameKo, p.nameEn, p.nameIntl, p.nameJa, p.nameZh, p.real, p.pos);
+    else out.push('dplus kia', 'dk', T('video.teamName'));
+    [v.match, v.event, v.point].forEach(function (o) {
       if (!o) return;
       Object.keys(o).forEach(function (k) { out.push(o[k]); });
     });
-    (v.tags || []).forEach(function (key) {
+    (v.tags || []).concat(videoChamps(entry)).forEach(function (key) {
       out.push(key);
       var t = typeof HL_TAGS !== 'undefined' ? HL_TAGS[key] : null;
       if (t) Object.keys(t).forEach(function (k) { out.push(t[k]); });
@@ -686,32 +754,51 @@
     return out.join(' ').toLowerCase();
   }
 
-  function hlMatches(entry, query) {
-    var q = String(query == null ? '' : query).trim().toLowerCase();
-    if (!q) return true;
-    var hay = hlHaystack(entry);
-    return q.split(/\s+/).every(function (w) { return hay.indexOf(w) > -1; });
+  /* 검색어: 앞의 # 은 떼고, 띄어쓰기 무관하게도 찾습니다 (한국어 IME 조합 중에도 안전) */
+  function hlTokens(query) {
+    return String(query == null ? '' : query)
+      .toLowerCase()
+      .split(/\s+/)
+      .map(function (w) { return w.replace(/^#+/, '').trim(); })
+      .filter(function (w) { return w.length > 0; });
   }
 
-  function videoItemHTML(entry, withWho) {
-    var v = entry.v, p = entry.p;
-    var tags = (v.tags || []).slice(0, 2).map(function (key) {
-      return '<span class="vc-tag">' + esc(tagText(key)) + '</span>';
+  function hlMatches(entry, query) {
+    var tokens = hlTokens(query);
+    if (!tokens.length) return true;
+    var hay = hlHaystack(entry);
+    var flat = hay.replace(/\s+/g, '');
+    return tokens.every(function (w) {
+      return hay.indexOf(w) > -1 || flat.indexOf(w.replace(/\s+/g, '')) > -1;
+    });
+  }
+
+  function videoItemHTML(entry) {
+    var v = entry.v;
+    var champs = videoChamps(entry);
+    var champTags = champs.map(function (key) {
+      return '<span class="vc-tag is-champ">' + esc(tagText(key)) + '</span>';
     }).join('');
     var team = v.team
       ? '<span class="vc-team' + (v.team === 'DK' ? ' is-now' : '') + '">' + esc(v.team) + '</span>'
       : '';
+    var who = whoText(entry);
+    var champLine = champs.map(tagText).join(' · ');
+    var title = L(v.point) || L(v.match);
     return '<li>' +
-      '<a class="vc-item" href="' + ytWatch(v.id) + '" target="_blank" rel="noopener" data-video="' + v.id + '">' +
-        '<span class="vc-thumb"><img loading="lazy" src="' + ytThumb(v.id) + '" alt="" width="168" height="94"><i class="vc-len">' + esc(v.len) + '</i></span>' +
+      '<button class="vc-item" type="button" data-play="' + esc(v.id) + '" data-title="' + esc(title) + '">' +
+        '<span class="vc-thumb"><img loading="lazy" src="' + ytThumb(v.id) + '" alt="" width="168" height="94">' +
+          '<i class="vc-play" aria-hidden="true">▶</i><i class="vc-len">' + esc(v.len) + '</i></span>' +
         '<span class="vc-body">' +
-          (withWho ? '<span class="vc-who">' + pName(p) + '<i>' + p.pos + '</i></span>' : '') +
-          '<b class="vc-title">' + L(v.match) + '</b>' +
-          '<span class="vc-meta">' + L(v.event) + ' · ' + esc(v.channel) + '</span>' +
-          '<span class="vc-tags">' + team + '<span class="vc-yr">' + esc(v.year) + '</span>' + tags +
-            '<span class="vc-len-txt">' + T('video.len', { len: v.len }) + '</span></span>' +
+          '<span class="vc-who' + (entry.p ? '' : ' is-team') + '">' + esc(who) +
+            (entry.p ? '<i>' + esc(entry.p.pos) + '</i>' : '<i>OFFICIAL</i>') +
+            (champLine ? '<b class="vc-champ">' + esc(champLine) + '</b>' : '') + '</span>' +
+          '<b class="vc-title">' + esc(title) + '</b>' +
+          '<span class="vc-meta">' + esc(L(v.match)) + ' · ' + esc(L(v.event)) + '</span>' +
+          '<span class="vc-tags"><span class="vc-cat vc-cat-' + esc(videoCat(entry)) + '">' + esc(catText(videoCat(entry))) + '</span>' +
+            champTags + team + '<span class="vc-yr">' + esc(v.year) + '</span></span>' +
         '</span>' +
-      '</a>' +
+      '</button>' +
     '</li>';
   }
 
@@ -729,39 +816,57 @@
     '</li>';
   }
 
+  function dkGroupHead(n) {
+    return '<li class="hl-group">' +
+      '<span class="hl-g-name">' + esc(T('video.teamName')) + '<i>OFFICIAL</i></span>' +
+      '<span class="hl-g-arc">' + esc(T('video.teamGroupNote')) + '</span>' +
+      '<span class="hl-g-n">' + esc(T('video.count', { n: n })) + '</span>' +
+    '</li>';
+  }
+
   function renderVideoList() {
     var host = $('#videoList');
     if (!host) return;
-    var all = allHighlights();
-    var list = state.videoPlayer === 'all' ? all : all.filter(function (e) { return e.p.key === state.videoPlayer; });
+    var list = archiveItems();
+    if (state.videoPlayer !== 'all') {
+      list = list.filter(function (e) { return videoWhoKey(e) === state.videoPlayer; });
+    }
+    if (state.videoCat !== 'all') {
+      list = list.filter(function (e) { return videoCat(e) === state.videoCat; });
+    }
+    if (state.videoChamp !== 'all') {
+      list = list.filter(function (e) { return videoChamps(e).indexOf(state.videoChamp) > -1; });
+    }
     var q = state.videoQuery;
     if (q) list = list.filter(function (e) { return hlMatches(e, q); });
 
     /* 정렬: 선수별(기본, 선수 순서 + 그 안에서 최신 연도순) / 최신순(연도 내림차순) */
     var byYear = function (a, b) { return b.v.year - a.v.year; };
-    var order = PLAYERS.map(function (p) { return p.key; });
+    var order = PLAYERS.map(function (p) { return p.key; }).concat(['dk']);
+    var rank = function (e) { var i = order.indexOf(videoWhoKey(e)); return i < 0 ? order.length : i; };
     var html = '';
     if (state.videoSort === 'recent') {
       list = list.slice().sort(function (a, b) {
         if (b.v.year !== a.v.year) return b.v.year - a.v.year;
-        return order.indexOf(a.p.key) - order.indexOf(b.p.key);
+        return rank(a) - rank(b);
       });
-      html = list.map(function (e) { return videoItemHTML(e, true); }).join('');
-    } else if (state.videoPlayer === 'all') {
-      PLAYERS.forEach(function (p) {
-        var rows = list.filter(function (e) { return e.p.key === p.key; }).sort(byYear);
-        if (!rows.length) return;
-        html += hlGroupHead(p, rows.length) +
-          rows.map(function (e) { return videoItemHTML(e, false); }).join('');
-      });
-    } else {
-      var cur = PLAYERS.filter(function (p) { return p.key === state.videoPlayer; })[0] || current();
+      html = list.map(videoItemHTML).join('');
+    } else if (state.videoPlayer !== 'all') {
+      /* 선수를 고르면 그 선수 영상만 한 묶음으로 보여 줍니다 (DK 공식 영상 포함). */
+      var one = player(state.videoPlayer);
       list = list.slice().sort(byYear);
-      html = (list.length ? hlGroupHead(cur, list.length) : '') +
-        list.map(function (e) { return videoItemHTML(e, false); }).join('');
+      html = (list.length ? hlGroupHead(one, list.length) : '') + list.map(videoItemHTML).join('');
+    } else {
+      PLAYERS.forEach(function (p) {
+        var rows = list.filter(function (e) { return e.p && e.p.key === p.key; }).sort(byYear);
+        if (!rows.length) return;
+        html += hlGroupHead(p, rows.length) + rows.map(videoItemHTML).join('');
+      });
+      var dkRows = list.filter(function (e) { return !e.p; }).sort(byYear);
+      if (dkRows.length) html += dkGroupHead(dkRows.length) + dkRows.map(videoItemHTML).join('');
     }
 
-    host.innerHTML = list.length || html
+    host.innerHTML = list.length
       ? html
       : '<li class="vc-empty">' + (q ? esc(T('video.searchEmpty', { q: q })) : T('video.empty')) + '</li>';
     var count = $('#videoCount');
@@ -773,6 +878,68 @@
       b.classList.toggle('is-active', on);
       b.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
+  }
+
+  /* ---------- 디플러스 기아 공식 재생목록 ---------- */
+  function renderPlaylists() {
+    var host = $('#plGrid');
+    if (!host) return;
+    var lists = typeof DK_PLAYLISTS !== 'undefined' ? DK_PLAYLISTS : [];
+    host.innerHTML = lists.map(function (pl) {
+      var name = L(pl.title);
+      return '<button class="pl-item" type="button" data-playlist="' + esc(pl.id) + '" data-title="' + esc(name) + '">' +
+        '<span class="pl-thumb"><img loading="lazy" src="' + ytThumb(pl.thumb) + '" alt="" width="320" height="180">' +
+          '<i class="pl-play" aria-hidden="true">▶</i>' +
+          (pl.n ? '<i class="pl-n">' + esc(T('video.plCount', { n: pl.n })) + '</i>' : '') + '</span>' +
+        '<b class="pl-title">' + esc(name) + '</b>' +
+      '</button>';
+    }).join('');
+  }
+
+  /* ---------- 인앱 유튜브 플레이어 ---------- */
+  var vpLastFocus = null;
+
+  function vpSrc(kind, id) {
+    var base = kind === 'list'
+      ? 'https://www.youtube.com/embed/videoseries?list=' + encodeURIComponent(id)
+      : 'https://www.youtube.com/embed/' + encodeURIComponent(id);
+    return base + '?autoplay=1&rel=0&playsinline=1&modestbranding=1';
+  }
+
+  function openPlayer(kind, id, title) {
+    var modal = $('#vpModal');
+    if (!modal || !id) return;
+    var frame = $('#vpFrame');
+    var open = $('#vpOpen');
+    vpLastFocus = document.activeElement;
+    var name = title || '';
+    var head = $('#vpTitle');
+    if (head) head.textContent = name;
+    if (open) {
+      open.href = kind === 'list' ? ('https://www.youtube.com/playlist?list=' + id) : ytWatch(id);
+    }
+    var note = $('#vpNote');
+    if (note) note.textContent = T('video.embedNote');
+    if (frame) {
+      frame.title = name || T('video.playerTitle');
+      frame.src = vpSrc(kind, id);
+    }
+    modal.hidden = false;
+    document.body.classList.add('vp-locked');
+    var close = $('#vpClose');
+    if (close) { try { close.focus(); } catch (e) {} }
+  }
+
+  /* 닫을 때 iframe src 를 비워 소리가 이어지지 않게 합니다. */
+  function closePlayer() {
+    var modal = $('#vpModal');
+    if (!modal || modal.hidden) return;
+    var frame = $('#vpFrame');
+    if (frame) frame.src = 'about:blank';
+    modal.hidden = true;
+    document.body.classList.remove('vp-locked');
+    if (vpLastFocus && vpLastFocus.focus) { try { vpLastFocus.focus(); } catch (e) {} }
+    vpLastFocus = null;
   }
 
   /* ---------- 디플러스 기아 공식 유튜브 최신 영상 (/api/dk-youtube) ---------- */
@@ -814,13 +981,14 @@
     }
 
     host.innerHTML = list.slice(0, 10).map(function (v) {
-      return '<a class="dy-item" href="' + esc(v.url) + '" target="_blank" rel="noopener" data-video="' + esc(v.id) + '">' +
+      return '<button class="dy-item" type="button" data-play="' + esc(v.id) + '" data-title="' + esc(v.title) + '"' +
+          ' aria-label="' + esc(v.title) + '">' +
         '<span class="dy-thumb"><img loading="lazy" src="' + esc(v.thumb) + '" alt="" width="320" height="180">' +
           '<i class="dy-play" aria-hidden="true">▶</i></span>' +
         '<b class="dy-title">' + esc(v.title) + '</b>' +
         '<span class="dy-meta"><span class="dy-date">' + esc(dkDate(v.published)) + '</span>' +
           (v.views ? '<span class="dy-views">' + esc(T('video.dkViews', { n: compactViews(v.views) })) + '</span>' : '') + '</span>' +
-      '</a>';
+      '</button>';
     }).join('');
 
     if (count) count.textContent = T('video.count', { n: Math.min(list.length, 10) });
@@ -888,9 +1056,18 @@
     renderVideoChannels();
     renderVideoStations();
     renderDkYoutube();
+    renderPlaylists();
+    renderVideoChamps();
+    renderVideoCats();
     renderVideoFilters();
     renderVideoList();
     renderVideoVod();
+    var hint = $('#videoArchiveHint');
+    if (hint) hint.textContent = T('video.archiveHint');
+    var note = $('#vpNote');
+    if (note) note.textContent = T('video.embedNote');
+    var close = $('#vpClose');
+    if (close) close.setAttribute('aria-label', T('video.close'));
   }
 
   /* ---------- 한 줄 응원 ---------- */
@@ -1631,6 +1808,21 @@
       renderVideoList();
       return;
     }
+    var catChip = e.target.closest('[data-video-cat]');
+    if (catChip) {
+      state.videoCat = catChip.getAttribute('data-video-cat');
+      renderVideoCats();
+      renderVideoList();
+      return;
+    }
+    var champChip = e.target.closest('[data-video-champ]');
+    if (champChip) {
+      var key = champChip.getAttribute('data-video-champ');
+      state.videoChamp = state.videoChamp === key ? 'all' : key;
+      renderVideoChamps();
+      renderVideoList();
+      return;
+    }
     var sortBtn = e.target.closest('[data-video-sort]');
     if (sortBtn) {
       state.videoSort = sortBtn.getAttribute('data-video-sort');
@@ -1644,14 +1836,46 @@
       renderVideoList();
       return;
     }
+    /* 인앱 플레이어: 카드·재생목록·최신 영상을 누르면 앱 안에서 재생 */
+    var playBtn = e.target.closest('[data-play]');
+    if (playBtn) {
+      openPlayer('video', playBtn.getAttribute('data-play'), playBtn.getAttribute('data-title'));
+      return;
+    }
+    var plBtn = e.target.closest('[data-playlist]');
+    if (plBtn) {
+      openPlayer('list', plBtn.getAttribute('data-playlist'), plBtn.getAttribute('data-title'));
+      return;
+    }
+    if (e.target.closest('#vpClose') || e.target.closest('#vpVeil')) {
+      closePlayer();
+      return;
+    }
     var tab = e.target.closest('[data-tab]');
     if (tab) { switchTab(tab.getAttribute('data-tab')); return; }
   });
 
-  document.addEventListener('input', function (e) {
+  /* 한국어 IME: 조합 중에는 다시 그리지 않고, 조합이 끝나면 한 번만 그립니다. */
+  var searchComposing = false;
+  document.addEventListener('compositionstart', function (e) {
+    if (e.target && e.target.id === 'videoSearch') searchComposing = true;
+  });
+  document.addEventListener('compositionend', function (e) {
     if (!e.target || e.target.id !== 'videoSearch') return;
+    searchComposing = false;
     state.videoQuery = e.target.value || '';
     renderVideoList();
+  });
+  document.addEventListener('input', function (e) {
+    if (!e.target || e.target.id !== 'videoSearch') return;
+    if (searchComposing) return;
+    state.videoQuery = e.target.value || '';
+    renderVideoList();
+  });
+
+  /* ESC 로 플레이어를 닫습니다. */
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' || e.key === 'Esc') closePlayer();
   });
 
   function selectPlayer(key) {

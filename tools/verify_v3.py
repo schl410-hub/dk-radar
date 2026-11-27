@@ -37,20 +37,45 @@ PLAYER_STREAMS = {
     "delight": ["https://chzzk.naver.com/59dd654778e3d0b64f3ed06baece805d"],
 }
 
-# 대표 하이라이트 아카이브 (2026-11-27, YouTube oEmbed 로 재생 가능 확인)
+# 디플러스 기아 공식 유튜브 재생목록 (2026-11-27 채널에서 확인)
+PLAYLISTS = ["PLRG5G_CO1tlo", "PLfgIi8amvN7A", "PLqP9PZoXicPWtVT29eT2YRw2T9btvz9J7",
+             "PLqP9PZoXicPVvy4J6jfCqPzhmfgttDwXK", "PLqP9PZoXicPV1mP4PJRXtqTActh2CRK8U",
+             "PLqP9PZoXicPXPp7ovbHc5b1aB61PyARoV"]
+PLAYLIST_COUNTS = ["3편", "7편", "28편", "7편", "12편", "21편"]
+
+# 영상 아카이브 (2026-11-27, YouTube oEmbed 로 재생 가능 확인)
 PLAYER_VIDEOS = {
-    "doran": ["uzkulCX1cvw", "zmt-dT7garg", "sqjM3EJO7ng", "gJarHbioMEg",
-              "H4Tp-sRSp2Y", "q_2YoaayhFg", "J8XPHKlTBLM"],
+    "doran": ["FDos-nzB8HE", "7wZxtaNDCTI", "uzkulCX1cvw", "zmt-dT7garg", "sqjM3EJO7ng",
+              "gJarHbioMEg", "H4Tp-sRSp2Y", "q_2YoaayhFg", "J8XPHKlTBLM"],
     "kanavi": ["Ws93_VsEx-s", "fOUtkqYy1VE", "iNQxu7iC6pU", "OUHbIAms4F4",
                "pPqJXwXuSDE", "SMxpnilYSyU"],
     "showmaker": ["FG8VNBFemDg", "SqKdQydiZKs", "C02yoXL62UY", "VpNVX1aKR9g",
-                  "DyaPoq_QAO8", "JT8H1izxnL8"],
+                  "DyaPoq_QAO8", "JT8H1izxnL8", "eXx3B3BZUHw"],
     "smash": ["uxnXy7SFMsY", "BxU5zVPnMiU", "6qYVK6DGkrU", "2JCbasoSUrY",
-              "yfC5vSjiJos", "99lMm4kPg0o"],
+              "yfC5vSjiJos", "99lMm4kPg0o", "HO5CPhBrYlM"],
     "delight": ["COviyhL_fxc", "OT-19WY8HFI", "c3QdrFHgxTU", "2FDj-lJth1E",
                 "PcrXCZYo_58", "oH96rywp2L0"],
 }
-TOTAL_VIDEOS = sum(len(v) for v in PLAYER_VIDEOS.values())
+CATEGORY_VIDEOS = {
+    "shorts": ["OUHbIAms4F4", "pPqJXwXuSDE", "SMxpnilYSyU", "2FDj-lJth1E"],
+    "behind": ["XEXtPYNkPWg", "CPVhODNOp7E", "uZFyMa0gUek", "hoFn9DSsdTQ",
+               "vPqoNL7W_HM", "HO5CPhBrYlM"],
+    "madmovie": ["MZhN9B-TUF0", "FkoP2DBhFTk", "eXx3B3BZUHw", "qhC6sonTgAA", "sWtO3OSF1k4"],
+}
+DK_ONLY_VIDEOS = ["XEXtPYNkPWg", "CPVhODNOp7E", "uZFyMa0gUek", "hoFn9DSsdTQ", "vPqoNL7W_HM",
+                  "QJIaTC-p8pg", "MZhN9B-TUF0", "FkoP2DBhFTk", "qhC6sonTgAA", "sWtO3OSF1k4"]
+ALL_VIDEO_IDS = set(v for ids in PLAYER_VIDEOS.values() for v in ids) | set(DK_ONLY_VIDEOS)
+CATEGORY_VIDEOS["highlight"] = sorted(
+    ALL_VIDEO_IDS - set(v for ids in CATEGORY_VIDEOS.values() for v in ids))
+CHAMPION_VIDEOS = {
+    "ambessa": ["FDos-nzB8HE", "7wZxtaNDCTI"],
+    "gnar": ["H4Tp-sRSp2Y"],
+    "azir": ["JT8H1izxnL8"],
+    "kaisa": ["QJIaTC-p8pg"],
+    "leblanc": ["VpNVX1aKR9g"],
+    "jayce": ["J8XPHKlTBLM"],
+}
+TOTAL_VIDEOS = len(ALL_VIDEO_IDS)
 
 
 def check(name, ok, detail=""):
@@ -135,44 +160,64 @@ async def main():
                 got = [h for h in hrefs if "op.gg" not in h and "u.gg" not in h]
                 check(f"{key} stream links", got == expect, got)
 
-            # ---------- 영상 탭: 생중계 · 방송국 · 하이라이트 10편 ----------
+            # ---------- 영상 탭: 생중계 · 재생목록 · 아카이브 (3번 시안) ----------
             await page.click('[data-tab="video"]')
-            await page.wait_for_timeout(600)
+            await page.wait_for_timeout(700)
             check("video panel visible", await page.is_visible("#panel-video"))
             check("video panel title", await page.inner_text("#panel-video .panel-title") == "영상")
             chan = await page.eval_on_selector_all("#videoChannels .chan", "e=>e.map(x=>x.href)")
             check("video official channels", chan == [LCK_CHZZK, LCK_SOOP, LCK_YT, DK_YT], chan)
-            check("video dk youtube ghost button",
-                  await page.get_attribute("#videoMore", "href") == DK_YT)
+            check("video dk channel link",
+                  await page.get_attribute("#dkYtOpen", "href") == "https://www.youtube.com/@DplusKia_LOL")
             st_rows = await page.eval_on_selector_all("#videoStations .st-row", "e=>e.length")
             check("video stations = 5", st_rows == 5, st_rows)
+
+            # 유튜브 재생목록 (실제 존재하는 공식 재생목록 6종)
+            pl_ids = await page.eval_on_selector_all("#plGrid .pl-item", "e=>e.map(x=>x.dataset.playlist)")
+            check("playlist grid = 6 official playlists", pl_ids == PLAYLISTS, pl_ids)
+            pl_counts = await page.eval_on_selector_all("#plGrid .pl-n", "e=>e.map(x=>x.textContent)")
+            check("playlist counts from channel", pl_counts == PLAYLIST_COUNTS, pl_counts)
+            pl_titles = await page.eval_on_selector_all("#plGrid .pl-title", "e=>e.map(x=>x.textContent.trim())")
+            check("playlist titles localized", pl_titles[0] == "2026 Worlds 딮터뷰" and len(pl_titles) == 6, pl_titles)
+            pl_thumbs = await page.eval_on_selector_all(
+                "#plGrid .pl-thumb img", "e=>e.map(x=>[x.complete, x.naturalWidth])")
+            check("playlist thumbs render", pl_thumbs and all(w > 0 for _, w in pl_thumbs), pl_thumbs)
+            await page.evaluate("document.querySelector('#plGrid').scrollIntoView({block:'center'})")
+            await page.wait_for_timeout(400)
+            await page.screenshot(path=str(OUT / "20-playlists-ko.png"))
+
+            # 아카이브: 칩 3줄 + 카드
+            champ_chips = await page.eval_on_selector_all("#videoChampChips .tag-chip", "e=>e.map(x=>x.textContent)")
+            check("champion chips", champ_chips == ["#암베사", "#나르", "#아지르", "#카이사", "#르블랑", "#제이스"], champ_chips)
+            cat_chips = await page.eval_on_selector_all("#videoCats .chip", "e=>e.map(x=>x.textContent)")
+            check("category chips", cat_chips == ["전체", "하이라이트", "매드무비", "딮터뷰·비하인드", "쇼츠"], cat_chips)
             chips = await page.eval_on_selector_all("#videoFilters .chip", "e=>e.map(x=>x.textContent)")
             check("video filter chips", chips == ["전체", "도란", "카나비", "쇼메이커", "스매쉬", "딜라이트"], chips)
-            total_items = await page.eval_on_selector_all("#videoList .vc-item", "e=>e.length")
-            check(f"video highlights = {TOTAL_VIDEOS}", total_items == TOTAL_VIDEOS, total_items)
-            check("video highlight count badge", await page.inner_text("#videoCount") == f"{TOTAL_VIDEOS}편",
-                  await page.inner_text("#videoCount"))
 
-            # 선수별 묶음 머리 (전체 보기 기본 정렬)
+            total_items = await page.eval_on_selector_all("#videoList .vc-item", "e=>e.length")
+            check(f"archive cards = {TOTAL_VIDEOS}", total_items == TOTAL_VIDEOS, total_items)
+            check("archive count badge", await page.inner_text("#videoCount") == f"{TOTAL_VIDEOS}편",
+                  await page.inner_text("#videoCount"))
+            check("archive cards are in-app buttons",
+                  await page.eval_on_selector_all("#videoList .vc-item", "e=>e.filter(x=>x.tagName==='BUTTON' && x.dataset.play).length") == TOTAL_VIDEOS)
+            play_ids = await page.eval_on_selector_all("#videoList .vc-item", "e=>e.map(x=>x.dataset.play)")
+            check("archive ids complete", set(play_ids) == set(ALL_VIDEO_IDS), sorted(set(ALL_VIDEO_IDS) - set(play_ids)))
+            check("archive ids unique", len(set(play_ids)) == len(play_ids), len(play_ids))
+
             groups = await page.eval_on_selector_all(".hl-group .hl-g-name", "e=>e.map(x=>x.firstChild.textContent.trim())")
-            check("highlight groups = 5 players", groups ==
-                  ["도란", "카나비", "쇼메이커", "스매쉬", "딜라이트"], groups)
+            check("archive groups = 5 players + Dplus Kia",
+                  groups == ["도란", "카나비", "쇼메이커", "스매쉬", "딜라이트", "Dplus Kia"], groups)
             arcs = await page.eval_on_selector_all(".hl-group .hl-g-arc", "e=>e.map(x=>x.textContent)")
             check("group team arc", arcs[0] == "T1 · Gen.G · HLE · DRX → DK 2027" and arcs[2] == "DK 2027", arcs)
             group_counts = await page.eval_on_selector_all(".hl-group .hl-g-n", "e=>e.map(x=>x.textContent)")
-            check("group counts", group_counts == ["7편", "6편", "6편", "6편", "6편"], group_counts)
-
-            all_hrefs = await page.eval_on_selector_all("#videoList .vc-item", "e=>e.map(x=>x.href)")
-            want_ids = set(v for ids in PLAYER_VIDEOS.values() for v in ids)
-            check("video highlights complete", set(h.split("v=")[1] for h in all_hrefs) == want_ids,
-                  len(all_hrefs))
-            check("video highlights unique", len(set(all_hrefs)) == len(all_hrefs), len(all_hrefs))
+            check("group counts", group_counts == ["9편", "6편", "6편", "6편", "6편", "12편"], group_counts)
             no_len = await page.eval_on_selector_all(
                 "#videoList .vc-len", "e=>e.map(x=>x.textContent).filter(t=>!t.includes(':'))")
-            check("every highlight shows a duration", no_len == [], no_len)
+            check("every card shows a duration", no_len == [], no_len)
             years = [int(y) for y in await page.eval_on_selector_all("#videoList .vc-yr", "e=>e.map(x=>x.textContent)")]
-            check("every highlight shows a year", years and all(y >= 2019 for y in years), years[:6])
-            # 묶음 안에서는 최신 연도가 위로
+            check("every card shows a year", years and all(y >= 2019 for y in years), years[:6])
+            cats = await page.eval_on_selector_all("#videoList .vc-cat", "e=>e.map(x=>x.textContent)")
+            check("every card shows a category badge", len(cats) == TOTAL_VIDEOS, len(cats))
             per_group = await page.eval_on_selector(
                 "#videoList",
                 "root=>{const groups=[];let cur=null;Array.from(root.children).forEach(el=>{"
@@ -182,7 +227,15 @@ async def main():
                   all(ys == sorted(ys, reverse=True) for ys in per_group if ys), per_group)
             teams = await page.eval_on_selector_all("#videoList .vc-team", "e=>e.map(x=>x.textContent)")
             check("team badge on every card", len(teams) == TOTAL_VIDEOS, len(teams))
-            check("current team (DK) highlighted", await page.eval_on_selector_all("#videoList .vc-team.is-now", "e=>e.length") == 9)
+            points = await page.eval_on_selector_all("#videoList .vc-title", "e=>e.map(x=>x.textContent.trim())")
+            check("every card has a one-line point", points and all(len(t) > 3 for t in points), points[:3])
+            champ_cards = await page.eval_on_selector_all("#videoList .vc-champ", "e=>e.map(x=>x.textContent.trim())")
+            check("champion tag on cards", len(champ_cards) == 7, champ_cards)
+            check("hint under archive", "아카이브" in await page.inner_text("#videoArchiveHint"),
+                  await page.inner_text("#videoArchiveHint"))
+            await page.evaluate("document.querySelector('#videoCats').scrollIntoView({block:'center'})")
+            await page.wait_for_timeout(400)
+            await page.screenshot(path=str(OUT / "21-archive-ko.png"))
 
             # 최신순 정렬
             await page.click('[data-video-sort="recent"]')
@@ -190,30 +243,53 @@ async def main():
             check("recent sort removes groups", await page.eval_on_selector_all(".hl-group", "e=>e.length") == 0)
             recent_years = [int(y) for y in await page.eval_on_selector_all("#videoList .vc-yr", "e=>e.map(x=>x.textContent)")]
             check("recent sort newest first", recent_years == sorted(recent_years, reverse=True), recent_years[:8])
-            check("recent sort shows player label",
+            check("recent sort keeps player label",
                   await page.eval_on_selector_all("#videoList .vc-who", "e=>e.length") == TOTAL_VIDEOS)
             await page.click('[data-video-sort="player"]')
             await page.wait_for_timeout(300)
-            check("back to player sort", await page.eval_on_selector_all(".hl-group", "e=>e.length") == 5)
+            check("back to player sort", await page.eval_on_selector_all(".hl-group", "e=>e.length") == 6)
 
+            # 선수 필터
             for key, ids in PLAYER_VIDEOS.items():
                 await page.click(f'#videoFilters [data-video-filter="{key}"]')
                 await page.wait_for_timeout(220)
-                hrefs = await page.eval_on_selector_all("#videoList .vc-item", "e=>e.map(x=>x.href)")
-                check(f"{key} highlight filter", set(h.split("v=")[1] for h in hrefs) == set(ids), hrefs)
+                got = await page.eval_on_selector_all("#videoList .vc-item", "e=>e.map(x=>x.dataset.play)")
+                check(f"{key} filter", set(got) == set(ids), got)
                 check(f"{key} filter keeps one group", await page.eval_on_selector_all(".hl-group", "e=>e.length") == 1)
                 thumbs = await page.eval_on_selector_all(
                     "#videoList .vc-thumb img", "e=>e.map(x=>[x.complete, x.naturalWidth])")
-                check(f"{key} highlight thumbs render", thumbs and all(w > 0 for _, w in thumbs), thumbs)
+                check(f"{key} thumbs render", thumbs and all(w > 0 for _, w in thumbs), thumbs)
                 lens = await page.eval_on_selector_all("#videoList .vc-len", "e=>e.map(x=>x.textContent)")
-                check(f"{key} highlight durations", all(l.count(":") == 1 for l in lens) and len(lens) == len(ids), lens)
-
-            # 검색 (챔피언·대회·키워드)
+                check(f"{key} durations", all(l.count(":") == 1 for l in lens) and len(lens) == len(ids), lens)
             await page.click('#videoFilters [data-video-filter="all"]')
             await page.wait_for_timeout(200)
+
+            # 종류 필터
+            for key, ids in CATEGORY_VIDEOS.items():
+                await page.click(f'#videoCats [data-video-cat="{key}"]')
+                await page.wait_for_timeout(220)
+                got = await page.eval_on_selector_all("#videoList .vc-item", "e=>e.map(x=>x.dataset.play)")
+                check(f"category {key} = {len(ids)}", set(got) == set(ids), got)
+            await page.click('#videoCats [data-video-cat="all"]')
+            await page.wait_for_timeout(200)
+
+            # 챔피언 칩 (요청한 5종이 실제 영상과 연결되는지)
+            for key, ids in CHAMPION_VIDEOS.items():
+                await page.click(f'#videoChampChips [data-video-champ="{key}"]')
+                await page.wait_for_timeout(220)
+                got = await page.eval_on_selector_all("#videoList .vc-item", "e=>e.map(x=>x.dataset.play)")
+                check(f"champion chip {key} = {len(ids)}", set(got) == set(ids), got)
+                check(f"champion chip {key} active",
+                      await page.get_attribute(f'#videoChampChips [data-video-champ="{key}"]', "aria-pressed") == "true")
+                await page.click(f'#videoChampChips [data-video-champ="{key}"]')
+                await page.wait_for_timeout(180)
+            check("champion chip toggles off",
+                  await page.eval_on_selector_all("#videoList .vc-item", "e=>e.length") == TOTAL_VIDEOS)
+
+            # 검색 (챔피언 · 대회 · 해시태그 · 한국어 IME)
             await page.fill("#videoSearch", "펜타킬")
             await page.wait_for_timeout(300)
-            hits = await page.eval_on_selector_all("#videoList .vc-item", "e=>e.map(x=>x.getAttribute('data-video'))")
+            hits = await page.eval_on_selector_all("#videoList .vc-item", "e=>e.map(x=>x.dataset.play)")
             check("video search 펜타킬", hits == ["2JCbasoSUrY"], hits)
             check("video search count", await page.inner_text("#videoCount") == "1편", await page.inner_text("#videoCount"))
             await page.fill("#videoSearch", "Worlds")
@@ -222,8 +298,37 @@ async def main():
             check("video search Worlds (영문 키워드)", worlds >= 5, worlds)
             await page.fill("#videoSearch", "아지르")
             await page.wait_for_timeout(300)
-            azir = await page.eval_on_selector_all("#videoList .vc-item", "e=>e.map(x=>x.getAttribute('data-video'))")
+            azir = await page.eval_on_selector_all("#videoList .vc-item", "e=>e.map(x=>x.dataset.play)")
             check("video search 아지르 (챔피언)", azir == ["JT8H1izxnL8"], azir)
+            await page.fill("#videoSearch", "#암베사")
+            await page.wait_for_timeout(300)
+            amb = await page.eval_on_selector_all("#videoList .vc-item", "e=>e.map(x=>x.dataset.play)")
+            check("video search #암베사 (해시태그)", set(amb) == {"FDos-nzB8HE", "7wZxtaNDCTI"}, amb)
+            await page.fill("#videoSearch", "카이사")
+            await page.wait_for_timeout(300)
+            kaisa = await page.eval_on_selector_all("#videoList .vc-item", "e=>e.map(x=>x.dataset.play)")
+            check("video search 카이사 (챔피언)", kaisa == ["QJIaTC-p8pg"], kaisa)
+            await page.fill("#videoSearch", "딮터뷰")
+            await page.wait_for_timeout(300)
+            behind = await page.eval_on_selector_all("#videoList .vc-item", "e=>e.length")
+            check("video search 딮터뷰 (종류 이름)", behind >= 3, behind)
+
+            # 한국어 IME: 조합 중에는 목록을 다시 그리지 않고, 조합이 끝나면 한 번에 반영
+            ime = await page.evaluate("""() => {
+              const box = document.querySelector('#videoSearch');
+              const before = document.querySelectorAll('#videoList .vc-item').length;
+              box.value = '암';
+              box.dispatchEvent(new CompositionEvent('compositionstart', { bubbles: true }));
+              box.dispatchEvent(new Event('input', { bubbles: true }));
+              const during = document.querySelectorAll('#videoList .vc-item').length;
+              box.value = '암베사';
+              box.dispatchEvent(new CompositionEvent('compositionend', { bubbles: true }));
+              const after = [...document.querySelectorAll('#videoList .vc-item')].map(x => x.dataset.play);
+              return { before, during, after };
+            }""")
+            check("IME keeps list steady while composing", ime["during"] == ime["before"], ime)
+            check("IME applies query on compositionend", set(ime["after"]) == {"FDos-nzB8HE", "7wZxtaNDCTI"}, ime["after"])
+
             await page.fill("#videoSearch", "없는검색어zzz")
             await page.wait_for_timeout(300)
             empty = await page.inner_text("#videoList")
@@ -235,6 +340,55 @@ async def main():
                   await page.eval_on_selector_all("#videoList .vc-item", "e=>e.length") == TOTAL_VIDEOS)
             check("video search clear hidden", not await page.is_visible("#videoSearchClear"))
 
+            # ---------- 인앱 유튜브 플레이어 ----------
+            await page.click('#videoList .vc-item')
+            await page.wait_for_timeout(900)
+            check("player modal opens", await page.is_visible("#vpModal"))
+            src = await page.get_attribute("#vpFrame", "src")
+            check("player loads youtube embed",
+                  src.startswith("https://www.youtube.com/embed/") and "autoplay=1" in src and "rel=0" in src, src)
+            check("player title from card",
+                  (await page.inner_text("#vpTitle")).strip() != "", await page.inner_text("#vpTitle"))
+            check("player youtube link",
+                  (await page.get_attribute("#vpOpen", "href")).startswith("https://www.youtube.com/watch?v="),
+                  await page.get_attribute("#vpOpen", "href"))
+            check("player embed note", len(await page.inner_text("#vpNote")) > 10)
+            check("body scroll locked while playing",
+                  "vp-locked" in (await page.get_attribute("body", "class") or ""))
+            await page.screenshot(path=str(OUT / "22-player-ko.png"))
+            await page.keyboard.press("Escape")
+            await page.wait_for_timeout(400)
+            check("player closes on ESC", await page.is_hidden("#vpModal"))
+            check("player stops audio on close", await page.get_attribute("#vpFrame", "src") == "about:blank",
+                  await page.get_attribute("#vpFrame", "src"))
+            check("body scroll restored", "vp-locked" not in (await page.get_attribute("body", "class") or ""))
+            # 배경 클릭으로도 닫힘
+            await page.click('#videoList .vc-item')
+            await page.wait_for_timeout(500)
+            await page.click("#vpVeil", position={"x": 8, "y": 8})
+            await page.wait_for_timeout(350)
+            check("player closes on backdrop", await page.is_hidden("#vpModal"))
+            # 재생목록은 videoseries 로 재생
+            await page.click("#plGrid .pl-item")
+            await page.wait_for_timeout(700)
+            pl_src = await page.get_attribute("#vpFrame", "src")
+            check("playlist opens in player",
+                  "youtube.com/embed/videoseries?list=PLRG5G_CO1tlo" in pl_src, pl_src)
+            check("playlist youtube link",
+                  await page.get_attribute("#vpOpen", "href") == "https://www.youtube.com/playlist?list=PLRG5G_CO1tlo",
+                  await page.get_attribute("#vpOpen", "href"))
+            await page.click("#vpClose")
+            await page.wait_for_timeout(300)
+            check("player close button works", await page.is_hidden("#vpModal"))
+
+            # ---------- 모바일 폭 3종 가로 넘침 0 ----------
+            for w in (360, 390, 430):
+                await page.set_viewport_size({"width": w, "height": 860})
+                await page.wait_for_timeout(350)
+                over = await page.evaluate("document.documentElement.scrollWidth - window.innerWidth")
+                check(f"no horizontal overflow (ko video {w}px)", over <= 1, over)
+            await page.set_viewport_size({"width": 390, "height": 844})
+            await page.wait_for_timeout(250)
             # 디플러스 기아 공식 유튜브 (/api/dk-youtube)
             try:
                 await page.wait_for_function(
@@ -245,9 +399,9 @@ async def main():
             check("dk youtube videos", dk_items == 10, dk_items)
             check("dk youtube count badge", await page.inner_text("#dkYtCount") == "10편",
                   await page.inner_text("#dkYtCount"))
-            dk_hrefs = await page.eval_on_selector_all("#dkYtGrid .dy-item", "e=>e.map(x=>x.href)")
-            check("dk youtube links", all(h.startswith("https://www.youtube.com/watch?v=") for h in dk_hrefs),
-                  dk_hrefs[:2])
+            dk_ids = await page.eval_on_selector_all("#dkYtGrid .dy-item", "e=>e.map(x=>x.dataset.play)")
+            check("dk youtube cards play in app",
+                  all(v and len(v) == 11 for v in dk_ids) and len(set(dk_ids)) == len(dk_ids), dk_ids[:3])
             dk_titles = await page.eval_on_selector_all("#dkYtGrid .dy-title", "e=>e.map(x=>x.textContent.trim())")
             check("dk youtube titles", all(len(t) > 3 for t in dk_titles), dk_titles[:2])
             dk_thumbs = await page.eval_on_selector_all(
@@ -366,7 +520,14 @@ async def main():
             await page.click('[data-tab="video"]')
             await page.wait_for_timeout(600)
             video = await page.inner_text("#panel-video")
-            check("en video tab", "Signature highlights" in video and "Official LCK" in video and "Player streams" in video, video[:120])
+            check("en video tab", "Video archive" in video and "Official LCK" in video and "Player streams" in video, video[:120])
+            check("en playlist section", "YouTube playlists" in video and "D plus KIA · Official" in video, video[:160])
+            check("en category chips",
+                  await page.eval_on_selector_all("#videoCats .chip", "e=>e.map(x=>x.textContent)") ==
+                  ["All", "Highlights", "Montage", "Interview & behind", "Shorts"])
+            check("en champion chips",
+                  await page.eval_on_selector_all("#videoChampChips .tag-chip", "e=>e.map(x=>x.textContent)") ==
+                  ["#Ambessa", "#Gnar", "#Azir", "#Kai'Sa", "#LeBlanc", "#Jayce"])
             check("en video filters",
                   await page.eval_on_selector_all("#videoFilters .chip", "e=>e.map(x=>x.textContent)") ==
                   ["All", "Doran", "Kanavi", "ShowMaker", "Smash", "Delight"])
@@ -374,7 +535,7 @@ async def main():
             check("en dk youtube section", "Dplus KIA official YouTube" in video)
             check("en dk youtube note", "Dplus KIA YouTube" in await page.inner_text("#dkYtNote"),
                   await page.inner_text("#dkYtNote"))
-            check("en highlight archive sub", "archive of signature moments" in video)
+            check("en archive hint", "Official channel playlists on top" in video)
             check("en search placeholder",
                   await page.get_attribute("#videoSearch", "placeholder") == "Search champion, event, keyword",
                   await page.get_attribute("#videoSearch", "placeholder"))
@@ -434,7 +595,10 @@ async def main():
             await page.click('[data-tab="video"]')
             await page.wait_for_timeout(600)
             ja_video = await page.inner_text("#panel-video")
-            check("ja video tab", "ライブ・公式チャンネル" in ja_video and "代表ハイライト" in ja_video and "LCK公式" in ja_video)
+            check("ja video tab", "ライブ・公式チャンネル" in ja_video and "動画アーカイブ" in ja_video and "LCK公式" in ja_video)
+            check("ja category chips",
+                  await page.eval_on_selector_all("#videoCats .chip", "e=>e.map(x=>x.textContent)") ==
+                  ["すべて", "ハイライト", "マッドムービー", "インタビュー・舞台裏", "ショート"])
             check("ja dk youtube section", "Dplus KIA 公式YouTube" in ja_video)
             check("ja search placeholder",
                   await page.get_attribute("#videoSearch", "placeholder") == "チャンピオン・大会・キーワード検索")
@@ -533,7 +697,7 @@ async def main():
             check("zh video filters",
                   await page.eval_on_selector_all("#videoFilters .chip", "e=>e.map(x=>x.textContent)") ==
                   ["全部", "多兰", "卡纳维", "秀梅克", "斯马什", "迪莱特"])
-            check("zh video titles", "第4局" in zh_video and "集锦" in zh_video, zh_video[:120])
+            check("zh video titles", "第4局" in zh_video and "视频档案" in zh_video, zh_video[:120])
             check("zh dk youtube section", "Dplus KIA 官方 YouTube" in zh_video)
             check("zh search placeholder",
                   await page.get_attribute("#videoSearch", "placeholder") == "搜索英雄、赛事、关键词")
