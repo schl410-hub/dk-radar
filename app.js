@@ -901,9 +901,9 @@
 
   function vpSrc(kind, id) {
     var base = kind === 'list'
-      ? 'https://www.youtube.com/embed/videoseries?list=' + encodeURIComponent(id)
-      : 'https://www.youtube.com/embed/' + encodeURIComponent(id);
-    return base + '?autoplay=1&rel=0&playsinline=1&modestbranding=1';
+      ? 'https://www.youtube.com/embed/videoseries?list=' + encodeURIComponent(id) + '&'
+      : 'https://www.youtube.com/embed/' + encodeURIComponent(id) + '?';
+    return base + 'autoplay=1&rel=0&playsinline=1&modestbranding=1';
   }
 
   function openPlayer(kind, id, title) {

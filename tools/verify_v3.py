@@ -373,7 +373,8 @@ async def main():
             await page.wait_for_timeout(700)
             pl_src = await page.get_attribute("#vpFrame", "src")
             check("playlist opens in player",
-                  "youtube.com/embed/videoseries?list=PLRG5G_CO1tlo" in pl_src, pl_src)
+                  pl_src == "https://www.youtube.com/embed/videoseries?list=PLRG5G_CO1tlo"
+                  "&autoplay=1&rel=0&playsinline=1&modestbranding=1", pl_src)
             check("playlist youtube link",
                   await page.get_attribute("#vpOpen", "href") == "https://www.youtube.com/playlist?list=PLRG5G_CO1tlo",
                   await page.get_attribute("#vpOpen", "href"))
