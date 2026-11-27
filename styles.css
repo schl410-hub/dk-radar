@@ -1652,8 +1652,14 @@ a.ev-card:hover, a.ev-card:focus-visible { border-color: var(--accent-line); }
   color: var(--accent); font-variant-numeric: tabular-nums;
 }
 .ev-card.is-birthday .ev-dd { color: var(--ink-2); }
-.ev-sub { font-size: 8px; line-height: 1.5; color: var(--muted); position: relative; z-index: 1; }
-.ev-note { font-size: 7.5px; line-height: 1.5; color: var(--muted-2); position: relative; z-index: 1; }
+.ev-sub {
+  font-size: 8px; line-height: 1.5; color: var(--muted); position: relative; z-index: 1;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.ev-note {
+  font-size: 7.5px; line-height: 1.5; color: var(--muted-2); position: relative; z-index: 1;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
 .ev-go { margin-top: 2px; font-size: 7.5px; font-weight: 800; color: var(--accent); position: relative; z-index: 1; }
 
 /* ---------- MY PICK 안의 인게임 줄 ---------- */

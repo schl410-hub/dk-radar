@@ -779,7 +779,7 @@ const EVENTS = [
     },
     note: {
       ko: 'DK 스매쉬 신인왕 · 팬 팀 투표 11.26 마감',
-      en: 'DK Smash won Rookie of the Year · fan team vote closed 11/26',
+      en: 'DK Smash took Rookie of the Year · fan vote closed 11/26',
       ja: 'DK スマッシュ新人王・ファン投票は11/26終了',
       zh: 'DK Smash 最佳新人 · 粉丝投票 11/26 截止'
     },
@@ -793,13 +793,13 @@ const EVENTS = [
     title: { ko: '2027 LCK 컵', en: '2027 LCK Cup', ja: '2027 LCKカップ', zh: '2027 LCK 杯' },
     sub: {
       ko: '개막일 미발표 · 1월 중순 예상',
-      en: 'Opening day not announced · mid-January expected',
+      en: 'Opening day not announced · mid-January',
       ja: '開幕日未発表・1月中旬の見込み',
       zh: '开幕日未公布 · 预计1月中旬'
     },
     note: {
       ko: '2026 시즌은 1월 14일 개막 · 확정되면 알려드려요',
-      en: 'The 2026 season opened on Jan 14 — this updates when LCK confirms',
+      en: 'The 2026 season opened Jan 14 · updates when confirmed',
       ja: '2026シーズンは1月14日開幕・確定次第更新',
       zh: '2026 赛季 1月14日开幕 · 确定后更新'
     },
