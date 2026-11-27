@@ -665,7 +665,7 @@
     if (tag.type === 'with' || tag.type === 'vs') {
       var pro = (tag.pro && typeof tag.pro === 'object') ? tag.pro : { slug: tag.pro, name: tag.name, nameKo: tag.nameKo, team: tag.team };
       if (!compact) return '<span class="mu mu-' + tag.type + '">' + T(tag.type === 'with' ? 'mu.with' : 'mu.vs', { pro: proLabel(pro) }) + '</span>';
-      return '<span class="mu mu-' + tag.type + '">' + (tag.type === 'with' ? '🤝 ' : '⚔️ ') + esc(lang() === 'ko' ? (pro.nameKo || pro.name) : pro.name) + '</span>';
+      return '<span class="mu mu-' + tag.type + '">' + (tag.type === 'with' ? '🤝 with ' : '⚔️ vs ') + esc(lang() === 'ko' ? (pro.nameKo || pro.name) : pro.name) + '</span>';
     }
     return '';
   }
