@@ -129,6 +129,26 @@ async def main():
             title = await page.inner_text(f"#panel-{tab} .panel-title")
             check(f"tab {label}", visible and title == label, title)
             await page.screenshot(path=str(OUT / f"signal-{tab}-dark.png"))
+        # ---- 영상 탭 디벨롭: LIVE NOW · 아카이브 100편+ · 찜 ----
+        await page.click('[data-tab="video"]')
+        await page.wait_for_timeout(SETTLE + 400)
+        check("video live hero visible", await page.is_visible("#liveHero"))
+        check("video live hero label", "LIVE NOW" in await page.inner_text("#liveHero"),
+              (await page.inner_text("#liveHero"))[:60])
+        check("video live hero body rendered",
+              await page.eval_on_selector_all("#liveHero .lh-card, #liveHero .lh-offbar", "e=>e.length") == 1)
+        count_text = await page.inner_text("#videoCount")
+        check("video archive 100+", count_text.endswith("편") and int(count_text.replace("편", "")) >= 100, count_text)
+        check("video saved chip", "★ 찜" in await page.inner_text("#videoCats"),
+              await page.inner_text("#videoCats"))
+        await page.click('[data-fav="FDos-nzB8HE"]')
+        await page.wait_for_timeout(250)
+        check("video fav stored locally",
+              "FDos-nzB8HE" in (await page.evaluate("localStorage.getItem('dk.signal.favs')") or ""))
+        await page.evaluate("localStorage.removeItem('dk.signal.favs')")
+        await page.reload(wait_until="networkidle")
+        await page.wait_for_timeout(SETTLE + 300)
+
         await page.click('[data-tab="feed"]')
         await page.wait_for_timeout(SETTLE)
 

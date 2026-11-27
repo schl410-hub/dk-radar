@@ -196,7 +196,9 @@ function startMockStreams() {
             broad_no: 1,
             broad_title: row.title,
             current_sum_viewer: row.viewers,
-            broad_start: row.startedAt
+            broad_start: row.startedAt,
+            broad_thumb: row.thumb === undefined ? '//thumbs.sooplive.co.kr/choi15778/broad.jpg' : row.thumb,
+            broad_cate: row.category === undefined ? '리그 오브 레전드' : row.category
           }
         });
       }
@@ -207,7 +209,13 @@ function startMockStreams() {
         return send(200, {
           code: 200,
           message: null,
-          content: { status: 'OPEN', liveTitle: row.title, concurrentUserCount: row.viewers, openDate: row.openAt }
+          content: {
+            status: 'OPEN', liveTitle: row.title, concurrentUserCount: row.viewers, openDate: row.openAt,
+            liveImageUrl: row.thumb === undefined
+              ? 'https://livecloud-thumb.akamaized.net/chzzk/livecloud/KR/test/{type}_{time}.jpg?type=360'
+              : row.thumb,
+            liveCategoryValue: row.category === undefined ? '리그 오브 레전드' : row.category
+          }
         });
       }
       send(404, { error: 'unknown stream path ' + url.pathname });
@@ -477,11 +485,24 @@ async function main() {
         lvDoran && JSON.stringify(lvDoran));
   check('live soop start time KST', !!lvDoran && lvDoran.startedAt === '2026-11-27T05:02:11.000Z', lvDoran && lvDoran.startedAt);
   check('live soop url', !!lvDoran && lvDoran.url === 'https://ch.sooplive.co.kr/choi15778', lvDoran && lvDoran.url);
+  check('live soop thumb normalized', !!lvDoran && lvDoran.thumb === 'https://thumbs.sooplive.co.kr/choi15778/broad.jpg', lvDoran && lvDoran.thumb);
+  check('live soop category', !!lvDoran && lvDoran.category === '리그 오브 레전드', lvDoran && lvDoran.category);
   check('live chzzk parsed', !!lvKanavi && lvKanavi.live === true && lvKanavi.platform === 'chzzk' && lvKanavi.viewers === 880,
         lvKanavi && JSON.stringify(lvKanavi));
+  check('live chzzk thumb template resolved', !!lvKanavi && /\/480_\d+\.jpg/.test(lvKanavi.thumb || ''), lvKanavi && lvKanavi.thumb);
+  check('live chzzk category', !!lvKanavi && lvKanavi.category === '리그 오브 레전드', lvKanavi && lvKanavi.category);
   check('live count', liveOn.json && liveOn.json.liveCount === 2, liveOn.json && liveOn.json.liveCount);
   check('live cache hit', (await call(liveFn, { url: '/api/live' })).json.servedFrom === 'cache', null);
   check('live offline player stays off', liveOn.json && liveOn.json.players.smash.live === false, null);
+  check('live offline player has no thumb', liveOn.json && !('thumb' in liveOn.json.players.smash), liveOn.json && liveOn.json.players.smash.thumb);
+  /* 방송 정보가 일부만 와도(썸네일·카테고리 없음) 안전하게 생략하는지 */
+  streamState.soop['choi15778'] = { title: '썸네일 없는 방송', viewers: 12, startedAt: '2026-11-27 14:02:11', thumb: null, category: null };
+  const liveBare = await call(liveFn, { url: '/api/live?refresh=1' });
+  const lvBare = liveBare.json && liveBare.json.players.doran;
+  check('live missing thumb omitted', !!lvBare && lvBare.live === true && !('thumb' in lvBare) && !('category' in lvBare),
+        lvBare && JSON.stringify({ thumb: lvBare.thumb, category: lvBare.category }));
+  streamState.soop['choi15778'] = { title: '솔랭 가즈아', viewers: 3120, startedAt: '2026-11-27 14:02:11' };
+  await call(liveFn, { url: '/api/live?refresh=1' });
 
   const run1 = await call(checkFn, { url: '/api/check?dry=1&token=smoke-secret' });
   check('check run1 200', run1.status === 200 && run1.json.ok === true, run1.status);

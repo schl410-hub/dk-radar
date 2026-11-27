@@ -19,6 +19,24 @@ const TIMEOUT = 3500;
 /* SOOP 은 브라우저가 아닌 User-Agent 를 404 로 막습니다. 방송국 API 는 브라우저와 같은 헤더로 요청합니다. */
 const BROWSER_UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
+/* 방송 썸네일 URL 정리: SOOP 은 '//host/...' 처럼 프로토콜이 빠진 값을 주기도 합니다. */
+function thumbUrl(value) {
+  var s = value == null ? '' : String(value).trim();
+  if (!s) return null;
+  if (/^https?:\/\//i.test(s)) return s;
+  if (s.indexOf('//') === 0) return 'https:' + s;
+  if (s.charAt(0) === '/') return 'https://ch.sooplive.co.kr' + s;
+  return s;
+}
+
+/* 방송 카테고리: API 가 숫자 코드만 주면 표시하지 않습니다(이름이 확인된 값만). */
+function categoryName(value) {
+  if (value == null) return null;
+  var s = String(value).trim();
+  if (!s || /^\d+$/.test(s)) return null;
+  return s.slice(0, 40);
+}
+
 /* SOOP 은 'YYYY-MM-DD HH:mm:ss' (KST) 문자열을 줍니다. */
 function kstIso(value) {
   if (!value) return null;
@@ -45,6 +63,8 @@ async function soopStream(userId) {
     title: broad.broad_title || station.station_title || '',
     viewers: Number(broad.current_sum_viewer || 0) || null,
     startedAt: kstIso(broad.broad_start),
+    thumb: thumbUrl(broad.broad_thumb || broad.broadThumb || broad.broad_thumbnail),
+    category: categoryName(broad.broad_cate || broad.broad_cate_name || broad.category),
     url: 'https://ch.sooplive.co.kr/' + encodeURIComponent(userId)
   };
 }
@@ -65,8 +85,17 @@ async function chzzkStream(channelId) {
     title: c.liveTitle || '',
     viewers: Number(c.concurrentUserCount || 0) || null,
     startedAt: c.openDate ? new Date(c.openDate).toISOString() : null,
+    thumb: chzzkThumb(c.liveImageUrl),
+    category: categoryName(c.liveCategoryValue),
     url: 'https://chzzk.naver.com/' + encodeURIComponent(channelId)
   };
+}
+
+/* CHZZK 은 liveImageUrl 에 '{type}_{time}.jpg' 자리표시자를 줍니다. 실제 이미지 주소로 바꿉니다. */
+function chzzkThumb(template) {
+  var s = thumbUrl(template);
+  if (!s) return null;
+  return s.replace(/\{type\}/g, '480').replace(/\{time\}/g, String(Date.now()));
 }
 
 /* 한 선수: 확인된 방송국을 순서대로 확인하고, 방송 중인 곳을 찾으면 바로 돌려줍니다. */
@@ -81,7 +110,12 @@ async function checkPlayer(player) {
     try {
       const r = order[i][0] === 'soop' ? await soopStream(order[i][1]) : await chzzkStream(order[i][1]);
       probed.push({ platform: order[i][0], ok: true, live: !!r.live });
-      if (r.live) return Object.assign(out, r);
+      if (r.live) {
+        /* 확인된 값만 내려보냅니다(썸네일·카테고리가 없으면 키 자체를 생략). */
+        if (!r.thumb) delete r.thumb;
+        if (!r.category) delete r.category;
+        return Object.assign(out, r);
+      }
     } catch (e) {
       /* 이 플랫폼은 실패 — 다음 방송국 확인 (차단·점검 여부를 알 수 있게 기록) */
       probed.push({ platform: order[i][0], ok: false, error: String(e && e.status ? 'HTTP ' + e.status : (e && e.message) || e).slice(0, 80) });

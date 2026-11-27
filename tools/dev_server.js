@@ -55,21 +55,28 @@ const HANDLERS = {
 };
 
 /* DK_LIVE_FAKE=1: 실제 방송이 없을 때도 라이브 배지 UI 를 검증할 수 있게 가짜 상태를 돌려줍니다. */
-if (process.env.DK_LIVE_FAKE === '1') {
+if (process.env.DK_LIVE_FAKE === '1' || process.env.DK_LIVE_FAKE === 'off') {
   HANDLERS['/api/live'] = function (req, res) {
     var players = {};
     ['doran', 'kanavi', 'showmaker', 'smash', 'delight'].forEach(function (k) { players[k] = { key: k, live: false }; });
-    players.doran = {
-      key: 'doran', nameKo: '도란', live: true, platform: 'soop', station: 'choi15778',
-      title: '솔랭 가즈아', viewers: 3120, startedAt: new Date().toISOString(),
-      url: 'https://ch.sooplive.co.kr/choi15778'
-    };
-    players.delight = {
-      key: 'delight', nameKo: '딜라이트', live: true, platform: 'chzzk', station: '59dd654778e3d0b64f3ed06baece805d',
-      title: 'DK Delight', viewers: 540, startedAt: new Date().toISOString(),
-      url: 'https://chzzk.naver.com/59dd654778e3d0b64f3ed06baece805d'
-    };
-    var body = { ok: true, at: new Date().toISOString(), servedFrom: 'fake', liveCount: 2, players: players };
+    if (process.env.DK_LIVE_FAKE === '1') {
+      players.doran = {
+        key: 'doran', nameKo: '도란', live: true, platform: 'soop', station: 'choi15778',
+        title: '솔랭 빠짐없이 갑니다', viewers: 4820,
+        startedAt: new Date(Date.now() - (1 * 3600 + 42 * 60 + 8) * 1000).toISOString(),
+        thumb: 'https://i.ytimg.com/vi/o1E-pxEdRw8/maxresdefault.jpg',
+        category: '리그 오브 레전드',
+        url: 'https://ch.sooplive.co.kr/choi15778'
+      };
+      players.delight = {
+        key: 'delight', nameKo: '딜라이트', live: true, platform: 'chzzk', station: '59dd654778e3d0b64f3ed06baece805d',
+        title: 'DK Delight · 랭크', viewers: 540, startedAt: new Date(Date.now() - 32 * 60 * 1000).toISOString(),
+        thumb: 'https://i.ytimg.com/vi/yfC5vSjiJos/maxresdefault.jpg',
+        category: '리그 오브 레전드',
+        url: 'https://chzzk.naver.com/59dd654778e3d0b64f3ed06baece805d'
+      };
+    }
+    var body = { ok: true, at: new Date().toISOString(), servedFrom: 'fake', liveCount: players.doran.live ? 2 : 0, players: players };
     res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
     res.end(JSON.stringify(body));
   };

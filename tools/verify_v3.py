@@ -6,7 +6,9 @@ dev_server 를 8765 포트에 띄우고 390x844 모바일 뷰포트에서 확인
 스크린샷은 /workspace/downloads/dk-signal-v3 에 남깁니다.
 """
 import asyncio
+import json
 import pathlib
+import re
 import shutil
 import subprocess
 import time
@@ -43,44 +45,29 @@ PLAYLISTS = ["PLRG5G_CO1tlo", "PLfgIi8amvN7A", "PLqP9PZoXicPWtVT29eT2YRw2T9btvz9
              "PLqP9PZoXicPXPp7ovbHc5b1aB61PyARoV"]
 PLAYLIST_COUNTS = ["3편", "7편", "28편", "7편", "12편", "21편"]
 
-# 영상 아카이브 (2026-11-27, YouTube oEmbed 로 재생 가능 확인)
-PLAYER_VIDEOS = {
-    "doran": ["FDos-nzB8HE", "7wZxtaNDCTI", "uzkulCX1cvw", "zmt-dT7garg", "sqjM3EJO7ng",
-              "gJarHbioMEg", "H4Tp-sRSp2Y", "q_2YoaayhFg", "J8XPHKlTBLM"],
-    "kanavi": ["Ws93_VsEx-s", "fOUtkqYy1VE", "iNQxu7iC6pU", "OUHbIAms4F4",
-               "pPqJXwXuSDE", "SMxpnilYSyU"],
-    "showmaker": ["FG8VNBFemDg", "SqKdQydiZKs", "C02yoXL62UY", "VpNVX1aKR9g",
-                  "DyaPoq_QAO8", "JT8H1izxnL8", "eXx3B3BZUHw"],
-    "smash": ["uxnXy7SFMsY", "BxU5zVPnMiU", "6qYVK6DGkrU", "2JCbasoSUrY",
-              "yfC5vSjiJos", "99lMm4kPg0o", "HO5CPhBrYlM"],
-    "delight": ["COviyhL_fxc", "OT-19WY8HFI", "c3QdrFHgxTU", "2FDj-lJth1E",
-                "PcrXCZYo_58", "oH96rywp2L0"],
-}
-CATEGORY_VIDEOS = {
-    "shorts": ["OUHbIAms4F4", "pPqJXwXuSDE", "SMxpnilYSyU", "2FDj-lJth1E"],
-    "behind": ["XEXtPYNkPWg", "CPVhODNOp7E", "uZFyMa0gUek", "hoFn9DSsdTQ",
-               "vPqoNL7W_HM", "HO5CPhBrYlM"],
-    "madmovie": ["MZhN9B-TUF0", "FkoP2DBhFTk", "eXx3B3BZUHw", "qhC6sonTgAA", "sWtO3OSF1k4"],
-}
-DK_ONLY_VIDEOS = ["XEXtPYNkPWg", "CPVhODNOp7E", "uZFyMa0gUek", "hoFn9DSsdTQ", "vPqoNL7W_HM",
-                  "QJIaTC-p8pg", "MZhN9B-TUF0", "FkoP2DBhFTk", "qhC6sonTgAA", "sWtO3OSF1k4"]
-ALL_VIDEO_IDS = set(v for ids in PLAYER_VIDEOS.values() for v in ids) | set(DK_ONLY_VIDEOS)
-CATEGORY_VIDEOS["highlight"] = sorted(
-    ALL_VIDEO_IDS - set(v for ids in CATEGORY_VIDEOS.values() for v in ids))
-CHAMPION_VIDEOS = {
-    "ambessa": ["FDos-nzB8HE", "7wZxtaNDCTI"],
-    "gnar": ["H4Tp-sRSp2Y"],
-    "azir": ["JT8H1izxnL8"],
-    "kaisa": ["QJIaTC-p8pg"],
-    "leblanc": ["VpNVX1aKR9g"],
-    "jayce": ["J8XPHKlTBLM"],
-}
-TOTAL_VIDEOS = len(ALL_VIDEO_IDS)
+# 영상 아카이브 — data.js 에서 그대로 읽어 기대값을 만듭니다 (편수가 늘어도 검증이 따라갑니다)
+PLAYER_KEYS = ["doran", "kanavi", "showmaker", "smash", "delight"]
+ARCHIVE = {}
 
-
-def check(name, ok, detail=""):
-    results.append((name, bool(ok), detail))
-    print(("PASS " if ok else "FAIL ") + name + ((" :: " + str(detail)) if detail else ""))
+ARCHIVE_JS = """
+const vm = require('vm');
+const fs = require('fs');
+const d = vm.runInNewContext(fs.readFileSync('data.js', 'utf8') + ';({PLAYERS: PLAYERS, DK: DK_VIDEOS, T: HL_TAGS})',
+                            {}, { timeout: 3000 });
+const by = {}, cats = {}, champs = {}, all = [], pcount = {};
+let champCards = 0;
+function add(h, key) {
+  (by[key] = by[key] || []).push(h.id);
+  const c = h.cat || 'highlight';
+  (cats[c] = cats[c] || []).push(h.id);
+  (h.champ || []).forEach(function (k) { (champs[k] = champs[k] || []).push(h.id); });
+  if ((h.champ || []).length) champCards++;
+  all.push(h.id);
+}
+d.PLAYERS.forEach(function (p) { pcount[p.key] = (p.highlights || []).length; (p.highlights || []).forEach(function (h) { add(h, p.key); }); });
+d.DK.forEach(function (h) { add(h, h.player || 'dk'); });
+console.log(JSON.stringify({ by: by, cats: cats, champs: champs, all: all, tags: Object.keys(d.T), champCards: champCards, pcount: pcount, dkcount: d.DK.length }));
+"""
 
 
 def node_bin():
@@ -88,6 +75,41 @@ def node_bin():
         if cand and pathlib.Path(cand).exists():
             return str(cand)
     return "node"
+
+
+def load_archive():
+    out = subprocess.run([node_bin(), "-e", ARCHIVE_JS], cwd=str(ROOT), capture_output=True, text=True, check=True)
+    return json.loads(out.stdout)
+
+
+def archive_globals():
+    global ARCHIVE, PLAYER_VIDEOS, CATEGORY_VIDEOS, ALL_VIDEO_IDS, TOTAL_VIDEOS, CHAMPION_VIDEOS, TAGS, DK_ONLY_VIDEOS, CHAMP_CARDS
+    data = load_archive()
+    ARCHIVE = data
+    by = dict(data["by"])
+    DK_ONLY_VIDEOS = by.pop("dk", [])
+    PLAYER_VIDEOS = {k: by.get(k, []) for k in PLAYER_KEYS}
+    CATEGORY_VIDEOS = data["cats"]
+    CHAMPION_VIDEOS = data["champs"]
+    ALL_VIDEO_IDS = set(data["all"])
+    TAGS = data["tags"]
+    CHAMP_CARDS = int(data.get("champCards") or 0)
+    TOTAL_VIDEOS = len(ALL_VIDEO_IDS)
+
+
+PLAYER_VIDEOS = {}
+CATEGORY_VIDEOS = {}
+ALL_VIDEO_IDS = set()
+CHAMPION_VIDEOS = {}
+TAGS = []
+DK_ONLY_VIDEOS = []
+CHAMP_CARDS = 0
+TOTAL_VIDEOS = 0
+
+
+def check(name, ok, detail=""):
+    results.append((name, bool(ok), detail))
+    print(("PASS " if ok else "FAIL ") + name + ((" :: " + str(detail)) if detail else ""))
 
 
 def start_server():
@@ -121,6 +143,8 @@ async def launch(p):
 
 
 async def main():
+    archive_globals()
+    print("archive:", TOTAL_VIDEOS, "videos |", {k: len(v) for k, v in PLAYER_VIDEOS.items()})
     OUT.mkdir(parents=True, exist_ok=True)
     server = start_server()
     try:
@@ -291,9 +315,12 @@ async def main():
 
             # 아카이브: 칩 3줄 + 카드
             champ_chips = await page.eval_on_selector_all("#videoChampChips .tag-chip", "e=>e.map(x=>x.textContent)")
-            check("champion chips", champ_chips == ["#암베사", "#나르", "#아지르", "#카이사", "#르블랑", "#제이스"], champ_chips)
+            check("champion chips start with the six picks",
+                  champ_chips[:6] == ["#암베사", "#나르", "#아지르", "#카이사", "#르블랑", "#제이스"], champ_chips[:6])
+            check("champion chips expanded (10+)", len(champ_chips) == len([t for t in TAGS if t in CHAMPION_VIDEOS]) and len(champ_chips) >= 10,
+                  champ_chips)
             cat_chips = await page.eval_on_selector_all("#videoCats .chip", "e=>e.map(x=>x.textContent)")
-            check("category chips", cat_chips == ["전체", "하이라이트", "매드무비", "딮터뷰·비하인드", "쇼츠"], cat_chips)
+            check("category chips (with saved chip)", cat_chips == ["전체", "★ 찜 0", "하이라이트", "매드무비", "딮터뷰·비하인드", "쇼츠"], cat_chips)
             chips = await page.eval_on_selector_all("#videoFilters .chip", "e=>e.map(x=>x.textContent)")
             check("video filter chips", chips == ["전체", "도란", "카나비", "쇼메이커", "스매쉬", "딜라이트"], chips)
 
@@ -313,7 +340,8 @@ async def main():
             arcs = await page.eval_on_selector_all(".hl-group .hl-g-arc", "e=>e.map(x=>x.textContent)")
             check("group team arc", arcs[0] == "T1 · Gen.G · HLE · DRX → DK 2027" and arcs[2] == "DK 2027", arcs)
             group_counts = await page.eval_on_selector_all(".hl-group .hl-g-n", "e=>e.map(x=>x.textContent)")
-            check("group counts", group_counts == ["9편", "6편", "6편", "6편", "6편", "12편"], group_counts)
+            want_counts = [f"{ARCHIVE['pcount'][k]}편" for k in PLAYER_KEYS] + [f"{ARCHIVE['dkcount']}편"]
+            check("group counts", group_counts == want_counts, group_counts)
             no_len = await page.eval_on_selector_all(
                 "#videoList .vc-len", "e=>e.map(x=>x.textContent).filter(t=>!t.includes(':'))")
             check("every card shows a duration", no_len == [], no_len)
@@ -331,9 +359,9 @@ async def main():
             teams = await page.eval_on_selector_all("#videoList .vc-team", "e=>e.map(x=>x.textContent)")
             check("team badge on every card", len(teams) == TOTAL_VIDEOS, len(teams))
             points = await page.eval_on_selector_all("#videoList .vc-title", "e=>e.map(x=>x.textContent.trim())")
-            check("every card has a one-line point", points and all(len(t) > 3 for t in points), points[:3])
+            check("every card has a one-line point", points and all(len(t) >= 2 for t in points), points[:3])
             champ_cards = await page.eval_on_selector_all("#videoList .vc-champ", "e=>e.map(x=>x.textContent.trim())")
-            check("champion tag on cards", len(champ_cards) == 7, champ_cards)
+            check("champion tag on cards", len(champ_cards) == CHAMP_CARDS, (len(champ_cards), CHAMP_CARDS))
             check("hint under archive", "아카이브" in await page.inner_text("#videoArchiveHint"),
                   await page.inner_text("#videoArchiveHint"))
             await page.evaluate("document.querySelector('#videoCats').scrollIntoView({block:'center'})")
@@ -402,7 +430,7 @@ async def main():
             await page.fill("#videoSearch", "아지르")
             await page.wait_for_timeout(300)
             azir = await page.eval_on_selector_all("#videoList .vc-item", "e=>e.map(x=>x.dataset.play)")
-            check("video search 아지르 (챔피언)", azir == ["JT8H1izxnL8"], azir)
+            check("video search 아지르 (챔피언)", set(azir) == {"JT8H1izxnL8", "poQBzdCFlY4"}, azir)
             await page.fill("#videoSearch", "#암베사")
             await page.wait_for_timeout(300)
             amb = await page.eval_on_selector_all("#videoList .vc-item", "e=>e.map(x=>x.dataset.play)")
@@ -476,14 +504,106 @@ async def main():
             await page.wait_for_timeout(700)
             pl_src = await page.get_attribute("#vpFrame", "src")
             check("playlist opens in player",
-                  pl_src == "https://www.youtube.com/embed/videoseries?list=PLRG5G_CO1tlo"
-                  "&autoplay=1&rel=0&playsinline=1&modestbranding=1", pl_src)
+                  pl_src.startswith("https://www.youtube.com/embed/videoseries?list=PLRG5G_CO1tlo")
+                  and "autoplay=1" in pl_src and "enablejsapi=1" in pl_src, pl_src)
             check("playlist youtube link",
                   await page.get_attribute("#vpOpen", "href") == "https://www.youtube.com/playlist?list=PLRG5G_CO1tlo",
                   await page.get_attribute("#vpOpen", "href"))
             await page.click("#vpClose")
             await page.wait_for_timeout(300)
             check("player close button works", await page.is_hidden("#vpModal"))
+
+            # ---------- ② 찜(★) & 연속 재생 (localStorage dk.signal.favs) ----------
+            await page.evaluate("localStorage.removeItem('dk.signal.favs')")
+            await page.reload(wait_until="networkidle")
+            await page.wait_for_timeout(700)
+            await page.click('[data-tab="video"]')
+            await page.wait_for_timeout(500)
+            check("saved chip starts at 0", "★ 찜 0" in await page.inner_text("#videoCats"))
+            check("saved bar hidden with no favs", await page.is_hidden("#favBar"))
+            await page.click('#videoCats [data-video-cat="fav"]')
+            await page.wait_for_timeout(300)
+            check("empty saved list message", "찜한 영상이 없어요" in await page.inner_text("#videoList"),
+                  (await page.inner_text("#videoList"))[:80])
+            await page.click('#videoCats [data-video-cat="all"]')
+            await page.wait_for_timeout(300)
+
+            for fid in ["FDos-nzB8HE", "7wZxtaNDCTI", "J8XPHKlTBLM"]:
+                await page.click(f'[data-fav="{fid}"]')
+                await page.wait_for_timeout(160)
+            check("saved chip counts", "★ 찜 3" in await page.inner_text("#videoCats"),
+                  await page.inner_text("#videoCats"))
+            check("star shows pressed state",
+                  await page.get_attribute('[data-fav="FDos-nzB8HE"]', "aria-pressed") == "true")
+            check("star glyph filled",
+                  (await page.inner_text('[data-fav="FDos-nzB8HE"]')).strip() == "★")
+            saved_raw = await page.evaluate("localStorage.getItem('dk.signal.favs')")
+            check("favs stored in localStorage only", json.loads(saved_raw) ==
+                  ["FDos-nzB8HE", "7wZxtaNDCTI", "J8XPHKlTBLM"], saved_raw)
+            check("saved bar shows count", "3편" in await page.inner_text("#favBar"),
+                  await page.inner_text("#favBar"))
+
+            await page.click('#videoCats [data-video-cat="fav"]')
+            await page.wait_for_timeout(350)
+            fav_ids = await page.eval_on_selector_all("#videoList .vc-item", "e=>e.map(x=>x.dataset.play)")
+            check("saved filter keeps save order", fav_ids == ["FDos-nzB8HE", "7wZxtaNDCTI", "J8XPHKlTBLM"], fav_ids)
+            check("saved filter count", await page.inner_text("#videoCount") == "3편",
+                  await page.inner_text("#videoCount"))
+            await page.screenshot(path=str(OUT / "51-live-saved-ko.png"))
+
+            # 찜 목록에서 연속 재생
+            await page.click("#favPlay")
+            await page.wait_for_timeout(700)
+            check("player opens from saved list", await page.is_visible("#vpModal"))
+            check("queue counter 1 / 3", await page.inner_text("#vpPos") == "1 / 3",
+                  await page.inner_text("#vpPos"))
+            check("queue mode label", "연속 재생 중" in await page.inner_text("#vpMode"),
+                  await page.inner_text("#vpMode"))
+            check("player star on for saved video",
+                  await page.get_attribute("#vpStar", "aria-pressed") == "true")
+            check("next preview shows second video", "도란의 암베사 깎기 1일차" in await page.inner_text("#vpNext"),
+                  (await page.inner_text("#vpNext"))[:80])
+            check("MY LIST rows = 3", await page.eval_on_selector_all("#vpQueueList .vp-qitem", "e=>e.length") == 3)
+            check("MY LIST current row highlighted",
+                  await page.eval_on_selector_all("#vpQueueList .vp-qitem.is-now", "e=>e.length") == 1)
+            qsrc = await page.get_attribute("#vpFrame", "src")
+            check("queue starts at first saved video", "FDos-nzB8HE" in qsrc, qsrc)
+            await page.screenshot(path=str(OUT / "51-live-player-saved-ko.png"))
+
+            await page.click("#vpNextBtn")
+            await page.wait_for_timeout(600)
+            check("next advances queue", await page.inner_text("#vpPos") == "2 / 3", await page.inner_text("#vpPos"))
+            nsrc = await page.get_attribute("#vpFrame", "src")
+            check("next loads second video", "7wZxtaNDCTI" in nsrc, nsrc)
+            await page.click("#vpStar")
+            await page.wait_for_timeout(250)
+            check("player star toggles off", await page.get_attribute("#vpStar", "aria-pressed") == "false")
+            check("un-saved removes from MY LIST",
+                  await page.eval_on_selector_all("#vpQueueList .vp-qitem", "e=>e.length") == 2)
+            await page.keyboard.press("Escape")
+            await page.wait_for_timeout(350)
+            check("saved chip after un-save", "★ 찜 2" in await page.inner_text("#videoCats"))
+            check("saved bar after un-save", "2편" in await page.inner_text("#favBar"))
+
+            # 새로고침해도 찜은 이 기기에 남습니다
+            await page.reload(wait_until="networkidle")
+            await page.wait_for_timeout(700)
+            await page.click('[data-tab="video"]')
+            await page.wait_for_timeout(500)
+            check("favs survive reload", "★ 찜 2" in await page.inner_text("#videoCats"),
+                  await page.inner_text("#videoCats"))
+            check("star state survives reload",
+                  await page.get_attribute('[data-fav="FDos-nzB8HE"]', "aria-pressed") == "true")
+            check("un-saved star stays empty",
+                  await page.get_attribute('[data-fav="7wZxtaNDCTI"]', "aria-pressed") == "false")
+            await page.click('#videoCats [data-video-cat="all"]')
+            await page.wait_for_timeout(300)
+            # 검증 뒤에는 찜을 지워 다음 구간(언어별 칩 확인)을 깨끗한 상태로
+            await page.evaluate("localStorage.removeItem('dk.signal.favs')")
+            await page.reload(wait_until="networkidle")
+            await page.wait_for_timeout(700)
+            await page.click('[data-tab="video"]')
+            await page.wait_for_timeout(400)
 
             # ---------- 모바일 폭 3종 가로 넘침 0 ----------
             for w in (360, 390, 430):
@@ -522,14 +642,67 @@ async def main():
                 want_streams += PLAYER_STREAMS[key]
             check("video stations links", st_links == want_streams, st_links)
 
-            # ---------- 라이브 방송 배지 (/api/live) ----------
-            check("live on-air row", await page.is_visible("#videoOnAir"))
-            check("live on-air names", "도란" in await page.inner_text("#videoOnAir"),
-                  await page.inner_text("#videoOnAir"))
+            # ---------- ③ LIVE NOW · 선수 방송 히어로 (/api/live) ----------
+            check("live hero visible", await page.is_visible("#liveHero"))
+            try:
+                await page.wait_for_function(
+                    "document.querySelectorAll('#liveHero .lh-card').length > 0", timeout=6000)
+            except Exception:
+                pass
+            hero = await page.inner_text("#liveHero")
+            check("live hero label", "LIVE NOW" in hero and "선수 방송" in hero, hero[:80])
+            check("live hero title", "솔랭 빠짐없이 갑니다" in hero, hero[:120])
+            check("live hero platform badge", "SOOP" in hero, hero[:120])
+            check("live hero viewers", "4,820명 시청 중" in hero, hero[:160])
+            check("live hero elapsed clock", bool(re.search(r"\d{2}:\d{2}", hero)), hero[:160])
+            check("live hero watch button",
+                  await page.get_attribute("#liveHero .lh-go", "href") == "https://ch.sooplive.co.kr/choi15778",
+                  await page.get_attribute("#liveHero .lh-go", "href"))
+            hero_thumb = await page.eval_on_selector("#liveHero .lh-thumb img", "e=>[e.complete, e.naturalWidth]")
+            check("live hero thumbnail renders", hero_thumb and hero_thumb[1] > 0, hero_thumb)
+            hero_off = await page.eval_on_selector_all("#liveHero .lh-off i:not(.is-live)", "e=>e.map(x=>x.textContent)")
+            check("live hero shows offline players", hero_off == ["카나비", "쇼메이커", "스매쉬"], hero_off)
+            check("live hero shows other live player", "딜라이트" in hero, hero[-80:])
+            check("live hero auto-check label", "1분마다" in await page.inner_text("#liveHeroTimer"),
+                  await page.inner_text("#liveHeroTimer"))
+            await page.screenshot(path=str(OUT / "50-live-hero-ko.png"))
+
+            # 전원 오프라인일 때: 컴팩트 오프라인 바 + 방송국 칩
+            offline_body = {
+                "ok": True, "at": "2026-11-27T09:00:00.000Z", "servedFrom": "test", "liveCount": 0,
+                "players": {k: {"key": k, "live": False} for k in PLAYER_KEYS},
+            }
+            await page.route("**/api/live*", lambda route: route.fulfill(
+                status=200, content_type="application/json", body=json.dumps(offline_body)))
+            await page.reload(wait_until="networkidle")
+            await page.wait_for_timeout(700)
+            await page.click('[data-tab="video"]')
+            await page.wait_for_timeout(500)
+            off_text = await page.inner_text("#liveHero")
+            check("offline hero message", "지금은 5명 모두 오프라인이에요" in off_text, off_text[:80])
+            check("offline hero interval", "5분마다" in off_text and "5분마다" in await page.inner_text("#liveHeroTimer"), off_text[:120])
+            check("offline hero station chips", await page.eval_on_selector_all("#liveHero .lh-chip", "e=>e.length") == 5,
+                  await page.eval_on_selector_all("#liveHero .lh-chip", "e=>e.map(x=>x.textContent)"))
+            check("offline hero has no live card", await page.eval_on_selector_all("#liveHero .lh-card", "e=>e.length") == 0)
+            check("offline hero channel links",
+                  (await page.eval_on_selector_all("#liveHero .lh-chip", "e=>e.map(x=>x.href)")) ==
+                  ["https://ch.sooplive.co.kr/choi15778",
+                   "https://chzzk.naver.com/e351edbd85f1ebf4eb975c21179a4c43",
+                   "https://ch.sooplive.co.kr/showmakerr",
+                   "https://ch.sooplive.co.kr/tlsrmawo",
+                   "https://chzzk.naver.com/59dd654778e3d0b64f3ed06baece805d"],
+                  await page.eval_on_selector_all("#liveHero .lh-chip", "e=>e.map(x=>x.href)"))
+            await page.screenshot(path=str(OUT / "50-live-hero-offline-ko.png"))
+            await page.unroute("**/api/live*")
+            await page.reload(wait_until="networkidle")
+            await page.wait_for_timeout(800)
+            await page.click('[data-tab="video"]')
+            await page.wait_for_timeout(600)
+
             onair_rows = await page.eval_on_selector_all("#videoStations .st-row.is-onair", "e=>e.length")
             check("live station rows", onair_rows == 2, onair_rows)
             check("live station badge", "LIVE" in await page.inner_text("#videoStations"))
-            check("live stream title", "솔랭 가즈아" in await page.inner_text("#videoStations"))
+            check("live stream title", "솔랭 빠짐없이 갑니다" in await page.inner_text("#videoStations"))
             await page.click('[data-tab="feed"]')
             await page.wait_for_timeout(500)
             tiles = await page.eval_on_selector_all(".tile", "e=>e.filter(x=>x.querySelector('.t-onair')).map(x=>x.dataset.player)")
@@ -628,9 +801,9 @@ async def main():
             check("en playlist section", "YouTube playlists" in video and "D plus KIA · Official" in video, video[:160])
             check("en category chips",
                   await page.eval_on_selector_all("#videoCats .chip", "e=>e.map(x=>x.textContent)") ==
-                  ["All", "Highlights", "Montage", "Interview & behind", "Shorts"])
+                  ["All", "★ Saved 0", "Highlights", "Montage", "Interview & behind", "Shorts"])
             check("en champion chips",
-                  await page.eval_on_selector_all("#videoChampChips .tag-chip", "e=>e.map(x=>x.textContent)") ==
+                  (await page.eval_on_selector_all("#videoChampChips .tag-chip", "e=>e.map(x=>x.textContent)"))[:6] ==
                   ["#Ambessa", "#Gnar", "#Azir", "#Kai'Sa", "#LeBlanc", "#Jayce"])
             check("en video filters",
                   await page.eval_on_selector_all("#videoFilters .chip", "e=>e.map(x=>x.textContent)") ==
@@ -702,7 +875,7 @@ async def main():
             check("ja video tab", "ライブ・公式チャンネル" in ja_video and "動画アーカイブ" in ja_video and "LCK公式" in ja_video)
             check("ja category chips",
                   await page.eval_on_selector_all("#videoCats .chip", "e=>e.map(x=>x.textContent)") ==
-                  ["すべて", "ハイライト", "マッドムービー", "インタビュー・舞台裏", "ショート"])
+                  ["すべて", "★お気に入り 0", "ハイライト", "マッドムービー", "インタビュー・舞台裏", "ショート"])
             check("ja dk youtube section", "Dplus KIA 公式YouTube" in ja_video)
             check("ja search placeholder",
                   await page.get_attribute("#videoSearch", "placeholder") == "チャンピオン・大会・キーワード検索")

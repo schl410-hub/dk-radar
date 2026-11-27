@@ -51,6 +51,29 @@
   })();
   state.player = myPick;
 
+  /* 찜한 영상(⭐): 이 폰 브라우저의 localStorage 에만 저장합니다. 로그인·서버 없음. */
+  var FAV_KEY = 'dk.signal.favs';
+  var favs = (function () {
+    try {
+      var raw = JSON.parse(store.get(FAV_KEY, '[]'));
+      if (!Array.isArray(raw)) return [];
+      var out = [];
+      raw.forEach(function (id) {
+        if (typeof id === 'string' && id && out.indexOf(id) < 0) out.push(id);
+      });
+      return out;
+    } catch (e) { return []; }
+  })();
+  function saveFavs() { store.set(FAV_KEY, JSON.stringify(favs)); }
+  function isFav(id) { return !!id && favs.indexOf(id) > -1; }
+  function toggleFav(id) {
+    if (!id) return false;
+    var i = favs.indexOf(id);
+    if (i > -1) favs.splice(i, 1); else favs.push(id);
+    saveFavs();
+    return i < 0;
+  }
+
   /* 알림 설정: 선수별 솔랭 알림 + DK 공식 경기 알림 (각각 localStorage 저장) */
   var OFFICIAL_KEY = 'dk.signal.official';
   var SOLO_KEY = 'dk.signal.solo.';
@@ -819,21 +842,120 @@
       }
     }
 
-    /* 지금 방송 중인 선수 (SOOP·CHZZK) */
-    var onair = $('#videoOnAir');
-    if (onair) {
-      var rows = PLAYERS.map(function (p) { return { p: p, lv: liveOf(p.key) }; }).filter(function (r) { return r.lv; });
-      if (rows.length) {
-        onair.hidden = false;
-        onair.innerHTML = '<b>' + T('live.onAir') + '</b>' + rows.map(function (r) {
-          return '<a class="oa" href="' + esc(r.lv.url || '#') + '" target="_blank" rel="noopener">' +
-            '<i class="oa-dot"></i>' + pName(r.p) +
-            '<em>' + (r.lv.platform === 'soop' ? T('video.soop') : T('video.chzzk')) + '</em></a>';
-        }).join('');
-      } else {
-        onair.hidden = true;
-        onair.innerHTML = '';
-      }
+    /* 방송 중인 선수는 위 LIVE NOW 히어로(#liveHero)가 맡습니다. */
+  }
+
+  /* ---------- ③ LIVE NOW · 선수 방송 히어로 ----------
+   * /api/live 가 방송 중이라고 하면 방제·썬네일·시청자·경과 시간을 크게 보여 주고,
+   * 전원 오프라인이면 같은 자리에 컴팩트한 오프라인 바를 둡니다. */
+  function fmtCount(n) {
+    var v = Number(n) || 0;
+    var loc = lang() === 'ko' ? 'ko-KR' : (lang() === 'ja' ? 'ja-JP' : (lang() === 'zh' ? 'zh-CN' : 'en-US'));
+    try { return v.toLocaleString(loc); } catch (e) { return String(v); }
+  }
+
+  /* 방송 시작 후 경과 시간 (01:42:08 / 42:08) */
+  function elapsedText(iso) {
+    var t = Date.parse(iso || '');
+    if (!iso || isNaN(t)) return '';
+    var s = Math.max(0, Math.floor((Date.now() - t) / 1000));
+    var h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+    var p = function (n) { return (n < 10 ? '0' : '') + n; };
+    return (h > 0 ? p(h) + ':' : '') + p(m) + ':' + p(sec);
+  }
+
+  /* 플랫폼이 주는 방송 카테고리 이름 — 널리 쓰이는 것만 4개 국어로, 나머지는 준 값 그대로 */
+  var LIVE_CATS = [
+    { re: /리그\s*오브\s*레전드|league\s*of\s*legends|^lol$|英雄联盟|リーグ・オブ・レジェンド/i,
+      t: { ko: '리그 오브 레전드', en: 'League of Legends', ja: 'リーグ・オブ・レジェンド', zh: '英雄联盟' } }
+  ];
+  function liveCatText(raw) {
+    var s = String(raw || '');
+    if (!s) return '';
+    for (var i = 0; i < LIVE_CATS.length; i++) {
+      if (LIVE_CATS[i].re.test(s)) return L(LIVE_CATS[i].t);
+    }
+    return s;
+  }
+
+  function platformText(platform) {
+    if (platform === 'chzzk') return T('video.chzzk');
+    if (platform === 'soop') return T('video.soop');
+    return String(platform || '').toUpperCase();
+  }
+
+  function stationChipHTML(p, cls) {
+    var s = (p.streams || [])[0];
+    if (!s) return '';
+    var label = platformText(s.platform);
+    var meta = PLATFORM[s.platform] || { cls: '' };
+    return '<a class="lh-chip ' + (cls != null ? cls : meta.cls) + '" href="' + esc(s.url) + '" target="_blank" rel="noopener"' +
+      ' aria-label="' + esc(T('video.liveOpenAria', { name: pName(p), platform: label })) + '">' +
+      '<i class="lh-dot"></i>' + esc(pName(p)) + '<em>' + esc(label) + '</em></a>';
+  }
+
+  function renderLiveHero() {
+    var host = $('#liveHeroBody');
+    if (!host) return;
+    var timer = $('#liveHeroTimer');
+    var rows = PLAYERS.map(function (p) { return { p: p, lv: liveOf(p.key) }; });
+    var onAir = rows.filter(function (r) { return r.lv; })
+      .sort(function (a, b) { return (Number(b.lv.viewers) || 0) - (Number(a.lv.viewers) || 0); });
+    if (timer) timer.textContent = T(onAir.length ? 'video.liveCheckLive' : 'video.liveCheckOff');
+
+    if (!onAir.length) {
+      host.innerHTML =
+        '<div class="lh-offbar"><i class="lh-dot" aria-hidden="true"></i>' +
+          '<b>' + esc(T('video.liveAllOff')) + '</b>' +
+          '<span>· ' + esc(T('video.liveCheckOff')) + '</span>' +
+        '</div>' +
+        '<div class="lh-chips" role="group" aria-label="' + esc(T('video.stationsAria')) + '">' +
+          rows.map(function (r) { return stationChipHTML(r.p); }).join('') +
+        '</div>';
+      return;
+    }
+
+    var top = onAir[0];
+    var lv = top.lv;
+    var others = rows.filter(function (r) { return !r.lv; });
+    var extraLive = onAir.slice(1);
+    var title = lv.title || (pName(top.p) + ' ' + T('live.badge'));
+    var metaParts = [esc(pName(top.p))];
+    if (lv.category) metaParts.push(esc(liveCatText(lv.category)));
+    if (lv.startedAt && elapsedText(lv.startedAt)) {
+      metaParts.push('<span id="lhElapsed" data-start="' + esc(lv.startedAt) + '">' + esc(elapsedText(lv.startedAt)) + '</span>');
+    }
+    var meta = metaParts.join(' · ');
+    var foot = others.map(function (r) {
+      return '<i>' + esc(pName(r.p)) + '</i>';
+    }).join('') + extraLive.map(function (r) {
+      return '<i class="is-live">● ' + esc(pName(r.p)) + '</i>';
+    }).join('');
+    host.innerHTML =
+      '<div class="lh-card">' +
+        '<a class="lh-thumb" href="' + esc(lv.url || '#') + '" target="_blank" rel="noopener"' +
+          ' aria-label="' + esc(T('video.liveOpenAria', { name: pName(top.p), platform: platformText(lv.platform) })) + '">' +
+          (lv.thumb ? '<img src="' + esc(lv.thumb) + '" alt="" loading="lazy">' : '') +
+          '<span class="lh-scrim" aria-hidden="true"></span>' +
+          '<span class="lh-live">' + esc(T('live.badge')) + '</span>' +
+          '<span class="lh-plat is-' + esc(lv.platform || '') + '">' + esc(platformText(lv.platform)) + '</span>' +
+          '<span class="lh-cap"><b>' + esc(title) + '</b>' +
+            '<span>' + meta +
+              (lv.viewers ? ' <i class="lh-vdot" aria-hidden="true">●</i> ' + esc(T('video.liveViewers', { n: fmtCount(lv.viewers) })) : '') +
+            '</span>' +
+          '</span>' +
+        '</a>' +
+        '<div class="lh-foot">' +
+          (foot ? '<span class="lh-off">' + esc(T('video.liveOffline')) + ' ' + foot + '</span>' : '') +
+          '<a class="lh-go" href="' + esc(lv.url || '#') + '" target="_blank" rel="noopener">' +
+            esc(T('video.liveGo')) + ' ↗</a>' +
+        '</div>' +
+      '</div>';
+    var img = host.querySelector('.lh-thumb img');
+    if (img) {
+      img.addEventListener('error', function () {
+        if (img.parentNode) img.parentNode.removeChild(img);
+      });
     }
   }
 
@@ -915,10 +1037,17 @@
         count[k]++;
       });
     });
+    /* 추천 6종은 시안 순서 그대로 앞에, 나머지는 편수 많은 순서로 */
     var order = ['ambessa', 'gnar', 'azir', 'kaisa', 'leblanc', 'jayce'];
     out.sort(function (a, b) {
+      var ai = order.indexOf(a), bi = order.indexOf(b);
+      if (ai > -1 || bi > -1) {
+        if (ai < 0) return 1;
+        if (bi < 0) return -1;
+        return ai - bi;
+      }
       if (count[b] !== count[a]) return count[b] - count[a];
-      return order.indexOf(a) - order.indexOf(b);
+      return a < b ? -1 : (a > b ? 1 : 0);
     });
     return out;
   }
@@ -940,12 +1069,16 @@
   function renderVideoCats() {
     var host = $('#videoCats');
     if (!host) return;
-    var cats = ['all'].concat(Object.keys(typeof HL_CATS !== 'undefined' ? HL_CATS : { highlight: 1 }));
-    host.innerHTML = cats.map(function (key) {
+    var cats = Object.keys(typeof HL_CATS !== 'undefined' ? HL_CATS : { highlight: 1 });
+    var all = '<button class="chip' + (state.videoCat === 'all' ? ' is-active' : '') + '" type="button" role="tab" aria-selected="' +
+      (state.videoCat === 'all') + '" data-video-cat="all">' + esc(T('video.filterAll')) + '</button>';
+    var favOn = state.videoCat === 'fav';
+    var fav = '<button class="chip is-fav' + (favOn ? ' is-active' : '') + '" type="button" role="tab" aria-selected="' + favOn +
+      '" data-video-cat="fav">' + esc(T('video.favChip', { n: favs.length })) + '</button>';
+    host.innerHTML = all + fav + cats.map(function (key) {
       var on = key === state.videoCat;
-      var label = key === 'all' ? T('video.filterAll') : catText(key);
       return '<button class="chip' + (on ? ' is-active' : '') + '" type="button" role="tab" aria-selected="' + on + '"' +
-        ' data-video-cat="' + key + '">' + esc(label) + '</button>';
+        ' data-video-cat="' + key + '">' + esc(catText(key)) + '</button>';
     }).join('');
   }
 
@@ -1008,7 +1141,8 @@
     var who = whoText(entry);
     var champLine = champs.map(tagText).join(' · ');
     var title = L(v.point) || L(v.match);
-    return '<li>' +
+    var on = isFav(v.id);
+    return '<li class="vc-row">' +
       '<button class="vc-item" type="button" data-play="' + esc(v.id) + '" data-title="' + esc(title) + '">' +
         '<span class="vc-thumb"><img loading="lazy" src="' + ytThumb(v.id) + '" alt="" width="168" height="94">' +
           '<i class="vc-play" aria-hidden="true">▶</i><i class="vc-len">' + esc(v.len) + '</i></span>' +
@@ -1022,6 +1156,9 @@
             champTags + team + '<span class="vc-yr">' + esc(v.year) + '</span></span>' +
         '</span>' +
       '</button>' +
+      '<button class="vc-fav' + (on ? ' is-on' : '') + '" type="button" data-fav="' + esc(v.id) + '"' +
+        ' aria-pressed="' + on + '" aria-label="' + esc(T(on ? 'video.favRemove' : 'video.favAdd')) + '"' +
+        ' title="' + esc(T(on ? 'video.favRemove' : 'video.favAdd')) + '">' + (on ? '★' : '☆') + '</button>' +
     '</li>';
   }
 
@@ -1047,14 +1184,26 @@
     '</li>';
   }
 
-  function renderVideoList() {
-    var host = $('#videoList');
-    if (!host) return;
+  function byYearSort(a, b) { return b.v.year - a.v.year; }
+  function playerRank(e) {
+    var order = PLAYERS.map(function (p) { return p.key; }).concat(['dk']);
+    var i = order.indexOf(videoWhoKey(e));
+    return i < 0 ? order.length : i;
+  }
+
+  /* 지금 고른 필터·검색을 그대로 적용한 목록 — 화면과 연속 재생 대기열이 같은 순서를 씁니다. */
+  function videoListEntries() {
     var list = archiveItems();
     if (state.videoPlayer !== 'all') {
       list = list.filter(function (e) { return videoWhoKey(e) === state.videoPlayer; });
     }
-    if (state.videoCat !== 'all') {
+    if (state.videoCat === 'fav') {
+      /* 찜 목록은 찜한 순서 그대로 */
+      var rank = {};
+      favs.forEach(function (id, i) { rank[id] = i; });
+      list = list.filter(function (e) { return isFav(e.v.id); })
+        .sort(function (a, b) { return rank[a.v.id] - rank[b.v.id]; });
+    } else if (state.videoCat !== 'all') {
       list = list.filter(function (e) { return videoCat(e) === state.videoCat; });
     }
     if (state.videoChamp !== 'all') {
@@ -1062,36 +1211,45 @@
     }
     var q = state.videoQuery;
     if (q) list = list.filter(function (e) { return hlMatches(e, q); });
+    return list;
+  }
 
-    /* 정렬: 선수별(기본, 선수 순서 + 그 안에서 최신 연도순) / 최신순(연도 내림차순) */
-    var byYear = function (a, b) { return b.v.year - a.v.year; };
-    var order = PLAYERS.map(function (p) { return p.key; }).concat(['dk']);
-    var rank = function (e) { var i = order.indexOf(videoWhoKey(e)); return i < 0 ? order.length : i; };
+  function renderVideoList() {
+    var host = $('#videoList');
+    if (!host) return;
+    var list = videoListEntries();
+    var q = state.videoQuery;
     var html = '';
-    if (state.videoSort === 'recent') {
+
+    if (state.videoCat === 'fav') {
+      /* 찜 목록은 묶음 없이 찜한 순서대로 */
+      html = list.map(videoItemHTML).join('');
+    } else if (state.videoSort === 'recent') {
       list = list.slice().sort(function (a, b) {
         if (b.v.year !== a.v.year) return b.v.year - a.v.year;
-        return rank(a) - rank(b);
+        return playerRank(a) - playerRank(b);
       });
       html = list.map(videoItemHTML).join('');
     } else if (state.videoPlayer !== 'all') {
-      /* 선수를 고르면 그 선수 영상만 한 묶음으로 보여 줍니다 (DK 공식 영상 포함). */
+      /* 선수를 고르면 그 선수 영상만 한 묶음으로 보여 줍니다 (팀 영상 포함). */
       var one = player(state.videoPlayer);
-      list = list.slice().sort(byYear);
+      list = list.slice().sort(byYearSort);
       html = (list.length ? hlGroupHead(one, list.length) : '') + list.map(videoItemHTML).join('');
     } else {
       PLAYERS.forEach(function (p) {
-        var rows = list.filter(function (e) { return e.p && e.p.key === p.key; }).sort(byYear);
+        var rows = list.filter(function (e) { return e.p && e.p.key === p.key; }).sort(byYearSort);
         if (!rows.length) return;
         html += hlGroupHead(p, rows.length) + rows.map(videoItemHTML).join('');
       });
-      var dkRows = list.filter(function (e) { return !e.p; }).sort(byYear);
+      var dkRows = list.filter(function (e) { return !e.p; }).sort(byYearSort);
       if (dkRows.length) html += dkGroupHead(dkRows.length) + dkRows.map(videoItemHTML).join('');
     }
 
-    host.innerHTML = list.length
-      ? html
-      : '<li class="vc-empty">' + (q ? esc(T('video.searchEmpty', { q: q })) : T('video.empty')) + '</li>';
+    if (!list.length) {
+      var empty = state.videoCat === 'fav' ? T('video.favEmpty') : (q ? T('video.searchEmpty', { q: q }) : T('video.empty'));
+      html = '<li class="vc-empty">' + esc(empty) + '</li>';
+    }
+    host.innerHTML = html;
     var count = $('#videoCount');
     if (count) count.textContent = T('video.count', { n: list.length });
     var clear = $('#videoSearchClear');
@@ -1101,6 +1259,34 @@
       b.classList.toggle('is-active', on);
       b.setAttribute('aria-pressed', on ? 'true' : 'false');
     });
+    renderFavBar();
+    renderYtSearch();
+  }
+
+  function renderFavBar() {
+    var bar = $('#favBar');
+    if (!bar) return;
+    bar.hidden = favs.length === 0;
+    var sub = $('#favBarSub');
+    if (sub) sub.textContent = T('video.favBarSub', { n: favs.length });
+  }
+
+  /* 검색어가 있으면 유튜브에서도 바로 찾아볼 수 있게 링크를 답니다. */
+  function renderYtSearch() {
+    var a = $('#videoYtSearch');
+    if (!a) return;
+    var q = String(state.videoQuery || '').trim();
+    a.hidden = !q;
+    if (!q) { a.href = '#'; a.textContent = ''; return; }
+    a.href = ytSearch(q);
+    a.textContent = T('video.ytSearch', { q: q }) + ' ↗';
+  }
+
+  /* 찜한 영상만 같은 순서로 (플레이어 MY LIST 대기열) */
+  function favEntries() {
+    var map = {};
+    archiveItems().forEach(function (e) { map[e.v.id] = e; });
+    return favs.map(function (id) { return map[id]; }).filter(Boolean);
   }
 
   /* ---------- 디플러스 기아 공식 재생목록 ---------- */
@@ -1119,38 +1305,186 @@
     }).join('');
   }
 
-  /* ---------- 인앱 유튜브 플레이어 ---------- */
+  /* ---------- 인앱 유튜브 플레이어 (찜 목록 연속 재생 · 다음 영상 · MY LIST) ---------- */
   var vpLastFocus = null;
+  var vp = { kind: 'video', id: '', title: '', queue: [], index: 0 };
 
   function vpSrc(kind, id) {
     var base = kind === 'list'
       ? 'https://www.youtube.com/embed/videoseries?list=' + encodeURIComponent(id) + '&'
       : 'https://www.youtube.com/embed/' + encodeURIComponent(id) + '?';
-    return base + 'autoplay=1&rel=0&playsinline=1&modestbranding=1';
+    var origin = '';
+    try {
+      if (location.origin && location.origin.indexOf('http') === 0) origin = '&origin=' + encodeURIComponent(location.origin);
+    } catch (e) {}
+    return base + 'autoplay=1&rel=0&playsinline=1&modestbranding=1&enablejsapi=1' + origin;
   }
 
-  function openPlayer(kind, id, title) {
+  function vpCurrent() {
+    return vp.queue.length ? vp.queue[vp.index] : null;
+  }
+  function vpCurrentId() {
+    var cur = vpCurrent();
+    return cur ? cur.v.id : (vp.kind === 'video' ? vp.id : '');
+  }
+  function vpCurrentTitle() {
+    var cur = vpCurrent();
+    return cur ? (L(cur.v.point) || L(cur.v.match)) : vp.title;
+  }
+
+  function openPlayer(kind, id, title, entries, index) {
     var modal = $('#vpModal');
     if (!modal || !id) return;
-    var frame = $('#vpFrame');
-    var open = $('#vpOpen');
     vpLastFocus = document.activeElement;
-    var name = title || '';
-    var head = $('#vpTitle');
-    if (head) head.textContent = name;
-    if (open) {
-      open.href = kind === 'list' ? ('https://www.youtube.com/playlist?list=' + id) : ytWatch(id);
-    }
-    var note = $('#vpNote');
-    if (note) note.textContent = T('video.embedNote');
-    if (frame) {
-      frame.title = name || T('video.playerTitle');
-      frame.src = vpSrc(kind, id);
+    vp = { kind: kind, id: id, title: title || '', queue: [], index: 0 };
+    if (kind === 'video' && Array.isArray(entries) && entries.length) {
+      var at = typeof index === 'number' ? index : -1;
+      if (at < 0) {
+        for (var i = 0; i < entries.length; i++) {
+          if (entries[i] && entries[i].v && entries[i].v.id === id) { at = i; break; }
+        }
+      }
+      if (at > -1) { vp.queue = entries.slice(); vp.index = at; }
     }
     modal.hidden = false;
     document.body.classList.add('vp-locked');
+    playCurrent();
     var close = $('#vpClose');
     if (close) { try { close.focus(); } catch (e) {} }
+  }
+
+  /* 대기열의 현재 영상을 틀고 플레이어 주변(제목·다음·MY LIST)을 다시 그립니다. */
+  function playCurrent() {
+    var frame = $('#vpFrame');
+    if (frame) {
+      if (vp.kind === 'list') {
+        frame.title = vp.title || T('video.playerTitle');
+        frame.src = vpSrc('list', vp.id);
+      } else {
+        var id = vpCurrentId();
+        frame.title = vpCurrentTitle() || T('video.playerTitle');
+        frame.src = id ? vpSrc('video', id) : 'about:blank';
+      }
+    }
+    renderPlayerChrome();
+  }
+
+  function vpMove(delta) {
+    if (!vp.queue.length) return;
+    var i = vp.index + delta;
+    if (i < 0 || i >= vp.queue.length) return;
+    vp.index = i;
+    playCurrent();
+  }
+
+  /* 찜 목록 전체를 대기열로 (현재 영상이 찜 안에 있으면 그 자리부터) */
+  function playQueueFrom(entries, id) {
+    if (!entries || !entries.length) return;
+    var at = 0;
+    for (var i = 0; i < entries.length; i++) if (entries[i].v.id === id) { at = i; break; }
+    openPlayer('video', entries[at].v.id, '', entries, at);
+  }
+
+  function renderPlayerChrome() {
+    var cur = vpCurrent();
+    var id = vpCurrentId();
+    var mode = $('#vpModeText');
+    if (mode) {
+      mode.textContent = T(vp.queue.length ? 'video.playing' : (vp.kind === 'list' ? 'video.playlistMode' : 'video.videoMode'));
+    }
+    var pos = $('#vpPos');
+    if (pos) {
+      pos.hidden = !vp.queue.length;
+      pos.textContent = vp.queue.length ? ((vp.index + 1) + ' / ' + vp.queue.length) : '';
+    }
+    var head = $('#vpTitle');
+    if (head) head.textContent = vpCurrentTitle() || '';
+
+    var meta = $('#vpMeta');
+    var tags = $('#vpTags');
+    if (!cur) {
+      if (meta) meta.textContent = vp.kind === 'list' ? T('video.playlistMode') : '';
+      if (tags) tags.innerHTML = '';
+    } else {
+      var v = cur.v;
+      if (meta) {
+        meta.textContent = [whoText(cur), v.channel, v.year].filter(Boolean).join(' · ');
+      }
+      if (tags) {
+        tags.innerHTML =
+          '<span class="vc-cat vc-cat-' + esc(videoCat(cur)) + '">' + esc(catText(videoCat(cur))) + '</span>' +
+          videoChamps(cur).map(function (key) { return '<span class="vc-tag is-champ">' + esc(tagText(key)) + '</span>'; }).join('') +
+          (v.team ? '<span class="vc-team' + (v.team === 'DK' ? ' is-now' : '') + '">' + esc(v.team) + '</span>' : '') +
+          '<span class="vc-yr">' + esc(v.year) + '</span>' +
+          (isFav(v.id) && favs.length > 1
+            ? '<button class="vc-tag vp-use-queue" type="button" id="vpUseQueue" style="font-family:inherit;cursor:pointer">' +
+              esc(T('video.myList')) + ' ▶</button>' : '');
+      }
+    }
+
+    var star = $('#vpStar');
+    var on = isFav(id);
+    if (star) {
+      star.classList.toggle('is-on', on);
+      star.setAttribute('aria-pressed', on ? 'true' : 'false');
+      star.textContent = T(on ? 'video.favDone' : 'video.favAdd');
+      star.hidden = !id;
+    }
+
+    var open = $('#vpOpen');
+    if (open) {
+      open.href = vp.kind === 'list'
+        ? ('https://www.youtube.com/playlist?list=' + encodeURIComponent(vp.id))
+        : ytWatch(id || vp.id);
+    }
+
+    /* 다음 영상 미리보기 */
+    var nextBox = $('#vpNext');
+    if (nextBox) {
+      var next = vp.queue.length && vp.index + 1 < vp.queue.length ? vp.queue[vp.index + 1] : null;
+      var showNext = !!vp.queue.length;
+      nextBox.hidden = !showNext;
+      if (showNext) {
+        var nt = $('#vpNextThumb'), ntB = $('#vpNextTitle'), ntM = $('#vpNextMeta'), nBtn = $('#vpNextBtn');
+        if (next) {
+          if (nt) { nt.src = ytThumb(next.v.id); nt.parentNode.hidden = false; }
+          if (ntB) ntB.textContent = L(next.v.point) || L(next.v.match);
+          if (ntM) ntM.textContent = [whoText(next), next.v.len].filter(Boolean).join(' · ');
+          if (nBtn) nBtn.hidden = false;
+        } else {
+          if (nt) { nt.parentNode.hidden = true; nt.removeAttribute('src'); }
+          if (ntB) ntB.textContent = T('video.lastOne');
+          if (ntM) ntM.textContent = (vp.index + 1) + ' / ' + vp.queue.length;
+          if (nBtn) nBtn.hidden = true;
+        }
+      }
+    }
+
+    /* MY LIST · 찜 목록 */
+    var qBox = $('#vpQueue');
+    var qList = $('#vpQueueList');
+    var qCount = $('#vpQueueCount');
+    var list = favEntries();
+    if (qBox) qBox.hidden = list.length === 0;
+    if (qCount) qCount.textContent = list.length ? T('video.count', { n: list.length }) : '';
+    if (qList) {
+      qList.innerHTML = list.map(function (e, i) {
+        var now = e.v.id === id;
+        return '<li><button class="vp-qitem' + (now ? ' is-now' : '') + '" type="button" data-queue-play="' + esc(e.v.id) + '"' +
+            ' aria-current="' + (now ? 'true' : 'false') + '">' +
+          '<span class="vp-qn">' + (i + 1) + '</span>' +
+          '<span class="vp-qthumb"><img loading="lazy" src="' + ytThumb(e.v.id) + '" alt=""></span>' +
+          '<span class="vp-qbody"><b>' + esc(L(e.v.point) || L(e.v.match)) + '</b>' +
+            '<span>' + esc([whoText(e), videoChamps(e).map(tagText).join(' · '), e.v.team].filter(Boolean).join(' · ')) + '</span></span>' +
+          '<span class="vp-qend">' + (now
+            ? '<span class="vp-qlive" aria-hidden="true"><i></i><i></i><i></i></span>'
+            : '<span class="vp-qstar" aria-hidden="true">★</span>') +
+            '<span class="vp-qlen">' + esc(e.v.len) + '</span></span>' +
+        '</button></li>';
+      }).join('');
+    }
+    var note = $('#vpNote');
+    if (note) note.textContent = T('video.embedNote');
   }
 
   /* 닫을 때 iframe src 를 비워 소리가 이어지지 않게 합니다. */
@@ -1161,9 +1495,31 @@
     if (frame) frame.src = 'about:blank';
     modal.hidden = true;
     document.body.classList.remove('vp-locked');
+    vp = { kind: 'video', id: '', title: '', queue: [], index: 0 };
     if (vpLastFocus && vpLastFocus.focus) { try { vpLastFocus.focus(); } catch (e) {} }
     vpLastFocus = null;
   }
+
+  /* YouTube iframe 이 보내는 "재생 끝" 신호로 다음 영상을 자동 재생합니다. */
+  (function watchVpEnd() {
+    window.addEventListener('message', function (ev) {
+      var host = '';
+      try { host = new URL(ev.origin).hostname; } catch (e) { return; }
+      if (!/(^|\.)youtube(-nocookie)?\.com$/.test(host)) return;
+      var data = ev.data;
+      try { if (typeof data === 'string') data = JSON.parse(data); } catch (e) { return; }
+      if (!data || data.event !== 'infoDelivery' || !data.info) return;
+      if (Number(data.info.playerState) === 0) vpMove(1);
+    });
+    var frame = $('#vpFrame');
+    if (frame) {
+      frame.addEventListener('load', function () {
+        try {
+          frame.contentWindow.postMessage(JSON.stringify({ event: 'listening', id: 1, channel: 'widget' }), '*');
+        } catch (e) {}
+      });
+    }
+  })();
 
   /* ---------- 디플러스 기아 공식 유튜브 최신 영상 (/api/dk-youtube) ---------- */
   function dkDate(iso) {
@@ -1276,6 +1632,7 @@
     if (more) more.href = CHANNELS.dkYoutube;
     var search = $('#videoSearch');
     if (search && search.value !== state.videoQuery) search.value = state.videoQuery;
+    renderLiveHero();
     renderVideoChannels();
     renderVideoStations();
     renderDkYoutube();
@@ -1291,6 +1648,7 @@
     if (note) note.textContent = T('video.embedNote');
     var close = $('#vpClose');
     if (close) close.setAttribute('aria-label', T('video.close'));
+    if (!$('#vpModal').hidden) renderPlayerChrome();
   }
 
   /* ---------- 한 줄 응원 ---------- */
@@ -1884,8 +2242,30 @@
       LIVE.lastSync = Date.now();
       renderAll();
       applyLiveStatus();
+      scheduleLivePoll();
       if (LIVE.config && LIVE.config.push && LIVE.config.push.ready) syncPush(false);
     });
+  }
+
+  /* LIVE NOW 카드는 방송 중이면 1분, 전원 오프라인이면 5분마다 확인합니다. */
+  var livePollTimer = null;
+  function scheduleLivePoll() {
+    if (livePollTimer) clearTimeout(livePollTimer);
+    livePollTimer = null;
+    if (!canUseApi() || LIVE.offline) return;
+    var liveNow = LIVE.live && LIVE.live.liveCount > 0;
+    livePollTimer = setTimeout(function () {
+      if (document.hidden) { scheduleLivePoll(); return; }
+      apiGet('./api/live').then(function (d) {
+        if (d && d.ok) {
+          var was = LIVE.live && LIVE.live.liveCount;
+          LIVE.live = d;
+          renderLiveHero();
+          if (was !== d.liveCount) { renderTiles(); renderVideoStations(); }
+        }
+        scheduleLivePoll();
+      });
+    }, liveNow ? 60000 : 300000);
   }
 
   /* ---------- 웹 푸시 구독 ---------- */
@@ -2081,15 +2461,68 @@
       renderVideoList();
       return;
     }
-    /* 인앱 플레이어: 카드·재생목록·최신 영상을 누르면 앱 안에서 재생 */
+    /* 찜(★) 토글 — 카드 위 별을 누르면 이 기기에만 저장/해제 */
+    var favBtn = e.target.closest('[data-fav]');
+    if (favBtn) {
+      var fid = favBtn.getAttribute('data-fav');
+      var added = toggleFav(fid);
+      favBtn.classList.toggle('is-on', added);
+      favBtn.textContent = added ? '★' : '☆';
+      favBtn.setAttribute('aria-pressed', added ? 'true' : 'false');
+      favBtn.setAttribute('aria-label', T(added ? 'video.favRemove' : 'video.favAdd'));
+      renderVideoCats();
+      renderFavBar();
+      if (!$('#vpModal').hidden) renderPlayerChrome();
+      if (state.videoCat === 'fav') renderVideoList();
+      return;
+    }
+
+    /* 찜 목록 연속 재생 */
+    if (e.target.closest('#favPlay')) {
+      var favQueue = favEntries();
+      if (favQueue.length) openPlayer('video', favQueue[0].v.id, '', favQueue, 0);
+      return;
+    }
+
+    /* 인앱 플레이어: 카드·재생목록·최신 영상을 누르면 앱 안에서 재생 (보고 있던 목록이 대기열) */
     var playBtn = e.target.closest('[data-play]');
     if (playBtn) {
-      openPlayer('video', playBtn.getAttribute('data-play'), playBtn.getAttribute('data-title'));
+      var pid = playBtn.getAttribute('data-play');
+      var queue = videoListEntries();
+      var inQueue = queue.some(function (en) { return en.v.id === pid; });
+      var only = archiveItems().filter(function (en) { return en.v.id === pid; });
+      openPlayer('video', pid, playBtn.getAttribute('data-title'),
+        inQueue ? queue : (only.length ? only : null));
       return;
     }
     var plBtn = e.target.closest('[data-playlist]');
     if (plBtn) {
       openPlayer('list', plBtn.getAttribute('data-playlist'), plBtn.getAttribute('data-title'));
+      return;
+    }
+
+    /* 플레이어: 찜 토글 · 다음 · MY LIST에서 이어 재생 */
+    if (e.target.closest('#vpStar')) {
+      var sid = vpCurrentId();
+      if (sid) {
+        toggleFav(sid);
+        renderVideoCats();
+        renderFavBar();
+        renderPlayerChrome();
+        if (state.videoCat === 'fav') renderVideoList();
+      }
+      return;
+    }
+    if (e.target.closest('#vpNextBtn')) { vpMove(1); return; }
+    if (e.target.closest('#vpUseQueue')) {
+      var favNow = favEntries();
+      if (favNow.length) playQueueFrom(favNow, vpCurrentId());
+      return;
+    }
+    var qPlay = e.target.closest('[data-queue-play]');
+    if (qPlay) {
+      var qid = qPlay.getAttribute('data-queue-play');
+      playQueueFrom(favEntries(), qid);
       return;
     }
     if (e.target.closest('#vpClose') || e.target.closest('#vpVeil')) {
@@ -2339,9 +2772,17 @@
   renderAll();
   applyLiveStatus();
   refreshLive();
+  scheduleLivePoll();
   setInterval(function () {
     if (!document.hidden && !LIVE.offline) refreshLive();
   }, LIVE_INTERVAL);
+  /* 방송 경과 시간은 서버 호출 없이 10초마다 다시 계산합니다. */
+  setInterval(function () {
+    var el = $('#lhElapsed');
+    if (!el) return;
+    var txt = elapsedText(el.getAttribute('data-start'));
+    if (txt && el.textContent !== txt) el.textContent = txt;
+  }, 10000);
   /* 인게임 경과 시간은 1분 단위로 다시 그립니다(서버 호출 없이 로컬 계산). */
   setInterval(function () {
     if (LIVE.solo && LIVE.solo.liveGames && LIVE.solo.liveGames.length) {
@@ -2352,6 +2793,7 @@
   }, 30000);
   document.addEventListener('visibilitychange', function () {
     if (!document.hidden && Date.now() - LIVE.lastSync > LIVE_INTERVAL) refreshLive();
+    if (!document.hidden && !livePollTimer) scheduleLivePoll();
   });
 
   try {
