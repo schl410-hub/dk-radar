@@ -300,6 +300,17 @@ async def main():
             await page.screenshot(path=str(OUT / "00-home-ko-dark.png"))
             await page.screenshot(path=str(OUT / "00-home-ko-dark-full.png"), full_page=True)
 
+            # ---------- ?lang= 로 들어와 바꾼 언어가 새로고침 후에도 유지 ----------
+            await page.goto(BASE + "?lang=ko", wait_until="networkidle")
+            await page.wait_for_timeout(700)
+            check("url lang applies", await page.get_attribute("html", "lang") == "ko")
+            await page.click('[data-lang="en"]')
+            await page.wait_for_timeout(700)
+            check("url lang follows switch", "lang=en" in page.url, page.url)
+            await page.reload(wait_until="networkidle")
+            await page.wait_for_timeout(700)
+            check("lang kept after reload (?lang=)", await page.get_attribute("html", "lang") == "en")
+
             # ---------- 브라우저 언어 자동 감지 (저장값 없는 새 컨텍스트) ----------
             for loc, want in [("en-US", "en"), ("ja-JP", "ja"), ("fr-FR", "ko")]:
                 ctx2 = await browser.new_context(viewport={"width": 390, "height": 844}, locale=loc)

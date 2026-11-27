@@ -851,11 +851,19 @@
     { ko: '4강', en: 'Semifinals', ja: 'ベスト4' },
     { ko: '결승', en: 'Final', ja: '決勝' }
   ];
+  function normBlock(s) {
+    return String(s || '').toLowerCase()
+      .replace(/\s*(stage|스테이지|ステージ)\s*/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .replace(/s$/, '');
+  }
   function blockText(str) {
     if (!str) return '';
     var s = String(str).trim();
+    var n = normBlock(s);
     for (var i = 0; i < BLOCKS.length; i++) {
-      if (BLOCKS[i].ko === s || BLOCKS[i].ja === s || BLOCKS[i].en.toLowerCase() === s.toLowerCase()) return L(BLOCKS[i]);
+      if (BLOCKS[i].ko === s || BLOCKS[i].ja === s || normBlock(BLOCKS[i].en) === n || normBlock(BLOCKS[i].ko) === n) return L(BLOCKS[i]);
     }
     var m = /^(\d+)라운드$/.exec(s);
     if (m) return lang() === 'ko' ? s : (lang() === 'ja' ? '第' + m[1] + 'ラウンド' : 'Round ' + m[1]);
@@ -1477,6 +1485,14 @@
 
   /* ---------- 언어 변경 ---------- */
   window.I18N.onChange(function () {
+    /* ?lang= 로 들어온 경우, 사용자가 바꾼 언어를 주소에도 반영해 새로고침 때 되돌아가지 않게 합니다. */
+    try {
+      var sp = new URLSearchParams(location.search);
+      if (sp.get('lang')) {
+        sp.set('lang', lang());
+        history.replaceState(null, '', location.pathname + '?' + sp.toString() + location.hash);
+      }
+    } catch (e) {}
     applyStatic();
     renderLangSwitch();
     updateThemeUI();
