@@ -23,7 +23,7 @@
     var t = localStorage.getItem('dk.signal.theme');
     if (t === 'mint' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
     var l = localStorage.getItem('dk.signal.lang');
-    if (l === 'ko' || l === 'en' || l === 'ja' || l === 'zh') document.documentElement.setAttribute('lang', l === 'zh' ? 'zh-CN' : l);
+    if (l === 'ko' || l === 'en' || l === 'ja' || l === 'zh' || l === 'vi') document.documentElement.setAttribute('lang', l === 'zh' ? 'zh-CN' : l);
   } catch (e) {}
 })();
 </script>
@@ -60,7 +60,9 @@
           <svg class="ic ic-sun" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.8"/><path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.4 5.4l1.6 1.6M17 17l1.6 1.6M18.6 5.4 17 7M7 17l-1.6 1.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
           <span id="themeTxt">다크</span>
         </button>
-        <button class="install-btn" id="installBtn" type="button" data-i18n="install" hidden>설치</button>
+        <button class="install-btn" id="installBtn" type="button" data-i18n-attr="aria-label:install.installAria" aria-label="앱 설치 안내 열기" title="앱 설치">
+          <span class="ib-ico" aria-hidden="true">📲</span><span class="ib-txt" data-i18n="install.btn">앱 설치</span>
+        </button>
       </div>
     </div>
     <nav class="tabs" role="tablist" data-i18n-attr="aria-label:nav.aria" aria-label="화면 선택">
@@ -98,6 +100,17 @@
       </div>
 
       <section class="pick" id="pickBanner" aria-live="polite"></section>
+
+      <!-- 앱 설치 배너: 스탠드얼론(설치됨)이 아니면 어떤 브라우저에서든 보입니다 -->
+      <section class="install-card" id="installCard" hidden>
+        <span class="ic-badge" aria-hidden="true">📲</span>
+        <span class="ic-body">
+          <b data-i18n="install.cardTitle">홈 화면에 딮기 시그널 설치</b>
+          <span data-i18n="install.cardBody">10초면 끝나요. 아이콘만 누르면 앱처럼 열려요.</span>
+        </span>
+        <button class="ic-go" id="installCardBtn" type="button" data-i18n="install.cardCta">설치 방법</button>
+        <button class="ic-x" id="installCardX" type="button" data-i18n-attr="aria-label:install.dismiss" aria-label="설치 안내 닫기">✕</button>
+      </section>
 
       <!-- 이벤트 · D-DAY: LCK 어워드 · 2027 LCK 컵 · 다음 생일 (지난 일정은 앱이 자동으로 숨깁니다) -->
       <section class="events" id="eventStrip" hidden aria-label="이벤트 · D-DAY" data-i18n-attr="aria-label:event.stripAria"></section>
@@ -397,6 +410,7 @@
       <section class="card">
         <div class="eyebrow" data-i18n="records.season">2026 시즌</div>
         <h3 class="card-title" id="recordsWho">도란 · 2026 시즌</h3>
+        <ul class="rec-profile" id="recordsProfile" data-i18n-attr="aria-label:records.profileAria" aria-label="선수 기본 정보"></ul>
         <div class="link-row" id="recordsLinks"></div>
         <ul class="records" id="recordsList"></ul>
       </section>
@@ -460,6 +474,54 @@
       <ol class="vp-qlist" id="vpQueueList" data-i18n-attr="aria-label:video.queueAria"></ol>
       <p class="vp-qfoot" data-i18n="video.queueFoot">찜은 이 기기에 저장돼요. 로그인 없이도 그대로 남아요.</p>
     </div>
+  </div>
+</div>
+
+<!-- 앱 설치 가이드: 기기·브라우저·인앱 브라우저에 맞춰 순서를 바꿔 보여줍니다 -->
+<div class="lg-modal" id="installModal" hidden>
+  <div class="lg-veil" id="installVeil"></div>
+  <div class="lg-sheet in-sheet" role="dialog" aria-modal="true" aria-labelledby="inTitle">
+    <div class="lg-head">
+      <b class="lg-title" id="inTitle" data-i18n="install.title">홈 화면에 앱 설치</b>
+      <button class="lg-close" id="installClose" type="button" data-i18n-attr="aria-label:install.close" aria-label="닫기">✕</button>
+    </div>
+    <p class="in-lead" data-i18n="install.lead"></p>
+    <p class="in-device" id="installDevice"></p>
+    <div class="in-cta" id="installCta" hidden>
+      <button class="in-cta-btn" id="installPromptBtn" type="button" data-i18n="install.oneTouch"></button>
+      <p class="in-cta-note" data-i18n="install.oneTouchNote"></p>
+    </div>
+    <div class="in-done" id="installDone" hidden>
+      <b data-i18n="install.doneTitle"></b>
+      <span data-i18n="install.doneBody"></span>
+    </div>
+    <section class="in-sec is-warn" id="installInapp" hidden>
+      <h4 class="in-h"><i aria-hidden="true">⚠️</i><span data-i18n="install.inappTitle"></span></h4>
+      <p class="in-warn" data-i18n="install.inappBody"></p>
+      <ol class="in-steps">
+        <li data-i18n="install.inappStep1"></li>
+        <li data-i18n="install.inappStep2"></li>
+        <li data-i18n="install.inappStep3"></li>
+      </ol>
+    </section>
+    <h4 class="in-sub" id="installManualTitle" data-i18n="install.manualTitle">버튼이 안 보이면 이렇게 해요</h4>
+    <section class="in-sec" id="installIos">
+      <h4 class="in-h"><i aria-hidden="true">🍎</i><span data-i18n="install.iosTitle"></span></h4>
+      <ol class="in-steps">
+        <li data-i18n="install.iosStep1"></li>
+        <li data-i18n="install.iosStep2"></li>
+        <li data-i18n="install.iosStep3"></li>
+      </ol>
+      <p class="in-note" data-i18n="install.iosNote"></p>
+    </section>
+    <section class="in-sec" id="installAndroid">
+      <h4 class="in-h"><i aria-hidden="true">🤖</i><span data-i18n="install.androidTitle"></span></h4>
+      <ol class="in-steps">
+        <li data-i18n="install.androidStep1"></li>
+        <li data-i18n="install.androidStep2"></li>
+        <li data-i18n="install.androidStep3"></li>
+      </ol>
+    </section>
   </div>
 </div>
 

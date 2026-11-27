@@ -15,7 +15,7 @@
   - **솔로랭크**: `RIOT_API_KEY` 가 있으면 5인 티어·LP·시즌 전적·인게임 여부·최근 5경기를 실시간으로 받아 화면(타일·배너·전적표)에 반영하고, 없으면 `data.js` 스냅샷(2026-11-26)으로 안전하게 대체하며 상태 문구를 표시합니다.
   - 앱을 열어 둔 동안 90초마다 자동 확인하고, 상단에 `실시간` / `자동 갱신` 칩과 마지막 확인 시각을 보여 줍니다.
 - **웹 푸시 (VAPID)**: 선수별 솔랭 ON/OFF + DK 공식 경기 ON/OFF 설정이 서버 구독 정보와 함께 저장됩니다. 서버가 5분마다 새 랭크 게임(챔피언·KDA·승패)과 새 공식 일정·경기 시작 40분 전을 감지해 구독 기기로 보냅니다. 준비가 안 된 상태에서는 화면에 무엇이 빠졌는지 그대로 표시합니다.
-- **다국어 (KO · EN · JA · ZH)**: 헤더 `KO · EN · JA · ZH` 세그먼트로 즉시 전환. 탭·배지·선수명/실명/포지션/티어·공식 일정·경기표·영상 탭·알림 문구·테스트 알림·날짜 표기·챔피언 이름(Data Dragon zh_CN)까지 화면 전체와 `document.title`·`<html lang>`(zh-CN)·미리보기 문구가 함께 바뀝니다. `localStorage`(`dk.signal.lang`) 저장값 → 없으면 `navigator.language`(zh 계열→zh, ja/en/ko) → 기본 `ko`.
+- **다국어 (KO · EN · JA · ZH · VI)**: 헤더 `KO · EN · JA · ZH · VI` 세그먼트로 즉시 전환. 탭·배지·선수명/실명/포지션/티어·공식 일정·경기표·영상 탭·알림 문구·테스트 알림·날짜 표기·챔피언 이름(Data Dragon zh_CN·vi_VN)까지 화면 전체와 `document.title`·`<html lang>`(zh-CN)·미리보기 문구가 함께 바뀝니다. `localStorage`(`dk.signal.lang`) 저장값 → 없으면 `navigator.language`(vi/zh 계열→vi·zh, ja/en/ko) → 기본 `ko`.
 - **실시간 테마 전환**: 헤더 우측 `다크 / 소프트` 버튼. 선택은 `localStorage`에 저장되고 첫 페인트 전에 적용됩니다.
 - **탭 5개**: 홈 / 공식일정 / 영상 / 경기로그 / 기록실 (360~430px 모바일에서도 한 줄 유지)
 - **5인 상태 보드**: 도란 · 카나비 · 쇼메이커 · 스매쉬 · 딜라이트 타일을 누르면 최애 포커스 배너·하이라이트·전적표가 함께 바뀝니다. 인게임이면 `인게임` 배지가 붙습니다(키 설정 시).
@@ -62,6 +62,18 @@ curl -s $BASE/api/dk-youtube | head -c 400
 curl -s "$BASE/api/check?dry=1&token=$CHECK_SECRET"
 curl -s "$BASE/api/check?test=1&token=$CHECK_SECRET"   # 잠금화면 알림 확인
 ```
+
+## v3.6 (2026-11-27) — 데뷔일 D-DAY · 베트남어(VI) · 초간단 설치 가이드
+
+| 기능 | 내용 |
+| --- | --- |
+| 선수 데뷔일 | `data.js` `PLAYERS[].debut` + `debutNote`(데뷔 무대). 리그피디아(Leaguepedia) `ScoreboardPlayers` 첫 1군 공식전 기준 — 도란 2019-07-20(LCK 서머·Griffin), 카나비 2019-06-09(LPL 서머·JDG), 쇼메이커 2017-11-22(KeSPA Cup·DAMWON), 스매쉬 2025-01-24(LCK 컵·T1 1군), 딜라이트 2021-01-15(LCK 스프링·Fredit BRION) |
+| 데뷔 기념일 D-DAY | 홈 이벤트 스트립에 `🎉 {선수} 데뷔 N주년 D-XX` 카드를 가까운 두 명까지 함께 계산·노출(최대 5장) |
+| 기록실 프로필 | 선수 카드에 🎂 생일(만 나이·D-DAY) / 🎉 데뷔(YYYY-MM-DD·데뷔 N일째·데뷔 무대·N주년 D-XX) 표시 |
+| 베트남어(VI) | `i18n.js` 409키 × 5개 언어(ko/en/ja/zh/vi) 100% 일치, `data.js` 447개 문구(포인트·경기명·대회명)에 `vi`, 챔피언 173종 `vi_VN`(Data Dragon 16.23.1), `/api/official?lang=vi`·lolesports `hl=vi-VN` |
+| 설치 가이드 | 헤더 `📲 앱 설치` 버튼 + 홈 설치 배너가 **스탠드얼론이 아니면 항상** 보임. 모달에서 ① 안드로이드 원터치(`beforeinstallprompt`) ② 크롬·삼성 인터넷 수동 메뉴 ③ 아이폰 Safari 3단계 ④ 카톡·X·인스타 인앱 브라우저 경고를 지금 기기 순서로 정렬. 5개 국어 번역 |
+
+헤더는 360·390·430px에서 줄바꿈·가로 넘침 없이(오버플로 0) 언어 5개 + 테마 + 설치 버튼이 한 줄에 들어갑니다. 서버리스 함수는 그대로 **7개**입니다.
 
 ## v3.5 (2026-11-27) — 영상 탭 디벨롭 (LIVE NOW · 찜 · 연속 재생)
 
@@ -173,16 +185,16 @@ tools/make_font.py    Pretendard 서브셋 생성
 ## 검증
 
 ```bash
-python3 tools/verify_highlights.py          # 아카이브 45편 + 재생목록 6종 oEmbed 재생 확인
-node tools/api_smoke.js                    # 서버 함수 89항목 (실제 LoL Esports API·YouTube RSS 1회 + 가짜 SOOP/CHZZK)
+python3 tools/verify_highlights.py          # 아카이브 116편 + 재생목록 6종 oEmbed · 5개 국어 포인트 확인
+node tools/api_smoke.js                    # 서버 함수 119항목 (실제 LoL Esports API·YouTube RSS 1회 + 가짜 SOOP/CHZZK)
 
-LD_LIBRARY_PATH=... PLAYWRIGHT_BROWSERS_PATH=... python3 tools/verify.py       # 87/87
+LD_LIBRARY_PATH=... PLAYWRIGHT_BROWSERS_PATH=... python3 tools/verify.py       # 104/104
 LD_LIBRARY_PATH=... PLAYWRIGHT_BROWSERS_PATH=... python3 tools/verify_api.py   # 31/31
-LD_LIBRARY_PATH=... python3 tools/verify_v3.py                                 # 233/233 (다국어·재생목록·아카이브·인앱 플레이어·라이브)
+LD_LIBRARY_PATH=... python3 tools/verify_v3.py                                 # 394/394 (다국어 5종·재생목록·아카이브·인앱 플레이어·라이브·설치 가이드)
 ```
 
-- `verify_highlights.py` 는 `data.js` 의 영상 45편과 재생목록 6종을 YouTube oEmbed 로 하나씩 확인하고, 챔피언 태그 정합성·한 줄 포인트 4개 국어·중복 ID 까지 봅니다(영상이 내려가면 여기서 먼저 걸립니다).
+- `verify_highlights.py` 는 `data.js` 의 영상 45편과 재생목록 6종을 YouTube oEmbed 로 하나씩 확인하고, 챔피언 태그 정합성·한 줄 포인트·경기명·대회명 5개 국어(ko/en/ja/zh/vi)·중복 ID 까지 봅니다(영상이 내려가면 여기서 먼저 걸립니다).
 - `verify.py` 는 `tools/dev_server.js`(픽스처 `none`)를 직접 띄워 5탭, 5인 전환, 테마 저장, MY PICK, 알림 동기화, 테스트 푸시, 응원 저장, 콘솔 에러를 확인하고 `downloads/dk-radar/signal-*.png` 를 갱신합니다.
 - `verify_api.py` 는 다음 경기가 공개된 픽스처로 NEXT 카드 자동 갱신, 미공개 시 2027 LCK 컵 fallback, 실시간 솔로랭크 응답의 티어·인게임·전적 반영, 서버 미연결 시 화면 유지를 확인합니다.
-- `verify_v3.py` 는 KO/EN/JA/ZH 전환(탭·배너·타일·하이라이트·표·일정·기록·알림·응원·영상 탭), 새로고침 후 언어 유지, 브라우저 언어 자동 감지(en-US→EN, ja-JP→JA, zh-CN/zh-TW→ZH, 그 외→KO), 영상 탭 공식 채널 4곳·방송국 5인·재생목록 6종(카운트·썸네일·재생)·아카이브 45편(선수/종류/챔피언 필터·검색·해시태그·한국어 IME·썸네일·길이·연도)·인앱 플레이어(임베드 URL·닫기·소리 정지·배경 클릭)·디플러스 기아 공식 유튜브 10편(/api/dk-youtube)·VOD 링크, 라이브 배지(타일·MY PICK·영상 탭·방송국 카드·토글), 네 언어권에서의 가로 넘침, 콘솔 에러를 확인하고 `downloads/dk-signal-v3/*.png` 를 갱신합니다.
+- `verify_v3.py` 는 KO/EN/JA/ZH/VI 전환(탭·배너·타일·하이라이트·표·일정·기록·알림·응원·영상 탭), 새로고침 후 언어 유지, 브라우저 언어 자동 감지(en-US→EN, ja-JP→JA, zh-CN/zh-TW→ZH, vi-VN→VI, 그 외→KO), 헤더 한 줄(360/390/430)·설치 버튼·설치 안내(아이폰/카톡/안드로이드/스탠드얼론), 영상 탭 공식 채널 4곳·방송국 5인·재생목록 6종(카운트·썸네일·재생)·아카이브 45편(선수/종류/챔피언 필터·검색·해시태그·한국어 IME·썸네일·길이·연도)·인앱 플레이어(임베드 URL·닫기·소리 정지·배경 클릭)·디플러스 기아 공식 유튜브 10편(/api/dk-youtube)·VOD 링크, 라이브 배지(타일·MY PICK·영상 탭·방송국 카드·토글), 네 언어권에서의 가로 넘침, 콘솔 에러를 확인하고 `downloads/dk-signal-v3/*.png` 를 갱신합니다.
 - 로컬에서 눈으로 보기: `node tools/dev_server.js` → http://127.0.0.1:8765

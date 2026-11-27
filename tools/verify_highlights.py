@@ -119,12 +119,20 @@ def main():
         else:
             print("CHAMP OK %-8s -> %s" % (key, ", ".join(by_champ[key])))
 
-    # 4) 포인트(한 줄)와 4개 언어가 모든 항목에 있는지
+    # 4) 포인트(한 줄)와 5개 언어가 모든 항목에 있는지 (v3.6: VI 추가)
     for it in items:
         pt = it.get("point") or {}
-        if not all(pt.get(l) for l in ("ko", "en", "ja", "zh")):
+        if not all(pt.get(l) for l in ("ko", "en", "ja", "zh", "vi")):
             failures.append("point:" + it["id"])
-            print("FAIL missing 4-language point", it["id"])
+            print("FAIL missing 5-language point", it["id"], [l for l in ("ko", "en", "ja", "zh", "vi") if not pt.get(l)])
+
+    # 5) 경기명·대회명도 5개 언어인지 (한 항목이라도 비면 실패)
+    for it in items:
+        for field in ("match", "event"):
+            obj = it.get(field) or {}
+            if obj and not all(obj.get(l) for l in ("ko", "en", "ja", "zh", "vi")):
+                failures.append("%s:%s" % (field, it["id"]))
+                print("FAIL missing 5-language", field, it["id"])
 
     dupes = len(items) - len(set(it["id"] for it in items))
     if dupes:

@@ -214,7 +214,7 @@
   function normChamp(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
   function champIndex() {
     if (CHAMP_INDEX) return CHAMP_INDEX;
-    CHAMP_INDEX = { ko: {}, en: {}, ja: {}, zh: {} };
+    CHAMP_INDEX = { ko: {}, en: {}, ja: {}, zh: {}, vi: {} };
     Object.keys(CHAMPIONS || {}).forEach(function (id) {
       var row = CHAMPIONS[id];
       if (!row || !row.length) return;
@@ -222,17 +222,19 @@
       CHAMP_INDEX.en[normChamp(row[1])] = row;
       CHAMP_INDEX.ja[row[2]] = row;
       if (row[3]) CHAMP_INDEX.zh[row[3]] = row;
+      if (row[4]) CHAMP_INDEX.vi[row[4]] = row;
     });
     return CHAMP_INDEX;
   }
   function champText(name) {
     if (name == null) return '';
     var idx = champIndex();
-    var row = idx.ko[name] || idx.en[normChamp(name)] || idx.ja[name] || idx.zh[name];
+    var row = idx.ko[name] || idx.en[normChamp(name)] || idx.ja[name] || idx.zh[name] || idx.vi[name];
     if (!row) return name;
     if (lang() === 'ko') return row[0];
     if (lang() === 'ja') return row[2];
     if (lang() === 'zh') return row[3] || row[0];
+    if (lang() === 'vi') return row[4] || row[1];
     return row[1];
   }
 
@@ -590,6 +592,24 @@
   }
   function ddayText(n) { return n <= 0 ? T('event.today') : T('event.dday', { n: n }); }
 
+  /* 데뷔 기념일: 해마다 돌아오므로 다음 기념일까지 남은 날과 몇 주년인지 함께 셉니다. */
+  function nextAnniversary(iso) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ''));
+    if (!m) return null;
+    var born = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    var now = new Date();
+    var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var t = new Date(now.getFullYear(), Number(m[2]) - 1, Number(m[3]));
+    if (t < today) t = new Date(now.getFullYear() + 1, Number(m[2]) - 1, Number(m[3]));
+    return {
+      days: Math.round((t - today) / 86400000),
+      years: t.getFullYear() - born.getFullYear(),
+      date: t,
+      md: window.I18N.shortDate(t),
+      year: born.getFullYear()
+    };
+  }
+
   function eventCardHTML(ev, n) {
     var icon = ev.kind === 'awards' ? '🏆' : '📅';
     return '<a class="ev-card is-' + ev.kind + (ev.tentative ? ' is-est' : '') + '" href="' + esc(ev.url) + '" target="_blank" rel="noopener">' +
@@ -610,6 +630,15 @@
     '</div>';
   }
 
+  function debutCardHTML(p, a) {
+    return '<div class="ev-card is-debut">' +
+      '<span class="ev-top"><span class="ev-kind"><i aria-hidden="true">🎉</i>' +
+        esc(T('event.debut', { name: pName(p), n: a.years })) + '</span>' +
+        '<b class="ev-dd">' + ddayText(a.days) + '</b></span>' +
+      '<span class="ev-sub">' + esc(T('event.debutSub', { md: a.md, year: a.year, event: L(p.debutNote) })) + '</span>' +
+    '</div>';
+  }
+
   function renderEvents() {
     var host = $('#eventStrip');
     if (!host) return;
@@ -626,8 +655,19 @@
       if (!best || b.days < best.b.days) best = { p: p, b: b };
     });
     if (best) cards.push({ days: best.b.days, html: birthdayCardHTML(best.p, best.b) });
+
+    /* 다가오는 데뷔 기념일: 가까운 두 명을 함께 보여줍니다. */
+    var debuts = [];
+    PLAYERS.forEach(function (p) {
+      var a = nextAnniversary(p.debut);
+      if (!a) return;
+      debuts.push({ days: a.days, html: debutCardHTML(p, a) });
+    });
+    debuts.sort(function (a, b) { return a.days - b.days; });
+    debuts.slice(0, 2).forEach(function (c) { cards.push(c); });
+
     cards.sort(function (a, b) { return a.days - b.days; });
-    var show = cards.slice(0, 3);
+    var show = cards.slice(0, 5);
     host.innerHTML = show.map(function (c) { return c.html; }).join('');
     host.hidden = !show.length;
   }
@@ -1859,10 +1899,63 @@
   }
 
   /* ---------- 기록실 탭 ---------- */
+  /* ---------- 기록실: 선수 기본 정보(생일·데뷔일) ---------- */
+  function ageOf(iso) {
+    var b = isoDate(iso);
+    if (!b) return null;
+    var now = new Date();
+    var age = now.getFullYear() - b.getFullYear();
+    if (now.getMonth() < b.getMonth() || (now.getMonth() === b.getMonth() && now.getDate() < b.getDate())) age--;
+    return age;
+  }
+  function daysSince(iso) {
+    var t = isoDate(iso);
+    if (!t) return null;
+    var now = new Date();
+    var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return Math.round((today - t) / 86400000) + 1;
+  }
+  function fmtDays(n) {
+    return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  }
+  function recordsProfileHTML(p) {
+    var rows = '';
+    var age = ageOf(p.birthday);
+    var b = nextBirthday(p.birthday);
+    if (p.birthday) {
+      rows += '<li class="rec-pf">' +
+        '<span class="pf-ico" aria-hidden="true">🎂</span>' +
+        '<span class="pf-body"><b>' + esc(T('records.birthday')) + '</b>' +
+          '<span>' + esc(T('records.birthdayValue', { date: p.birthday, age: age })) + '</span></span>' +
+        '<span class="pf-tag">' + ddayText(b ? b.days : 0) + '</span>' +
+      '</li>';
+    }
+    if (p.debut) {
+      var days = daysSince(p.debut);
+      var a = nextAnniversary(p.debut);
+      var tag = '';
+      if (a && a.years > 0) {
+        tag = a.days === 0
+          ? T('records.debutToday', { n: a.years })
+          : T('records.debutUpcoming', { n: a.years, d: a.days });
+      }
+      rows += '<li class="rec-pf is-debut">' +
+        '<span class="pf-ico" aria-hidden="true">🎉</span>' +
+        '<span class="pf-body"><b>' + esc(T('records.debut')) + '</b>' +
+          '<span>' + esc(T('records.debutValue', { date: p.debut, days: fmtDays(days) })) + '</span>' +
+          '<i class="pf-note">' + esc(L(p.debutNote)) + '</i></span>' +
+        (tag ? '<span class="pf-tag is-years">' + esc(tag) + '</span>' : '') +
+      '</li>';
+    }
+    return rows;
+  }
+
   function renderRecords() {
     var p = current();
     var who = $('#recordsWho');
     if (who) who.textContent = T('records.who', { name: pName(p) });
+    var profile = $('#recordsProfile');
+    if (profile) profile.innerHTML = recordsProfileHTML(p);
     var list = $('#recordsList');
     if (list) {
       list.innerHTML = p.records.map(function (r) {
@@ -2706,28 +2799,147 @@
   var testBtn = $('#testBtn');
   if (testBtn) testBtn.addEventListener('click', sendTest);
 
-  /* ---------- PWA ---------- */
+  /* ---------- PWA 설치 가이드 ----------
+   * beforeinstallprompt 는 크롬 계열 안드로이드에서만 옵니다.
+   * 아이폰 Safari·카톡/X/인스타 인앱 브라우저에서는 아예 발생하지 않아서,
+   * 예전에는 버튼이 영영 숨겨졌습니다. 이제는 설치된 상태(스탠드얼론)가 아니면 항상 보여주고,
+   * 누르면 지금 환경에 맞는 순서로 따라하기 안내를 띄웁니다. */
   var installPrompt = null;
+  var INSTALL_HIDE_KEY = 'dk.signal.install.hide';
+
+  function isStandalone() {
+    try {
+      if (window.matchMedia) {
+        if (window.matchMedia('(display-mode: standalone)').matches) return true;
+        if (window.matchMedia('(display-mode: fullscreen)').matches) return true;
+        if (window.matchMedia('(display-mode: minimal-ui)').matches) return true;
+      }
+    } catch (e) {}
+    try { if (navigator.standalone === true) return true; } catch (e) {}
+    return false;
+  }
+
+  function envInfo() {
+    var ua = navigator.userAgent || '';
+    var ios = /iPhone|iPad|iPod/i.test(ua);
+    var android = /Android/i.test(ua);
+    /* 카카오톡·X(트위터)·인스타·페북·라인·네이버 앱 안에서 열린 경우 */
+    var inapp = /KAKAOTALK|KakaoTalk|NAVER\(|NAVER\/|DaumApps|Daum|Instagram|FBAN|FBAV|FB_IAB|Line\/|Twitter|X-Client|everytime/i.test(ua);
+    return { ios: ios, android: android, desktop: !ios && !android, inapp: inapp };
+  }
+
+  function deviceLabel(env) {
+    if (env.ios) return T('install.deviceIos');
+    if (env.android) return T('install.deviceAndroid');
+    return T('install.deviceDesktop');
+  }
+
+  function syncInstallUI() {
+    var standalone = isStandalone();
+    var btn = $('#installBtn');
+    if (btn) {
+      btn.hidden = standalone;
+      btn.setAttribute('aria-label', T(standalone ? 'install.already' : 'install.installAria'));
+    }
+    var card = $('#installCard');
+    if (card) card.hidden = standalone || store.get(INSTALL_HIDE_KEY, '0') === '1';
+    var cta = $('#installCta');
+    if (cta) cta.hidden = !installPrompt;
+    var done = $('#installDone');
+    if (done) done.hidden = !standalone;
+  }
+
+  function renderInstallGuide() {
+    var env = envInfo();
+    var dev = $('#installDevice');
+    if (dev) dev.textContent = T('install.detected', { device: deviceLabel(env) });
+
+    var inapp = $('#installInapp');
+    if (inapp) inapp.hidden = !env.inapp;
+
+    /* 지금 쓰는 기기의 안내를 맨 위로 올립니다 (인앱 브라우저 주의 → 기기별 순서 → 나머지). */
+    var iosSec = $('#installIos');
+    var andSec = $('#installAndroid');
+    var manual = $('#installManualTitle');
+    if (iosSec && andSec) {
+      var first = env.ios ? iosSec : andSec;
+      var second = env.ios ? andSec : iosSec;
+      if (env.desktop) { first = iosSec; second = andSec; }
+      first.style.order = '7';
+      second.style.order = '8';
+      first.classList.add('is-here');
+      second.classList.remove('is-here');
+      if (env.desktop) {
+        iosSec.classList.remove('is-here');
+        andSec.classList.remove('is-here');
+      }
+    }
+    if (manual) manual.style.order = '6';
+    if (inapp) inapp.style.order = '5';
+    var cta = $('#installCta');
+    if (cta) cta.style.order = '3';
+    var done = $('#installDone');
+    if (done) done.style.order = '4';
+    var head = $('.in-sheet .lg-head');
+    if (head) head.style.order = '0';
+    var lead = $('.in-lead');
+    if (lead) lead.style.order = '1';
+    if (dev) dev.style.order = '2';
+  }
+
+  function openInstall() {
+    var modal = $('#installModal');
+    if (!modal) return;
+    syncInstallUI();
+    renderInstallGuide();
+    modal.hidden = false;
+  }
+  function closeInstall() {
+    var modal = $('#installModal');
+    if (modal) modal.hidden = true;
+  }
+
   window.addEventListener('beforeinstallprompt', function (e) {
     e.preventDefault();
     installPrompt = e;
-    var btn = $('#installBtn');
-    if (btn) btn.hidden = false;
+    syncInstallUI();
+    if ($('#installModal') && !$('#installModal').hidden) renderInstallGuide();
   });
+  window.addEventListener('appinstalled', function () {
+    installPrompt = null;
+    store.set(INSTALL_HIDE_KEY, '1');
+    syncInstallUI();
+    closeInstall();
+    showBanner(T('install.doneTitle'), T('install.doneBody'));
+  });
+
   var installBtn = $('#installBtn');
-  if (installBtn) {
-    installBtn.addEventListener('click', function () {
-      if (!installPrompt) {
-        showBanner(T('banner.installTitle'), T('banner.installBody'));
-        return;
-      }
-      installPrompt.prompt();
-      installPrompt.userChoice.then(function () {
-        installPrompt = null;
-        installBtn.hidden = true;
-      }).catch(function () {});
-    });
-  }
+  if (installBtn) installBtn.addEventListener('click', openInstall);
+  var installCardBtn = $('#installCardBtn');
+  if (installCardBtn) installCardBtn.addEventListener('click', openInstall);
+  var installCardX = $('#installCardX');
+  if (installCardX) installCardX.addEventListener('click', function () {
+    store.set(INSTALL_HIDE_KEY, '1');
+    syncInstallUI();
+  });
+  var installClose = $('#installClose');
+  if (installClose) installClose.addEventListener('click', closeInstall);
+  var installVeil = $('#installVeil');
+  if (installVeil) installVeil.addEventListener('click', closeInstall);
+  var promptBtn = $('#installPromptBtn');
+  if (promptBtn) promptBtn.addEventListener('click', function () {
+    if (!installPrompt) {
+      closeInstall();
+      showBanner(T('banner.installTitle'), T('banner.installBody'));
+      return;
+    }
+    installPrompt.prompt();
+    installPrompt.userChoice.then(function () {
+      installPrompt = null;
+      syncInstallUI();
+      renderInstallGuide();
+    }).catch(function () {});
+  });
 
   if (!window.__DK_PREVIEW__ && 'serviceWorker' in navigator && (location.protocol === 'https:' || location.protocol === 'http:')) {
     window.addEventListener('load', function () {
@@ -2740,9 +2952,12 @@
 
   window.addEventListener('online', function () { setNote(T('banner.online')); });
 
-  /* 인게임 시트: Esc 로 닫기 */
+  /* 인게임 시트·설치 안내: Esc 로 닫기 */
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && lgOpenKey) closeLive();
+    if (e.key !== 'Escape') return;
+    var install = $('#installModal');
+    if (install && !install.hidden) { closeInstall(); return; }
+    if (lgOpenKey) closeLive();
   });
 
   /* ---------- 언어 변경 ---------- */
@@ -2758,6 +2973,8 @@
     applyStatic();
     renderLangSwitch();
     updateThemeUI();
+    syncInstallUI();
+    if ($('#installModal') && !$('#installModal').hidden) renderInstallGuide();
     if (lgOpenKey) closeLive();
     renderAll();
     applyLiveStatus();
@@ -2769,6 +2986,7 @@
   applyStatic();
   renderLangSwitch();
   updateThemeUI();
+  syncInstallUI();
   renderAll();
   applyLiveStatus();
   refreshLive();
@@ -2807,7 +3025,7 @@
       }
     }
     var langParam = params.get('lang');
-    if (langParam && ['ko', 'en', 'ja', 'zh'].indexOf(langParam) > -1 && langParam !== lang()) {
+    if (langParam && ['ko', 'en', 'ja', 'zh', 'vi'].indexOf(langParam) > -1 && langParam !== lang()) {
       window.I18N.setLang(langParam);
     }
   } catch (e) {}

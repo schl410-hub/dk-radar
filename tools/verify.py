@@ -433,6 +433,37 @@ async def main():
         await page.screenshot(path=str(OUT / "signal-home-dark.png"))
         await page.screenshot(path=str(OUT / "signal-home-dark-full.png"), full_page=True)
 
+        # ---------- v3.6: 베트남어(VI) · 5번째 언어 ----------
+        await page.click('[data-lang="vi"]')
+        await page.wait_for_timeout(800)
+        check("vi html lang", await page.get_attribute("html", "lang") == "vi")
+        check("vi home tab", "Trang chủ" in await page.inner_text(".tab"))
+        check("vi pick banner", "MY PICK · Doran hôm nay" in await page.inner_text("#pickBanner"),
+              (await page.inner_text("#pickBanner"))[:80])
+        check("no horizontal overflow (vi)",
+              await page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1"))
+        await page.click('[data-tab="records"]')
+        await page.wait_for_timeout(400)
+        vi_profile = await page.inner_text("#recordsProfile")
+        check("vi records birthday+debut", "SINH NHẬT" in vi_profile and "RA MẮT" in vi_profile, vi_profile[:100])
+        await page.screenshot(path=str(OUT / "signal-records-vi.png"))
+        await page.click('[data-tab="feed"]')
+        await page.wait_for_timeout(300)
+
+        # ---------- v3.6: 설치 버튼·가이드 (프롬프트 없이도 항상 보임) ----------
+        check("install button always visible", await page.is_visible("#installBtn"))
+        check("install card visible", await page.is_visible("#installCard"))
+        await page.click("#installBtn")
+        await page.wait_for_timeout(350)
+        check("install modal opens", await page.is_visible("#installModal"))
+        modal_vi = await page.inner_text("#installModal")
+        check("install modal in vi", "Cài app vào màn hình chính" in modal_vi, modal_vi[:60])
+        check("install modal has ios+android", "iPhone (Safari)" in modal_vi and "Android (Chrome · Samsung Internet)" in modal_vi)
+        await page.screenshot(path=str(OUT / "signal-install-vi.png"))
+        await page.click("#installClose")
+        await page.wait_for_timeout(300)
+        check("install modal closes", not await page.is_visible("#installModal"))
+
         # 콘솔
         bad = [l for l in logs if l[0] in ("error", "pageerror")]
         check("no console errors", not bad, bad)

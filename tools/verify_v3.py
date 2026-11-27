@@ -195,7 +195,8 @@ async def main():
             ev_links = await page.eval_on_selector_all("#eventStrip a.ev-card", "e=>e.map(x=>x.href)")
             check("event official links", len(ev_links) == 2 and all("lolesports.com" in h for h in ev_links), ev_links)
             ev_cards = await page.eval_on_selector_all("#eventStrip .ev-card", "e=>e.length")
-            check("event strip 3 cards", ev_cards == 3, ev_cards)
+            check("event strip 4-5 cards", 4 <= ev_cards <= 5, ev_cards)
+            check("event debut cards", "데뷔" in ev_text and "주년" in ev_text, ev_text[-120:])
             await page.screenshot(path=str(OUT / "30-events-ko.png"))
 
             # ---------- 인게임 레이더 (DK_INGAME_FAKE=1) ----------
@@ -997,6 +998,188 @@ async def main():
             await page.click('[data-tab="feed"]')
             await page.wait_for_timeout(400)
 
+            # ---------- VI(베트남어) 전환 · 5번째 언어 ----------
+            await page.click('[data-lang="vi"]')
+            await page.wait_for_timeout(900)
+            check("html lang vi", await page.get_attribute("html", "lang") == "vi")
+            check("vi stored", await page.evaluate("localStorage.getItem('dk.signal.lang')") == "vi")
+            check("vi title", "Tín hiệu DK" in await page.title(), await page.title())
+            check("vi tabs", await page.eval_on_selector_all(".tab", "e=>e.map(x=>x.innerText)") ==
+                  ["Trang chủ", "Lịch đấu", "Video", "Nhật ký đấu", "Thành tích"],
+                  await page.eval_on_selector_all(".tab", "e=>e.map(x=>x.innerText)"))
+            check("vi panel aria labels",
+                  await page.eval_on_selector_all(".panel", "e=>e.map(x=>x.getAttribute('aria-label'))") ==
+                  ["Trang chủ", "Lịch đấu", "Video", "Nhật ký đấu", "Thành tích"])
+            vi_home = await page.inner_text("#panel-feed")
+            check("vi board", "Bảng trạng thái 5 người" in vi_home)
+            check("vi pick banner", "MY PICK · Doran hôm nay" in vi_home, vi_home[:120])
+            vi_hl = await page.inner_text("#highlightCard")
+            check("vi champion names", "Renekton" in vi_hl, vi_hl[:120])
+            check("vi notify", "Cài đặt thông báo" in await page.inner_text(".notify-card"))
+            check("vi cheer", "Một dòng cổ vũ" in await page.inner_text(".cheer-card"))
+            check("vi install button", "Cài app" in await page.inner_text("#installBtn"))
+            check("no horizontal overflow (vi)",
+                  await page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1"),
+                  await page.evaluate("[document.documentElement.scrollWidth, innerWidth]"))
+            await page.evaluate("window.scrollTo(0, 0)")
+            await page.wait_for_timeout(300)
+            await page.screenshot(path=str(OUT / "13-home-vi-dark.png"))
+            await page.screenshot(path=str(OUT / "13-home-vi-dark-full.png"), full_page=True)
+
+            vi_strip = await page.inner_text("#eventStrip")
+            check("vi event strip", "Lễ trao giải LCK 2026" in vi_strip, vi_strip[:100])
+            check("vi debut card in strip", "kỷ niệm" in vi_strip or "năm ra mắt" in vi_strip, vi_strip[:200])
+            check("vi dd format", "D-" in vi_strip)
+
+            await page.click('[data-tab="records"]')
+            await page.wait_for_timeout(500)
+            vi_rec = await page.inner_text("#panel-records")
+            check("vi records", "Mùa 2026" in vi_rec, vi_rec[:80])
+            vi_profile = await page.inner_text("#recordsProfile")
+            check("vi records profile birthday", "SINH NHẬT" in vi_profile and "2000-07-22" in vi_profile, vi_profile[:80])
+            check("vi records profile debut", "RA MẮT" in vi_profile and "2019-07-20" in vi_profile, vi_profile[:160])
+            check("vi records debut days", "ngày" in vi_profile)
+            await page.screenshot(path=str(OUT / "14-records-vi-dark.png"))
+
+            await page.click('[data-tab="video"]')
+            await page.wait_for_timeout(600)
+            vi_video = await page.inner_text("#panel-video")
+            check("vi video tab", "Trực tiếp · kênh chính thức" in vi_video and "Kênh riêng của tuyển thủ" in vi_video, vi_video[:120])
+            check("vi video filters",
+                  await page.eval_on_selector_all("#videoFilters .chip", "e=>e.map(x=>x.textContent)") ==
+                  ["Tất cả", "Doran", "Kanavi", "ShowMaker", "Smash", "Delight"])
+            check("vi highlight count", await page.inner_text("#videoCount") == f"{TOTAL_VIDEOS} clip",
+                  await page.inner_text("#videoCount"))
+            check("vi search placeholder",
+                  await page.get_attribute("#videoSearch", "placeholder") == "Tìm theo tướng · giải đấu · từ khóa")
+            check("vi video archive", "Kho video" in vi_video)
+            check("no horizontal overflow (vi video)",
+                  await page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1"))
+            await page.screenshot(path=str(OUT / "15-video-vi-dark.png"))
+
+            await page.click('[data-tab="official"]')
+            await page.wait_for_timeout(1400)
+            vi_off = await page.inner_text("#panel-official")
+            check("vi schedule", "Lịch đấu" in vi_off and "Lịch mùa 2027" in vi_off, vi_off[:80])
+            await page.click('[data-tab="feed"]')
+            await page.wait_for_timeout(400)
+
+            # ---------- 언어 바꿔도 헤더가 한 줄(360·390·430) ----------
+            for w in (360, 390, 430):
+                await page.set_viewport_size({"width": w, "height": 844})
+                await page.wait_for_timeout(350)
+                row_h = await page.evaluate("document.querySelector('.brand-row').getBoundingClientRect().height")
+                ov = await page.evaluate("document.documentElement.scrollWidth - window.innerWidth")
+                check(f"header one line @{w}", row_h <= 40, row_h)
+                check(f"no overflow @{w}", ov <= 0, ov)
+                check(f"lang buttons visible @{w}",
+                      await page.eval_on_selector_all(".lang-btn", "e=>e.every(b=>b.getBoundingClientRect().width>0)"))
+                await page.screenshot(path=str(OUT / f"16-header-vi-{w}.png"))
+            await page.set_viewport_size({"width": 390, "height": 844})
+            await page.wait_for_timeout(300)
+
+            # ---------- 앱 설치 버튼·안내 (beforeinstallprompt 없이도 보임) ----------
+            check("install button visible without prompt", await page.is_visible("#installBtn"))
+            check("install card visible", await page.is_visible("#installCard"))
+            await page.click("#installBtn")
+            await page.wait_for_timeout(400)
+            check("install modal opens", await page.is_visible("#installModal"))
+            in_modal = await page.inner_text("#installModal")
+            check("install modal vi title", "Cài app vào màn hình chính" in in_modal, in_modal[:60])
+            check("install modal ios steps", "Chia sẻ" in in_modal and "Thêm vào MH chính" in in_modal)
+            check("install modal android steps", "Samsung Internet" in in_modal and "Thêm vào màn hình chính" in in_modal)
+            check("install modal inapp hidden on desktop", not await page.is_visible("#installInapp"))
+            check("install one-touch hidden without prompt", not await page.is_visible("#installCta"))
+            check("install device label", "Máy tính" in await page.inner_text("#installDevice"),
+                  await page.inner_text("#installDevice"))
+            await page.screenshot(path=str(OUT / "17-install-guide-vi.png"))
+            await page.click("#installClose")
+            await page.wait_for_timeout(300)
+            check("install modal closes", not await page.is_visible("#installModal"))
+
+            # 카드의 닫기 버튼 → 이 기기에서 다시 숨김
+            await page.click("#installCardX")
+            await page.wait_for_timeout(300)
+            check("install card dismiss", not await page.is_visible("#installCard"))
+            check("install button stays", await page.is_visible("#installBtn"))
+
+            # ---------- 아이폰 Safari: 프롬프트가 없어도 버튼이 보이고 Safari 안내가 먼저 ----------
+            iphone_ua = ("Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 "
+                         "(KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1")
+            ctx_ios = await browser.new_context(viewport={"width": 390, "height": 844}, locale="ko-KR",
+                                                user_agent=iphone_ua, is_mobile=True, has_touch=True)
+            pg_ios = await ctx_ios.new_page()
+            await pg_ios.goto(BASE, wait_until="networkidle")
+            await pg_ios.wait_for_timeout(700)
+            check("ios: install button visible", await pg_ios.is_visible("#installBtn"))
+            await pg_ios.click("#installBtn")
+            await pg_ios.wait_for_timeout(400)
+            ios_dev = await pg_ios.inner_text("#installDevice")
+            check("ios: device label", "아이폰" in ios_dev, ios_dev)
+            first_sec = await pg_ios.evaluate("document.querySelector('.in-sheet .in-sec.is-here')?.id")
+            check("ios: safari steps first", first_sec == "installIos", first_sec)
+            check("ios: no one-touch without prompt", not await pg_ios.is_visible("#installCta"))
+            await pg_ios.screenshot(path=str(OUT / "18-install-guide-ios.png"))
+            await ctx_ios.close()
+
+            # ---------- 카톡 인앱 브라우저: 경고가 맨 위, 다른 브라우저 안내 ----------
+            kakao_ua = ("Mozilla/5.0 (Linux; Android 14; SM-S921N) AppleWebKit/537.36 (KHTML, like Gecko) "
+                        "Chrome/130.0.0.0 Mobile Safari/537.36 KAKAOTALK 11.2.0")
+            ctx_ka = await browser.new_context(viewport={"width": 390, "height": 844}, locale="ko-KR",
+                                               user_agent=kakao_ua, is_mobile=True, has_touch=True)
+            pg_ka = await ctx_ka.new_page()
+            await pg_ka.goto(BASE, wait_until="networkidle")
+            await pg_ka.wait_for_timeout(700)
+            check("kakao: install button visible", await pg_ka.is_visible("#installBtn"))
+            await pg_ka.click("#installBtn")
+            await pg_ka.wait_for_timeout(400)
+            check("kakao: in-app warning shown", await pg_ka.is_visible("#installInapp"))
+            ka_text = await pg_ka.inner_text("#installInapp")
+            check("kakao: warning copy", "카톡/X 안에서는 설치가 안 돼요" in ka_text, ka_text[:80])
+            ka_order = await pg_ka.evaluate(
+                "() => { const s=document.querySelector('#installInapp'); const a=document.querySelector('#installAndroid');"
+                " return [Number(s.style.order), Number(a.style.order)]; }")
+            check("kakao: warning above device steps", ka_order[0] < ka_order[1], ka_order)
+            await pg_ka.screenshot(path=str(OUT / "19-install-guide-kakao.png"))
+            await ctx_ka.close()
+
+            # ---------- 안드로이드 크롬: 원터치 설치(beforeinstallprompt 있음) ----------
+            ctx_and = await browser.new_context(viewport={"width": 390, "height": 844}, locale="ko-KR",
+                                                user_agent=("Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 "
+                                                            "(KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36"),
+                                                is_mobile=True, has_touch=True)
+            pg_and = await ctx_and.new_page()
+            await pg_and.goto(BASE, wait_until="networkidle")
+            await pg_and.wait_for_timeout(600)
+            await pg_and.evaluate("""() => {
+              const e = new Event('beforeinstallprompt');
+              e.prompt = () => {};
+              e.userChoice = Promise.resolve({ outcome: 'accepted' });
+              window.dispatchEvent(e);
+            }""")
+            await pg_and.wait_for_timeout(300)
+            await pg_and.click("#installBtn")
+            await pg_and.wait_for_timeout(400)
+            check("android: one-touch prompt shown", await pg_and.is_visible("#installCta"))
+            check("android: one-touch label", "지금 홈 화면에 설치하기" in await pg_and.inner_text("#installPromptBtn"),
+                  await pg_and.inner_text("#installPromptBtn"))
+            first_and = await pg_and.evaluate("document.querySelector('.in-sheet .in-sec.is-here')?.id")
+            check("android: android steps first", first_and == "installAndroid", first_and)
+            await pg_and.screenshot(path=str(OUT / "20-install-guide-android.png"))
+            await ctx_and.close()
+
+            # ---------- 스탠드얼론(이미 설치됨)에서는 버튼을 숨깁니다 ----------
+            ctx_sa = await browser.new_context(viewport={"width": 390, "height": 844}, locale="ko-KR")
+            pg_sa = await ctx_sa.new_page()
+            await pg_sa.add_init_script("Object.defineProperty(window.matchMedia, 'call', {});"
+                                        "window.matchMedia = (q) => ({ matches: /standalone/.test(q), media: q,"
+                                        " addEventListener(){}, removeEventListener(){}, addListener(){}, removeListener(){} });")
+            await pg_sa.goto(BASE, wait_until="networkidle")
+            await pg_sa.wait_for_timeout(600)
+            check("standalone: install button hidden", not await pg_sa.is_visible("#installBtn"))
+            check("standalone: install card hidden", not await pg_sa.is_visible("#installCard"))
+            await ctx_sa.close()
+
             # ---------- ?lang= 로 들어와 바꾼 언어가 새로고침 후에도 유지 ----------
             await page.goto(BASE + "?lang=ko", wait_until="networkidle")
             await page.wait_for_timeout(700)
@@ -1009,7 +1192,7 @@ async def main():
             check("lang kept after reload (?lang=)", await page.get_attribute("html", "lang") == "en")
 
             # ---------- 브라우저 언어 자동 감지 (저장값 없는 새 컨텍스트) ----------
-            for loc, want in [("en-US", "en"), ("ja-JP", "ja"), ("zh-CN", "zh-CN"), ("zh-TW", "zh-CN"), ("fr-FR", "ko")]:
+            for loc, want in [("en-US", "en"), ("ja-JP", "ja"), ("zh-CN", "zh-CN"), ("zh-TW", "zh-CN"), ("vi-VN", "vi"), ("fr-FR", "ko")]:
                 ctx2 = await browser.new_context(viewport={"width": 390, "height": 844}, locale=loc)
                 pg = await ctx2.new_page()
                 await pg.goto(BASE, wait_until="networkidle")

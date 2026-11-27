@@ -1,5 +1,5 @@
 /* GET /api/official — DK 공식 경기(다음 경기 + 최근 결과)를 LoL Esports 공개 API에서 가져옵니다.
- *   ?lang=ko|en|ja|zh : 일정 문구 언어 (기본 ko)
+ *   ?lang=ko|en|ja|zh|vi : 일정 문구 언어 (기본 ko)
  *   ?refresh=1      : 캐시 건너뛰기
  */
 const { json, fail } = require('./_lib/http');

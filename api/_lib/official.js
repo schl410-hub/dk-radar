@@ -15,14 +15,15 @@ const LCK_LEAGUE_ID = '98767991310872058'; /* LCK */
 
 const DK_CODES = ['DK', 'DPLUSKIA', 'DPLUS KIA'];
 
-const HL = { ko: 'ko-KR', en: 'en-US', ja: 'ja-JP', zh: 'zh-CN' };
-const VOD_LOCALE = { ko: 'ko-KR', en: 'en-US', ja: 'ja-JP', zh: 'zh-CN' };
+const HL = { ko: 'ko-KR', en: 'en-US', ja: 'ja-JP', zh: 'zh-CN', vi: 'vi-VN' };
+const VOD_LOCALE = { ko: 'ko-KR', en: 'en-US', ja: 'ja-JP', zh: 'zh-CN', vi: 'vi-VN' };
 /* 한국 팬은 SOOP(아프리카) 중계를, 해외 팬은 유튜브를 먼저 봅니다. */
 const PROVIDER_PREF = {
   ko: ['afreecatv', 'youtube', 'twitch'],
   en: ['youtube', 'twitch', 'afreecatv'],
   ja: ['youtube', 'twitch', 'afreecatv'],
-  zh: ['youtube', 'twitch', 'afreecatv']
+  zh: ['youtube', 'twitch', 'afreecatv'],
+  vi: ['youtube', 'twitch', 'afreecatv']
 };
 
 /* 서버가 앱으로 그대로 돌려주는 안내 문구 (zh 는 중국어 간체) */
@@ -46,6 +47,11 @@ const MESSAGES = {
     unavailable: '获取官方赛程失败',
     apiError: '没有收到赛程 API 的响应',
     noUpcoming: '下一场官方比赛尚未公布'
+  },
+  vi: {
+    unavailable: 'Không tải được lịch thi đấu chính thức',
+    apiError: 'Không nhận được phản hồi từ API lịch thi đấu',
+    noUpcoming: 'Trận chính thức tiếp theo chưa được công bố'
   }
 };
 function messageFor(lang, key) {
@@ -56,6 +62,7 @@ function messageFor(lang, key) {
 /* hl(ko-KR / en-US / ja-JP / zh-CN) → 앱 언어 키 */
 function langForHl(hl) {
   const s = String(hl || '').toLowerCase();
+  if (s.indexOf('vi') === 0) return 'vi';
   if (s.indexOf('zh') === 0) return 'zh';
   if (s.indexOf('ja') === 0) return 'ja';
   if (s.indexOf('en') === 0) return 'en';
@@ -275,9 +282,11 @@ async function enrichVideos(list, hl) {
       const vod = {
         ko: pickVod(details.games, 'ko'),
         en: pickVod(details.games, 'en'),
-        ja: pickVod(details.games, 'ja')
+        ja: pickVod(details.games, 'ja'),
+        zh: pickVod(details.games, 'zh'),
+        vi: pickVod(details.games, 'vi')
       };
-      const any = vod.ko || vod.en || vod.ja;
+      const any = vod.ko || vod.en || vod.ja || vod.vi;
       if (any) item.vod = vod;
     }
     if (details.streams.length) item.streamLinks = details.streams;
