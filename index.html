@@ -266,16 +266,36 @@
         <ul class="station-list" id="videoStations"></ul>
       </section>
 
+      <section class="card dy-card">
+        <div class="card-head">
+          <div>
+            <div class="eyebrow">DPLUS KIA · YOUTUBE</div>
+            <h3 class="card-title" data-i18n="video.dkTitle">디플러스 기아 공식 유튜브</h3>
+          </div>
+          <a class="ghost-btn" id="dkYtOpen" href="https://www.youtube.com/@DplusKia_LOL" target="_blank" rel="noopener" data-i18n="video.dkOpen">채널 열기 ↗</a>
+        </div>
+        <p class="vc-sub"><span data-i18n="video.dkSub">채널에 올라온 최신 영상을 그대로 모았어요.</span> <span class="vc-count" id="dkYtCount"></span></p>
+        <div class="dy-grid" id="dkYtGrid" aria-live="polite" data-i18n-attr="aria-label:video.dkGridAria"></div>
+        <p class="board-note" id="dkYtNote"></p>
+      </section>
+
       <section class="card video-card">
         <div class="card-head">
           <div>
-            <div class="eyebrow">HIGHLIGHTS · YOUTUBE</div>
+            <div class="eyebrow">HIGHLIGHTS · ARCHIVE</div>
             <h3 class="card-title" data-i18n="video.title">대표 하이라이트</h3>
           </div>
           <a class="ghost-btn" id="videoMore" href="https://www.youtube.com/@DplusKia_LOL" target="_blank" rel="noopener" data-i18n="video.more">Dplus KIA 유튜브 ↗</a>
         </div>
-        <p class="vc-sub"><span data-i18n="video.highlightsSub">5인 대표 장면 10편을 선수별로 모았어요.</span> <span class="vc-count" id="videoCount"></span></p>
+        <p class="vc-sub"><span data-i18n="video.highlightsSub">5인 대표 장면을 연도·대회별로 모은 아카이브예요.</span> <span class="vc-count" id="videoCount"></span></p>
         <div class="chip-row vid-filters" id="videoFilters" role="tablist" data-i18n-attr="aria-label:video.filtersAria" aria-label="선수별 하이라이트 필터"></div>
+        <div class="hl-search">
+          <input class="hl-search-input" id="videoSearch" type="search" autocomplete="off"
+                 placeholder="챔피언 · 대회 · 키워드로 찾기"
+                 data-i18n-attr="placeholder:video.searchPlaceholder;aria-label:video.searchAria"
+                 aria-label="하이라이트 검색">
+          <button class="hl-search-clear" id="videoSearchClear" type="button" hidden data-i18n-attr="aria-label:video.clearSearch" aria-label="검색 지우기">✕</button>
+        </div>
         <ul class="vc-list" id="videoList"></ul>
       </section>
 

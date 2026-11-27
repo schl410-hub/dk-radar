@@ -1375,6 +1375,79 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
 .vc-empty { padding: 14px 4px; text-align: center; font-size: 9px; color: var(--muted); }
 .vod-path { margin-top: 10px; }
 
+/* ---------- 디플러스 기아 공식 유튜브 (최신 영상) ---------- */
+.dy-card { padding: 15px 16px 14px; }
+.dy-grid {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+@media (min-width: 420px) { .dy-grid { gap: 9px; } }
+.dy-item {
+  display: flex; flex-direction: column; gap: 4px;
+  min-width: 0; text-decoration: none;
+  padding: 6px; border-radius: 12px;
+  background: var(--chip-bg); border: 1px solid var(--line);
+  transition: border-color .2s ease, transform .15s ease;
+}
+.dy-item:active { transform: scale(.985); }
+.dy-thumb {
+  position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden;
+  border-radius: 8px; background: var(--bar-bg);
+}
+.dy-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.dy-play {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-style: normal; font-size: 13px; color: #fff; opacity: .92;
+  background: linear-gradient(180deg, rgba(0,0,0,0) 45%, rgba(0,0,0,.45) 100%);
+  text-shadow: 0 2px 8px rgba(0,0,0,.6);
+}
+.dy-title {
+  font-size: 9.5px; font-weight: 800; letter-spacing: -.02em; color: var(--ink);
+  line-height: 1.32;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  min-height: 25px;
+}
+.dy-meta { display: flex; align-items: center; gap: 4px; font-size: 7.5px; color: var(--muted-2); }
+.dy-date { font-variant-numeric: tabular-nums; }
+.dy-views::before { content: '·'; margin-right: 4px; }
+.dy-empty {
+  grid-column: 1 / -1; padding: 16px 4px; text-align: center;
+  font-size: 9px; color: var(--muted);
+}
+
+/* ---------- 하이라이트 아카이브 검색 ---------- */
+.hl-search { position: relative; margin-top: 8px; display: flex; align-items: center; }
+.hl-search-input {
+  width: 100%; box-sizing: border-box;
+  font-family: inherit;
+  font-size: 9.5px; font-weight: 600; color: var(--ink);
+  background: var(--chip-bg); border: 1px solid var(--line);
+  border-radius: 999px; padding: 7px 30px 7px 12px;
+  -webkit-appearance: none; appearance: none;
+}
+.hl-search-input::placeholder { color: var(--muted-2); font-weight: 600; }
+.hl-search-input:focus { outline: none; border-color: var(--accent-line); background: var(--accent-soft); }
+.hl-search-input::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; }
+.hl-search-clear {
+  position: absolute; right: 5px; top: 50%; transform: translateY(-50%);
+  width: 20px; height: 20px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 9px; font-weight: 800; line-height: 1;
+  color: var(--muted); background: var(--line-soft); border: 0;
+}
+.hl-search-clear[hidden] { display: none; }
+.vc-yr {
+  font-size: 7px; font-weight: 800; color: var(--muted);
+  border: 1px solid var(--line); border-radius: 5px; padding: 1px 4px;
+  font-variant-numeric: tabular-nums;
+}
+.vc-tag {
+  font-size: 7px; font-weight: 700; color: var(--ink-2);
+  background: var(--line-soft); border-radius: 5px; padding: 1px 4px;
+}
+
 </style>
 <script>
 /* 저장된 테마·언어를 첫 페인트 전에 적용해 깜빡임을 막습니다. */
@@ -1626,16 +1699,36 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
         <ul class="station-list" id="videoStations"></ul>
       </section>
 
+      <section class="card dy-card">
+        <div class="card-head">
+          <div>
+            <div class="eyebrow">DPLUS KIA · YOUTUBE</div>
+            <h3 class="card-title" data-i18n="video.dkTitle">디플러스 기아 공식 유튜브</h3>
+          </div>
+          <a class="ghost-btn" id="dkYtOpen" href="https://www.youtube.com/@DplusKia_LOL" target="_blank" rel="noopener" data-i18n="video.dkOpen">채널 열기 ↗</a>
+        </div>
+        <p class="vc-sub"><span data-i18n="video.dkSub">채널에 올라온 최신 영상을 그대로 모았어요.</span> <span class="vc-count" id="dkYtCount"></span></p>
+        <div class="dy-grid" id="dkYtGrid" aria-live="polite" data-i18n-attr="aria-label:video.dkGridAria"></div>
+        <p class="board-note" id="dkYtNote"></p>
+      </section>
+
       <section class="card video-card">
         <div class="card-head">
           <div>
-            <div class="eyebrow">HIGHLIGHTS · YOUTUBE</div>
+            <div class="eyebrow">HIGHLIGHTS · ARCHIVE</div>
             <h3 class="card-title" data-i18n="video.title">대표 하이라이트</h3>
           </div>
           <a class="ghost-btn" id="videoMore" href="https://www.youtube.com/@DplusKia_LOL" target="_blank" rel="noopener" data-i18n="video.more">Dplus KIA 유튜브 ↗</a>
         </div>
-        <p class="vc-sub"><span data-i18n="video.highlightsSub">5인 대표 장면 10편을 선수별로 모았어요.</span> <span class="vc-count" id="videoCount"></span></p>
+        <p class="vc-sub"><span data-i18n="video.highlightsSub">5인 대표 장면을 연도·대회별로 모은 아카이브예요.</span> <span class="vc-count" id="videoCount"></span></p>
         <div class="chip-row vid-filters" id="videoFilters" role="tablist" data-i18n-attr="aria-label:video.filtersAria" aria-label="선수별 하이라이트 필터"></div>
+        <div class="hl-search">
+          <input class="hl-search-input" id="videoSearch" type="search" autocomplete="off"
+                 placeholder="챔피언 · 대회 · 키워드로 찾기"
+                 data-i18n-attr="placeholder:video.searchPlaceholder;aria-label:video.searchAria"
+                 aria-label="하이라이트 검색">
+          <button class="hl-search-clear" id="videoSearchClear" type="button" hidden data-i18n-attr="aria-label:video.clearSearch" aria-label="검색 지우기">✕</button>
+        </div>
         <ul class="vc-list" id="videoList"></ul>
       </section>
 
@@ -1833,7 +1926,21 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
       'video.stationsTitle': '선수별 개인 방송국',
       'video.stationsSub': '5인이 방송을 켜면 여기서 바로 볼 수 있어요.',
       'video.stationAria': '{name} 선수의 {platform} 방송국 열기',
-      'video.highlightsSub': '5인 대표 장면 10편을 선수별로 모았어요.',
+      'video.highlightsSub': '5인 대표 장면을 연도·대회별로 모은 아카이브예요.',
+
+      'video.dkTitle': '디플러스 기아 공식 유튜브',
+      'video.dkSub': '채널에 올라온 따끈한 영상을 바로 모았어요.',
+      'video.dkOpen': '채널 열기 ↗',
+      'video.dkGridAria': '디플러스 기아 공식 유튜브 최신 영상',
+      'video.dkNote': '디플러스 기아 유튜브 채널에서 {time}에 받아왔어요.',
+      'video.dkFallback': '채널에서 최신 영상을 받아오지 못해 마지막 확인본을 보여줘요.',
+      'video.dkEmpty': '채널 영상을 불러오는 중이에요.',
+      'video.dkViews': '조회 {n}회',
+      'video.searchPlaceholder': '챔피언 · 대회 · 키워드로 찾기',
+      'video.searchAria': '하이라이트 검색',
+      'video.clearSearch': '검색 지우기',
+      'video.searchEmpty': '‘{q}’에 맞는 하이라이트가 없어요.',
+      'video.searchHint': '챔피언·대회·플레이 키워드로 찾아보세요.',
       'video.filterAll': '전체',
       'video.filtersAria': '선수별 하이라이트 필터',
       'video.count': '{n}편',
@@ -2128,7 +2235,21 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
       'video.stationsTitle': 'Player streams',
       'video.stationsSub': 'When one of the five goes live, open it right here.',
       'video.stationAria': 'Open {name}’s {platform} stream',
-      'video.highlightsSub': 'Ten signature clips from all five players.',
+      'video.highlightsSub': 'An archive of signature moments, sorted by player, season and event.',
+
+      'video.dkTitle': 'Dplus KIA official YouTube',
+      'video.dkSub': 'The newest uploads from the official channel, fresh from YouTube.',
+      'video.dkOpen': 'Open channel ↗',
+      'video.dkGridAria': 'Latest videos from the Dplus KIA YouTube channel',
+      'video.dkNote': 'Fetched from the Dplus KIA YouTube feed at {time}.',
+      'video.dkFallback': 'Could not reach the channel feed, so this is the last verified list.',
+      'video.dkEmpty': 'Loading the channel videos.',
+      'video.dkViews': '{n} views',
+      'video.searchPlaceholder': 'Search champion, event, keyword',
+      'video.searchAria': 'Search highlights',
+      'video.clearSearch': 'Clear search',
+      'video.searchEmpty': 'No highlights match “{q}”.',
+      'video.searchHint': 'Try a champion, event or play keyword.',
       'video.filterAll': 'All',
       'video.filtersAria': 'Filter highlights by player',
       'video.count': '{n} clips',
@@ -2423,7 +2544,21 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
       'video.stationsTitle': '選手の個人配信',
       'video.stationsSub': '5人が配信を始めたらここからすぐ見られます。',
       'video.stationAria': '{name}選手の{platform}配信を開く',
-      'video.highlightsSub': '5人の代表シーン10本を選手別にまとめました。',
+      'video.highlightsSub': '5人の代表シーンを年・大会別に集めたアーカイブです。',
+
+      'video.dkTitle': 'Dplus KIA 公式YouTube',
+      'video.dkSub': '公式チャンネルの最新動画をそのまままとめました。',
+      'video.dkOpen': 'チャンネルを開く ↗',
+      'video.dkGridAria': 'Dplus KIA 公式YouTubeの最新動画',
+      'video.dkNote': 'Dplus KIA YouTubeチャンネルから{time}に取得しました。',
+      'video.dkFallback': '最新動画を取得できなかったため、最後に確認した一覧を表示しています。',
+      'video.dkEmpty': 'チャンネル動画を読み込み中です。',
+      'video.dkViews': '再生 {n}回',
+      'video.searchPlaceholder': 'チャンピオン・大会・キーワード検索',
+      'video.searchAria': 'ハイライト検索',
+      'video.clearSearch': '検索をクリア',
+      'video.searchEmpty': '「{q}」に一致するハイライトはありません。',
+      'video.searchHint': 'チャンピオン・大会・プレイのキーワードで探せます。',
       'video.filterAll': 'すべて',
       'video.filtersAria': '選手別ハイライトの絞り込み',
       'video.count': '{n}本',
@@ -2708,7 +2843,21 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
       'video.stationsTitle': '选手个人直播间',
       'video.stationsSub': '五人开播时，可以直接从这里进入。',
       'video.stationAria': '打开 {name} 选手的 {platform} 直播间',
-      'video.highlightsSub': '五人代表场面共10支，按选手整理。',
+      'video.highlightsSub': '五位选手的代表场面，按选手、赛季与赛事归档。',
+
+      'video.dkTitle': 'Dplus KIA 官方 YouTube',
+      'video.dkSub': '官方频道最新视频，直接同步。',
+      'video.dkOpen': '打开频道 ↗',
+      'video.dkGridAria': 'Dplus KIA 官方 YouTube 最新视频',
+      'video.dkNote': '于 {time} 从 Dplus KIA YouTube 频道获取。',
+      'video.dkFallback': '无法获取频道最新视频，显示最后确认的列表。',
+      'video.dkEmpty': '正在加载频道视频。',
+      'video.dkViews': '{n} 次观看',
+      'video.searchPlaceholder': '搜索英雄、赛事、关键词',
+      'video.searchAria': '搜索集锦',
+      'video.clearSearch': '清除搜索',
+      'video.searchEmpty': '没有与“{q}”匹配的集锦。',
+      'video.searchHint': '试试英雄、赛事或精彩操作关键词。',
       'video.filterAll': '全部',
       'video.filtersAria': '按选手筛选集锦',
       'video.count': '{n}支',
@@ -3045,6 +3194,32 @@ const CHANNELS = {
   }
 };
 
+/* 하이라이트 아카이브 태그 — 검색과 배지에 함께 씁니다 (KO/EN/JA/ZH) */
+const HL_TAGS = {
+  lck: { ko: 'LCK', en: 'LCK', ja: 'LCK', zh: 'LCK' },
+  worlds: { ko: '월즈', en: 'Worlds', ja: 'ワールズ', zh: '世界赛' },
+  msi: { ko: 'MSI', en: 'MSI', ja: 'MSI', zh: 'MSI' },
+  lckcup: { ko: 'LCK 컵', en: 'LCK Cup', ja: 'LCKカップ', zh: 'LCK 杯' },
+  playoffs: { ko: '플레이오프', en: 'Playoffs', ja: 'プレーオフ', zh: '季后赛' },
+  final: { ko: '결승', en: 'Final', ja: '決勝', zh: '决赛' },
+  pentakill: { ko: '펜타킬', en: 'Pentakill', ja: 'ペンタキル', zh: '五杀' },
+  carry: { ko: '캐리', en: 'Carry', ja: 'キャリー', zh: '带飞' },
+  comeback: { ko: '역전극', en: 'Comeback', ja: '逆転劇', zh: '逆转' },
+  top: { ko: '탑', en: 'Top', ja: 'トップ', zh: '上路' },
+  jgl: { ko: '정글', en: 'Jungle', ja: 'ジャングル', zh: '打野' },
+  mid: { ko: '미드', en: 'Mid', ja: 'ミッド', zh: '中路' },
+  adc: { ko: '원딜', en: 'ADC', ja: 'ADC', zh: '射手' },
+  sup: { ko: '서폿', en: 'Support', ja: 'サポート', zh: '辅助' },
+  rookie: { ko: '신인왕', en: 'Rookie of the Year', ja: '新人王', zh: '最佳新人' },
+  win300: { ko: '300승', en: '300th win', ja: '通算300勝', zh: '300胜' },
+  champion: { ko: '우승', en: 'Title', ja: '優勝', zh: '冠军' },
+  debut: { ko: '데뷔', en: 'Debut', ja: 'デビュー', zh: '出道' },
+  gnar: { ko: '나르', en: 'Gnar', ja: 'ナー', zh: '纳尔' },
+  jayce: { ko: '제이스', en: 'Jayce', ja: 'ジェイス', zh: '杰斯' },
+  azir: { ko: '아지르', en: 'Azir', ja: 'アジール', zh: '阿兹尔' },
+  leblanc: { ko: '르블랑', en: 'LeBlanc', ja: 'ルブラン', zh: '乐芙兰' }
+};
+
 const PLAYERS = [
   {
     key: 'doran',
@@ -3078,8 +3253,13 @@ const PLAYERS = [
       { platform: 'chzzk', url: 'https://chzzk.naver.com/20e11539e1afa21fc959dd3f4ff2332c', handle: '도란도란란' }
     ],
     highlights: [
-      { id: 'uzkulCX1cvw', len: '12:13', channel: 'LCK', match: { ko: 'T1 vs BFX · 4세트', en: 'T1 vs BFX · Game 4', ja: 'T1 vs BFX 第4試合', zh: 'T1 vs BFX · 第4局' }, event: { ko: '2026 우리은행 LCK 플레이오프', en: '2026 LCK Playoffs', ja: '2026 LCK プレーオフ', zh: '2026 友利银行 LCK 季后赛' } },
-      { id: 'zmt-dT7garg', len: '13:10', channel: 'LCK', match: { ko: 'T1 vs DK · 2세트', en: 'T1 vs DK · Game 2', ja: 'T1 vs DK 第2試合', zh: 'T1 vs DK · 第2局' }, event: { ko: '2026 LCK', en: '2026 LCK', ja: '2026 LCK', zh: '2026 LCK' } }
+      { id: 'uzkulCX1cvw', len: '12:13', channel: 'LCK', year: 2026, match: { ko: 'T1 vs BFX · 4세트', en: 'T1 vs BFX · Game 4', ja: 'T1 vs BFX 第4試合', zh: 'T1 vs BFX · 第4局' }, event: { ko: '2026 우리은행 LCK 플레이오프', en: '2026 LCK Playoffs', ja: '2026 LCK プレーオフ', zh: '2026 LCK 季后赛' }, tags: ['playoffs', 'lck', 'top'] },
+      { id: 'zmt-dT7garg', len: '13:10', channel: 'LCK', year: 2026, match: { ko: 'T1 vs DK · 2세트', en: 'T1 vs DK · Game 2', ja: 'T1 vs DK 第2試合', zh: 'T1 vs DK · 第2局' }, event: { ko: '2026 LCK', en: '2026 LCK', ja: '2026 LCK', zh: '2026 LCK' }, tags: ['lck', 'top', 'carry'] },
+      { id: 'sqjM3EJO7ng', len: '11:04', channel: 'LCK', year: 2025, match: { ko: 'T1 vs HLE · 4세트', en: 'T1 vs HLE · Game 4', ja: 'T1 vs HLE 第4試合', zh: 'T1 vs HLE · 第4局' }, event: { ko: '2025 우리은행 LCK CUP 플레이오프', en: '2025 LCK Cup Playoffs', ja: '2025 LCKカップ プレーオフ', zh: '2025 LCK 杯 季后赛' }, tags: ['lckcup', 'playoffs', 'top'] },
+      { id: 'gJarHbioMEg', len: '11:00', channel: 'LCK', year: 2023, match: { ko: 'T1 vs GEN · 1세트', en: 'T1 vs GEN · Game 1', ja: 'T1 vs GEN 第1試合', zh: 'T1 vs GEN · 第1局' }, event: { ko: '2023 LCK 스프링 결승', en: '2023 LCK Spring Final', ja: '2023 LCK スプリング決勝', zh: '2023 LCK 春季赛决赛' }, tags: ['lck', 'final', 'top', 'carry'] },
+      { id: 'H4Tp-sRSp2Y', len: '3:02', channel: 'LoL Esports', year: 2024, match: { ko: '도란 · 나르 대형 궁', en: 'Doran · huge Gnar ult', ja: 'ドラン · ナー特大ウルト', zh: 'Doran · 纳尔巨量控制' }, event: { ko: 'LoL Esports · TOP 5 PLAYS', en: 'LoL Esports · TOP 5 PLAYS', ja: 'LoL Esports · TOP 5 PLAYS', zh: 'LoL Esports · TOP 5 PLAYS' }, tags: ['top', 'carry', 'gnar'] },
+      { id: 'q_2YoaayhFg', len: '3:29', channel: 'LoL Esports', year: 2023, match: { ko: 'Gen.G vs T1 · LCK 결승', en: 'Gen.G vs T1 · LCK Final', ja: 'Gen.G vs T1 · LCK決勝', zh: 'Gen.G vs T1 · LCK决赛' }, event: { ko: 'LoL Esports · Plays of the Week', en: 'LoL Esports · Plays of the Week', ja: 'LoL Esports · Plays of the Week', zh: 'LoL Esports · Plays of the Week' }, tags: ['lck', 'final', 'carry', 'comeback'] },
+      { id: 'J8XPHKlTBLM', len: '8:27', channel: 'LoL Esports', year: 2020, match: { ko: 'DRX · 월즈 그룹 스테이지', en: 'DRX · Worlds group stage', ja: 'DRX · ワールズ グループステージ', zh: 'DRX · 世界赛小组赛' }, event: { ko: 'Worlds 2020 · Lane Kingdom', en: 'Worlds 2020 · Lane Kingdom', ja: 'Worlds 2020 · Lane Kingdom', zh: 'Worlds 2020 · Lane Kingdom' }, tags: ['worlds', 'top', 'carry', 'jayce'] }
     ],
     note: { ko: '', en: '', ja: '', zh: '' },
     official: {
@@ -3140,8 +3320,12 @@ const PLAYERS = [
       { platform: 'chzzk', url: 'https://chzzk.naver.com/e351edbd85f1ebf4eb975c21179a4c43', handle: 'HLE Kanavi' }
     ],
     highlights: [
-      { id: 'Ws93_VsEx-s', len: '12:39', channel: 'LCK', match: { ko: 'HLE vs T1 · 3세트', en: 'HLE vs T1 · Game 3', ja: 'HLE vs T1 第3試合', zh: 'HLE vs T1 · 第3局' }, event: { ko: '2026 LCK 로드 투 MSI', en: '2026 LCK Road to MSI', ja: '2026 LCK ロード・トゥMSI', zh: '2026 LCK 通往 MSI' } },
-      { id: 'fOUtkqYy1VE', len: '10:02', channel: 'LCK', match: { ko: 'DK vs HLE · 1세트', en: 'DK vs HLE · Game 1', ja: 'DK vs HLE 第1試合', zh: 'DK vs HLE · 第1局' }, event: { ko: '2026 LCK', en: '2026 LCK', ja: '2026 LCK', zh: '2026 LCK' } }
+      { id: 'Ws93_VsEx-s', len: '12:39', channel: 'LCK', year: 2026, match: { ko: 'HLE vs T1 · 3세트', en: 'HLE vs T1 · Game 3', ja: 'HLE vs T1 第3試合', zh: 'HLE vs T1 · 第3局' }, event: { ko: '2026 LCK 로드 투 MSI', en: '2026 LCK Road to MSI', ja: '2026 LCK ロード・トゥMSI', zh: '2026 LCK 通往 MSI' }, tags: ['lck', 'jgl', 'carry'] },
+      { id: 'fOUtkqYy1VE', len: '10:02', channel: 'LCK', year: 2026, match: { ko: 'DK vs HLE · 1세트', en: 'DK vs HLE · Game 1', ja: 'DK vs HLE 第1試合', zh: 'DK vs HLE · 第1局' }, event: { ko: '2026 LCK', en: '2026 LCK', ja: '2026 LCK', zh: '2026 LCK' }, tags: ['lck', 'jgl'] },
+      { id: 'iNQxu7iC6pU', len: '10:51', channel: 'LCK', year: 2026, match: { ko: 'HLE vs T1 · 2세트', en: 'HLE vs T1 · Game 2', ja: 'HLE vs T1 第2試合', zh: 'HLE vs T1 · 第2局' }, event: { ko: '2026 LCK', en: '2026 LCK', ja: '2026 LCK', zh: '2026 LCK' }, tags: ['lck', 'jgl', 'carry'] },
+      { id: 'OUHbIAms4F4', len: '0:25', channel: 'LoL Esports', year: 2026, match: { ko: 'HLE · G2 상대 정글 장악', en: 'HLE · jungle grip vs G2', ja: 'HLE · G2戦のジャングル掌握', zh: 'HLE · 对 G2 的野区压制' }, event: { ko: '2026 월드 챔피언십 · 스위스', en: 'Worlds 2026 · Swiss', ja: 'ワールズ2026 · スイス', zh: '2026 世界赛 · 瑞士轮' }, tags: ['worlds', 'jgl', 'carry'] },
+      { id: 'pPqJXwXuSDE', len: '0:56', channel: 'LoL Esports', year: 2023, match: { ko: '카나비 · 완벽한 각도', en: 'Kanavi · the perfect angle', ja: 'カナビ · 完璧な角度', zh: 'Kanavi · 完美角度' }, event: { ko: 'LoL Esports · 플레이 클립', en: 'LoL Esports · play clip', ja: 'LoL Esports · プレイクリップ', zh: 'LoL Esports · 精彩片段' }, tags: ['jgl', 'carry'] },
+      { id: 'SMxpnilYSyU', len: '0:09', channel: 'LoL Esports', year: 2026, match: { ko: '카나비 · 다시 정상에', en: 'Kanavi · champion again', ja: 'カナビ · 再び頂点へ', zh: 'Kanavi · 再度夺冠' }, event: { ko: 'MSI 2026', en: 'MSI 2026', ja: 'MSI 2026', zh: 'MSI 2026' }, tags: ['msi', 'champion', 'jgl'] }
     ],
     note: { ko: '', en: '', ja: '', zh: '' },
     official: {
@@ -3204,8 +3388,12 @@ const PLAYERS = [
       { platform: 'chzzk', url: 'https://chzzk.naver.com/07a040b24eb497dc36c31d82bc06ccc2', handle: 'DK 쇼메쇼메' }
     ],
     highlights: [
-      { id: 'FG8VNBFemDg', len: '10:29', channel: 'LCK', match: { ko: 'DK vs GEN · 3세트', en: 'DK vs GEN · Game 3', ja: 'DK vs GEN 第3試合', zh: 'DK vs GEN · 第3局' }, event: { ko: '2026 LCK', en: '2026 LCK', ja: '2026 LCK', zh: '2026 LCK' } },
-      { id: 'SqKdQydiZKs', len: '7:31', channel: 'LCK', match: { ko: 'DK vs GEN · 1세트', en: 'DK vs GEN · Game 1', ja: 'DK vs GEN 第1試合', zh: 'DK vs GEN · 第1局' }, event: { ko: '2026 LCK', en: '2026 LCK', ja: '2026 LCK', zh: '2026 LCK' } }
+      { id: 'FG8VNBFemDg', len: '10:29', channel: 'LCK', year: 2026, match: { ko: 'DK vs GEN · 3세트', en: 'DK vs GEN · Game 3', ja: 'DK vs GEN 第3試合', zh: 'DK vs GEN · 第3局' }, event: { ko: '2026 LCK', en: '2026 LCK', ja: '2026 LCK', zh: '2026 LCK' }, tags: ['lck', 'mid', 'carry'] },
+      { id: 'SqKdQydiZKs', len: '7:31', channel: 'LCK', year: 2026, match: { ko: 'DK vs GEN · 1세트', en: 'DK vs GEN · Game 1', ja: 'DK vs GEN 第1試合', zh: 'DK vs GEN · 第1局' }, event: { ko: '2026 LCK', en: '2026 LCK', ja: '2026 LCK', zh: '2026 LCK' }, tags: ['lck', 'mid'] },
+      { id: 'C02yoXL62UY', len: '10:49', channel: 'LCK', year: 2026, match: { ko: 'DK vs GEN · 2세트', en: 'DK vs GEN · Game 2', ja: 'DK vs GEN 第2試合', zh: 'DK vs GEN · 第2局' }, event: { ko: '2026 LCK', en: '2026 LCK', ja: '2026 LCK', zh: '2026 LCK' }, tags: ['lck', 'mid', 'comeback'] },
+      { id: 'VpNVX1aKR9g', len: '8:49', channel: 'LCK', year: 2021, match: { ko: 'T1 vs DK · 4세트', en: 'T1 vs DK · Game 4', ja: 'T1 vs DK 第4試合', zh: 'T1 vs DK · 第4局' }, event: { ko: '2021 월드 챔피언십 4강', en: 'Worlds 2021 Semifinals', ja: 'ワールズ2021 準決勝', zh: '2021 世界赛四强' }, tags: ['worlds', 'mid', 'carry', 'leblanc'] },
+      { id: 'DyaPoq_QAO8', len: '7:51', channel: 'LCK', year: 2025, match: { ko: 'DK vs BFX · 4세트', en: 'DK vs BFX · Game 4', ja: 'DK vs BFX 第4試合', zh: 'DK vs BFX · 第4局' }, event: { ko: '2025 우리은행 LCK 플레이오프', en: '2025 LCK Playoffs', ja: '2025 LCK プレーオフ', zh: '2025 LCK 季后赛' }, tags: ['playoffs', 'lck', 'mid', 'carry'] },
+      { id: 'JT8H1izxnL8', len: '3:45', channel: 'LoL Esports', year: 2024, match: { ko: '쇼메이커 · 아지르 4인 궁', en: 'ShowMaker · Azir shuffle', ja: 'ショーメーカー · アジール シャッフル', zh: 'ShowMaker · 沙皇大招' }, event: { ko: 'LoL Esports · TOP 5 PLAYS', en: 'LoL Esports · TOP 5 PLAYS', ja: 'LoL Esports · TOP 5 PLAYS', zh: 'LoL Esports · TOP 5 PLAYS' }, tags: ['mid', 'carry', 'azir'] }
     ],
     note: {
       ko: '최근 경기 중 NA 표시는 북미 계정(Sonny Hayes#722)에서 치른 게임이에요.',
@@ -3272,8 +3460,12 @@ const PLAYERS = [
       { platform: 'chzzk', url: 'https://chzzk.naver.com/44aa27b0df5175323fac934acdff1ed5', handle: 'DK 스매쉬1' }
     ],
     highlights: [
-      { id: 'uxnXy7SFMsY', len: '7:21', channel: 'LCK', match: { ko: 'T1 vs KT · 3세트', en: 'T1 vs KT · Game 3', ja: 'T1 vs KT 第3試合', zh: 'T1 vs KT · 第3局' }, event: { ko: '2025 LCK 컵', en: '2025 LCK Cup', ja: '2025 LCKカップ', zh: '2025 LCK 杯' } },
-      { id: 'BxU5zVPnMiU', len: '9:33', channel: 'LCK', match: { ko: 'T1 vs GEN · 1세트', en: 'T1 vs GEN · Game 1', ja: 'T1 vs GEN 第1試合', zh: 'T1 vs GEN · 第1局' }, event: { ko: '2025 LCK 컵 · 신인왕 등장', en: '2025 LCK Cup · rookie debut', ja: '2025 LCKカップ · 新人登場', zh: '2025 LCK 杯 · 新人王登场' } }
+      { id: 'uxnXy7SFMsY', len: '7:21', channel: 'LCK', year: 2025, match: { ko: 'T1 vs KT · 3세트', en: 'T1 vs KT · Game 3', ja: 'T1 vs KT 第3試合', zh: 'T1 vs KT · 第3局' }, event: { ko: '2025 LCK 컵', en: '2025 LCK Cup', ja: '2025 LCKカップ', zh: '2025 LCK 杯' }, tags: ['lckcup', 'adc'] },
+      { id: 'BxU5zVPnMiU', len: '9:33', channel: 'LCK', year: 2025, match: { ko: 'T1 vs GEN · 1세트', en: 'T1 vs GEN · Game 1', ja: 'T1 vs GEN 第1試合', zh: 'T1 vs GEN · 第1局' }, event: { ko: '2025 LCK 컵 · 신인왕 등장', en: '2025 LCK Cup · rookie debut', ja: '2025 LCKカップ · 新人王登場', zh: '2025 LCK 杯 · 新人王登场' }, tags: ['lckcup', 'rookie', 'debut', 'adc'] },
+      { id: '6qYVK6DGkrU', len: '3:28', channel: 'LoL Esports', year: 2025, match: { ko: '스매쉬 · T1 신인왕', en: 'Smash · T1 rookie', ja: 'スマッシュ · T1新人', zh: 'Smash · T1 新人' }, event: { ko: 'LoL Esports · TOP 5 PLAYS', en: 'LoL Esports · TOP 5 PLAYS', ja: 'LoL Esports · TOP 5 PLAYS', zh: 'LoL Esports · TOP 5 PLAYS' }, tags: ['rookie', 'adc', 'carry'] },
+      { id: '2JCbasoSUrY', len: '0:26', channel: 'LCK', year: 2026, match: { ko: 'DK · 월즈 1호 펜타킬', en: 'DK · first pentakill of Worlds', ja: 'DK · ワールズ第1号ペンタキル', zh: 'DK · 世界赛首个五杀' }, event: { ko: '2026 월드 챔피언십', en: 'Worlds 2026', ja: 'ワールズ2026', zh: '2026 世界赛' }, tags: ['worlds', 'pentakill', 'adc'] },
+      { id: 'yfC5vSjiJos', len: '13:27', channel: 'LCK', year: 2026, match: { ko: 'MKOI vs DK · 1세트', en: 'MKOI vs DK · Game 1', ja: 'MKOI vs DK 第1試合', zh: 'MKOI vs DK · 第1局' }, event: { ko: '2026 월드 챔피언십 · 스위스', en: 'Worlds 2026 · Swiss', ja: 'ワールズ2026 · スイス', zh: '2026 世界赛 · 瑞士轮' }, tags: ['worlds', 'adc'] },
+      { id: '99lMm4kPg0o', len: '11:54', channel: 'LCK', year: 2026, match: { ko: 'BLG vs DK · 3세트', en: 'BLG vs DK · Game 3', ja: 'BLG vs DK 第3試合', zh: 'BLG vs DK · 第3局' }, event: { ko: '2026 월드 챔피언십 · 8강', en: 'Worlds 2026 · Quarterfinals', ja: 'ワールズ2026 · 準々決勝', zh: '2026 世界赛 · 八强' }, tags: ['worlds', 'adc', 'carry'] }
     ],
     note: { ko: '', en: '', ja: '', zh: '' },
     official: {
@@ -3330,8 +3522,12 @@ const PLAYERS = [
       { platform: 'chzzk', url: 'https://chzzk.naver.com/59dd654778e3d0b64f3ed06baece805d', handle: 'HLE Delight' }
     ],
     highlights: [
-      { id: 'COviyhL_fxc', len: '8:52', channel: 'LCK', match: { ko: 'HLE vs DK · 2세트', en: 'HLE vs DK · Game 2', ja: 'HLE vs DK 第2試合', zh: 'HLE vs DK · 第2局' }, event: { ko: '2026 LCK · LCK 300승 기념', en: '2026 LCK · 300th LCK win', ja: '2026 LCK · LCK通算300勝', zh: '2026 LCK · LCK 300胜纪念' } },
-      { id: 'OT-19WY8HFI', len: '12:03', channel: 'LCK', match: { ko: 'HLE vs T1 · 1세트', en: 'HLE vs T1 · Game 1', ja: 'HLE vs T1 第1試合', zh: 'HLE vs T1 · 第1局' }, event: { ko: '2026 우리은행 LCK 플레이오프', en: '2026 LCK Playoffs', ja: '2026 LCK プレーオフ', zh: '2026 友利银行 LCK 季后赛' } }
+      { id: 'COviyhL_fxc', len: '8:52', channel: 'LCK', year: 2026, match: { ko: 'HLE vs DK · 2세트', en: 'HLE vs DK · Game 2', ja: 'HLE vs DK 第2試合', zh: 'HLE vs DK · 第2局' }, event: { ko: '2026 LCK · LCK 300승', en: '2026 LCK · 300th LCK win', ja: '2026 LCK · LCK通算300勝', zh: '2026 LCK · LCK 300胜' }, tags: ['lck', 'sup', 'win300'] },
+      { id: 'OT-19WY8HFI', len: '12:03', channel: 'LCK', year: 2026, match: { ko: 'HLE vs T1 · 1세트', en: 'HLE vs T1 · Game 1', ja: 'HLE vs T1 第1試合', zh: 'HLE vs T1 · 第1局' }, event: { ko: '2026 우리은행 LCK 플레이오프', en: '2026 LCK Playoffs', ja: '2026 LCK プレーオフ', zh: '2026 LCK 季后赛' }, tags: ['playoffs', 'lck', 'sup'] },
+      { id: 'c3QdrFHgxTU', len: '35:59', channel: 'LCK', year: 2026, match: { ko: 'DK vs HLE · 매치', en: 'DK vs HLE · Match', ja: 'DK vs HLE · マッチ', zh: 'DK vs HLE · 比赛' }, event: { ko: '2026 LCK 매치 123', en: '2026 LCK · Match 123', ja: '2026 LCK マッチ123', zh: '2026 LCK 第123场' }, tags: ['lck', 'sup'] },
+      { id: '2FDj-lJth1E', len: '0:20', channel: 'LoL Esports', year: 2026, match: { ko: '딜라이트 · 로봇 서폿', en: 'Delight · robot support', ja: 'ディライト · ロボットサポート', zh: 'Delight · 机器人辅助' }, event: { ko: 'MSI 2026', en: 'MSI 2026', ja: 'MSI 2026', zh: 'MSI 2026' }, tags: ['msi', 'champion', 'sup'] },
+      { id: 'PcrXCZYo_58', len: '9:37', channel: 'LCK', year: 2026, match: { ko: 'G2 vs HLE · 1세트', en: 'G2 vs HLE · Game 1', ja: 'G2 vs HLE 第1試合', zh: 'G2 vs HLE · 第1局' }, event: { ko: '2026 월드 챔피언십 · 스위스', en: 'Worlds 2026 · Swiss', ja: 'ワールズ2026 · スイス', zh: '2026 世界赛 · 瑞士轮' }, tags: ['worlds', 'sup'] },
+      { id: 'oH96rywp2L0', len: '43:39', channel: 'LCK', year: 2026, match: { ko: 'HLE vs KT · 매치', en: 'HLE vs KT · Match', ja: 'HLE vs KT · マッチ', zh: 'HLE vs KT · 比赛' }, event: { ko: '2026 LCK 매치 117', en: '2026 LCK · Match 117', ja: '2026 LCK マッチ117', zh: '2026 LCK 第117场' }, tags: ['lck', 'sup'] }
     ],
     note: {
       ko: '닉네임이 플레이리스트겨울#KR1 에서 죽각딜#KR02 로 바뀌어 u.gg 새 주소로 연결했어요.',
@@ -3634,6 +3830,7 @@ const CHAMPIONS = {
     tab: 'feed',
     filter: 'all',
     videoPlayer: 'all',
+    videoQuery: '',
     checked: new Date(LAST_CHECKED)
   };
 
@@ -4246,7 +4443,7 @@ const CHAMPIONS = {
     }).join('');
   }
 
-  /* 대표 하이라이트: 5인 × 2편 = 10편, 선수별 필터 */
+  /* 대표 하이라이트 아카이브: 5인 31편, 선수 필터 + 검색 */
   function allHighlights() {
     var out = [];
     PLAYERS.forEach(function (p) {
@@ -4269,8 +4466,40 @@ const CHAMPIONS = {
     }).join('');
   }
 
+  function tagText(key) {
+    var t = typeof HL_TAGS !== 'undefined' ? HL_TAGS[key] : null;
+    if (!t) return key;
+    return t[lang()] || t.ko || key;
+  }
+
+  /* 검색은 화면 언어와 상관없이 4개 국어 제목·태그·선수 이름을 모두 훑습니다. */
+  function hlHaystack(entry) {
+    var p = entry.p, v = entry.v;
+    var out = [p.key, p.nameKo, p.nameEn, p.nameIntl, p.nameJa, p.nameZh, p.real, v.channel, v.year, v.len];
+    [v.match, v.event].forEach(function (o) {
+      if (!o) return;
+      Object.keys(o).forEach(function (k) { out.push(o[k]); });
+    });
+    (v.tags || []).forEach(function (key) {
+      out.push(key);
+      var t = typeof HL_TAGS !== 'undefined' ? HL_TAGS[key] : null;
+      if (t) Object.keys(t).forEach(function (k) { out.push(t[k]); });
+    });
+    return out.join(' ').toLowerCase();
+  }
+
+  function hlMatches(entry, query) {
+    var q = String(query == null ? '' : query).trim().toLowerCase();
+    if (!q) return true;
+    var hay = hlHaystack(entry);
+    return q.split(/\s+/).every(function (w) { return hay.indexOf(w) > -1; });
+  }
+
   function videoItemHTML(entry, withWho) {
     var v = entry.v, p = entry.p;
+    var tags = (v.tags || []).slice(0, 2).map(function (key) {
+      return '<span class="vc-tag">' + esc(tagText(key)) + '</span>';
+    }).join('');
     return '<li>' +
       '<a class="vc-item" href="' + ytWatch(v.id) + '" target="_blank" rel="noopener" data-video="' + v.id + '">' +
         '<span class="vc-thumb"><img loading="lazy" src="' + ytThumb(v.id) + '" alt="" width="168" height="94"><i class="vc-len">' + esc(v.len) + '</i></span>' +
@@ -4278,7 +4507,8 @@ const CHAMPIONS = {
           (withWho ? '<span class="vc-who">' + pName(p) + '<i>' + p.pos + '</i></span>' : '') +
           '<b class="vc-title">' + L(v.match) + '</b>' +
           '<span class="vc-meta">' + L(v.event) + '</span>' +
-          '<span class="vc-tags"><span class="vc-badge">' + T('video.badge') + '</span>' +
+          '<span class="vc-tags"><span class="vc-badge">' + esc(v.channel) + '</span>' +
+            '<span class="vc-yr">' + esc(v.year) + '</span>' + tags +
             '<span class="vc-len-txt">' + T('video.len', { len: v.len }) + '</span></span>' +
         '</span>' +
       '</a>' +
@@ -4290,11 +4520,71 @@ const CHAMPIONS = {
     if (!host) return;
     var all = allHighlights();
     var list = state.videoPlayer === 'all' ? all : all.filter(function (e) { return e.p.key === state.videoPlayer; });
+    var q = state.videoQuery;
+    if (q) list = list.filter(function (e) { return hlMatches(e, q); });
     host.innerHTML = list.length
       ? list.map(function (e) { return videoItemHTML(e, state.videoPlayer === 'all'); }).join('')
-      : '<li class="vc-empty">' + T('video.empty') + '</li>';
+      : '<li class="vc-empty">' + (q ? esc(T('video.searchEmpty', { q: q })) : T('video.empty')) + '</li>';
     var count = $('#videoCount');
     if (count) count.textContent = T('video.count', { n: list.length });
+    var clear = $('#videoSearchClear');
+    if (clear) clear.hidden = !q;
+  }
+
+  /* ---------- 디플러스 기아 공식 유튜브 최신 영상 (/api/dk-youtube) ---------- */
+  function dkDate(iso) {
+    var d = new Date(iso);
+    if (!iso || isNaN(d.getTime())) return '';
+    var y = d.getFullYear(), mo = d.getMonth() + 1, da = d.getDate();
+    if (lang() === 'en') return window.I18N.shortDate(d) + ', ' + y;
+    if (lang() === 'ja' || lang() === 'zh') return y + '年' + mo + '月' + da + '日';
+    return y + '. ' + mo + '. ' + da + '.';
+  }
+
+  function compactViews(n) {
+    var v = Number(n) || 0;
+    if (lang() === 'ko' || lang() === 'ja') {
+      if (v >= 10000) return (Math.round(v / 1000) / 10) + (lang() === 'ko' ? '만' : '万');
+    } else if (v >= 1000000) {
+      return (Math.round(v / 100000) / 10) + 'M';
+    } else if (v >= 1000) {
+      return (Math.round(v / 100) / 10) + 'K';
+    }
+    return String(v);
+  }
+
+  function renderDkYoutube() {
+    var host = $('#dkYtGrid');
+    if (!host) return;
+    var data = LIVE.dkYt;
+    var note = $('#dkYtNote');
+    var count = $('#dkYtCount');
+    var list = data && Array.isArray(data.videos) ? data.videos : [];
+
+    if (!list.length) {
+      var msg = (LIVE.offline || !canUseApi() || (data && data.ok === false)) ? 'video.dkFallback' : 'video.dkEmpty';
+      host.innerHTML = '<p class="dy-empty">' + esc(T(msg)) + '</p>';
+      if (count) count.textContent = '';
+      if (note) note.textContent = '';
+      return;
+    }
+
+    host.innerHTML = list.slice(0, 10).map(function (v) {
+      return '<a class="dy-item" href="' + esc(v.url) + '" target="_blank" rel="noopener" data-video="' + esc(v.id) + '">' +
+        '<span class="dy-thumb"><img loading="lazy" src="' + esc(v.thumb) + '" alt="" width="320" height="180">' +
+          '<i class="dy-play" aria-hidden="true">▶</i></span>' +
+        '<b class="dy-title">' + esc(v.title) + '</b>' +
+        '<span class="dy-meta"><span class="dy-date">' + esc(dkDate(v.published)) + '</span>' +
+          '<span class="dy-views">' + esc(T('video.dkViews', { n: compactViews(v.views) })) + '</span></span>' +
+      '</a>';
+    }).join('');
+
+    if (count) count.textContent = T('video.count', { n: Math.min(list.length, 10) });
+    if (note) {
+      if (data.stale || data.source === 'snapshot') note.textContent = T('video.dkFallback');
+      else if (data.fetchedAt) note.textContent = T('video.dkNote', { time: window.I18N.stamp(new Date(data.fetchedAt)) });
+      else note.textContent = '';
+    }
   }
 
   /* 최근 공식 경기 다시보기: /api/official recent + 풀영상 VOD·하이라이트 */
@@ -4349,8 +4639,11 @@ const CHAMPIONS = {
   function renderVideoPanel() {
     var more = $('#videoMore');
     if (more) more.href = CHANNELS.dkYoutube;
+    var search = $('#videoSearch');
+    if (search && search.value !== state.videoQuery) search.value = state.videoQuery;
     renderVideoChannels();
     renderVideoStations();
+    renderDkYoutube();
     renderVideoFilters();
     renderVideoList();
     renderVideoVod();
@@ -4598,6 +4891,7 @@ const CHAMPIONS = {
     official: null,
     solo: null,
     live: null,
+    dkYt: null,
     soloSource: 'snapshot',
     offline: false,
     lastSync: 0,
@@ -4918,9 +5212,10 @@ const CHAMPIONS = {
       LIVE.config ? Promise.resolve(LIVE.config) : apiGet('./api/config'),
       apiGet('./api/official?lang=' + lang()),
       apiGet('./api/solo'),
-      apiGet('./api/live')
+      apiGet('./api/live'),
+      apiGet('./api/dk-youtube')
     ]).then(function (res) {
-      var cfg = res[0], off = res[1], solo = res[2], live = res[3];
+      var cfg = res[0], off = res[1], solo = res[2], live = res[3], dkYt = res[4];
       if (cfg && cfg.ok) LIVE.config = cfg;
       if (!cfg && !off && !solo) {
         LIVE.offline = true;
@@ -4929,6 +5224,7 @@ const CHAMPIONS = {
       }
       if (off) LIVE.official = off;
       if (live && live.ok) LIVE.live = live;
+      if (dkYt) LIVE.dkYt = dkYt;
       if (solo) { LIVE.solo = solo; if (solo.source) LIVE.soloSource = solo.source; mergeSolo(solo); }
       LIVE.lastSync = Date.now();
       renderAll();
@@ -5091,8 +5387,21 @@ const CHAMPIONS = {
       renderVideoList();
       return;
     }
+    if (e.target.closest('#videoSearchClear')) {
+      state.videoQuery = '';
+      var box = $('#videoSearch');
+      if (box) { box.value = ''; box.focus(); }
+      renderVideoList();
+      return;
+    }
     var tab = e.target.closest('[data-tab]');
     if (tab) { switchTab(tab.getAttribute('data-tab')); return; }
+  });
+
+  document.addEventListener('input', function (e) {
+    if (!e.target || e.target.id !== 'videoSearch') return;
+    state.videoQuery = e.target.value || '';
+    renderVideoList();
   });
 
   function selectPlayer(key) {

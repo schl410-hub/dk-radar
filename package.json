@@ -1,6 +1,6 @@
 {
   "name": "dk-signal",
-  "version": "3.2.0",
+  "version": "3.3.0",
   "private": true,
   "description": "딮기 시그널 · DK SIGNAL — 공식 경기 자동 수집 + 영상 탭(생중계·방송국·하이라이트·VOD) + 솔로랭크 + 다국어(KO/EN/JA/ZH) + 웹 푸시 백엔드",
   "engines": {

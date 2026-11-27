@@ -27,6 +27,7 @@
     tab: 'feed',
     filter: 'all',
     videoPlayer: 'all',
+    videoQuery: '',
     checked: new Date(LAST_CHECKED)
   };
 
@@ -639,7 +640,7 @@
     }).join('');
   }
 
-  /* 대표 하이라이트: 5인 × 2편 = 10편, 선수별 필터 */
+  /* 대표 하이라이트 아카이브: 5인 31편, 선수 필터 + 검색 */
   function allHighlights() {
     var out = [];
     PLAYERS.forEach(function (p) {
@@ -662,8 +663,40 @@
     }).join('');
   }
 
+  function tagText(key) {
+    var t = typeof HL_TAGS !== 'undefined' ? HL_TAGS[key] : null;
+    if (!t) return key;
+    return t[lang()] || t.ko || key;
+  }
+
+  /* 검색은 화면 언어와 상관없이 4개 국어 제목·태그·선수 이름을 모두 훑습니다. */
+  function hlHaystack(entry) {
+    var p = entry.p, v = entry.v;
+    var out = [p.key, p.nameKo, p.nameEn, p.nameIntl, p.nameJa, p.nameZh, p.real, v.channel, v.year, v.len];
+    [v.match, v.event].forEach(function (o) {
+      if (!o) return;
+      Object.keys(o).forEach(function (k) { out.push(o[k]); });
+    });
+    (v.tags || []).forEach(function (key) {
+      out.push(key);
+      var t = typeof HL_TAGS !== 'undefined' ? HL_TAGS[key] : null;
+      if (t) Object.keys(t).forEach(function (k) { out.push(t[k]); });
+    });
+    return out.join(' ').toLowerCase();
+  }
+
+  function hlMatches(entry, query) {
+    var q = String(query == null ? '' : query).trim().toLowerCase();
+    if (!q) return true;
+    var hay = hlHaystack(entry);
+    return q.split(/\s+/).every(function (w) { return hay.indexOf(w) > -1; });
+  }
+
   function videoItemHTML(entry, withWho) {
     var v = entry.v, p = entry.p;
+    var tags = (v.tags || []).slice(0, 2).map(function (key) {
+      return '<span class="vc-tag">' + esc(tagText(key)) + '</span>';
+    }).join('');
     return '<li>' +
       '<a class="vc-item" href="' + ytWatch(v.id) + '" target="_blank" rel="noopener" data-video="' + v.id + '">' +
         '<span class="vc-thumb"><img loading="lazy" src="' + ytThumb(v.id) + '" alt="" width="168" height="94"><i class="vc-len">' + esc(v.len) + '</i></span>' +
@@ -671,7 +704,8 @@
           (withWho ? '<span class="vc-who">' + pName(p) + '<i>' + p.pos + '</i></span>' : '') +
           '<b class="vc-title">' + L(v.match) + '</b>' +
           '<span class="vc-meta">' + L(v.event) + '</span>' +
-          '<span class="vc-tags"><span class="vc-badge">' + T('video.badge') + '</span>' +
+          '<span class="vc-tags"><span class="vc-badge">' + esc(v.channel) + '</span>' +
+            '<span class="vc-yr">' + esc(v.year) + '</span>' + tags +
             '<span class="vc-len-txt">' + T('video.len', { len: v.len }) + '</span></span>' +
         '</span>' +
       '</a>' +
@@ -683,11 +717,71 @@
     if (!host) return;
     var all = allHighlights();
     var list = state.videoPlayer === 'all' ? all : all.filter(function (e) { return e.p.key === state.videoPlayer; });
+    var q = state.videoQuery;
+    if (q) list = list.filter(function (e) { return hlMatches(e, q); });
     host.innerHTML = list.length
       ? list.map(function (e) { return videoItemHTML(e, state.videoPlayer === 'all'); }).join('')
-      : '<li class="vc-empty">' + T('video.empty') + '</li>';
+      : '<li class="vc-empty">' + (q ? esc(T('video.searchEmpty', { q: q })) : T('video.empty')) + '</li>';
     var count = $('#videoCount');
     if (count) count.textContent = T('video.count', { n: list.length });
+    var clear = $('#videoSearchClear');
+    if (clear) clear.hidden = !q;
+  }
+
+  /* ---------- 디플러스 기아 공식 유튜브 최신 영상 (/api/dk-youtube) ---------- */
+  function dkDate(iso) {
+    var d = new Date(iso);
+    if (!iso || isNaN(d.getTime())) return '';
+    var y = d.getFullYear(), mo = d.getMonth() + 1, da = d.getDate();
+    if (lang() === 'en') return window.I18N.shortDate(d) + ', ' + y;
+    if (lang() === 'ja' || lang() === 'zh') return y + '年' + mo + '月' + da + '日';
+    return y + '. ' + mo + '. ' + da + '.';
+  }
+
+  function compactViews(n) {
+    var v = Number(n) || 0;
+    if (lang() === 'ko' || lang() === 'ja') {
+      if (v >= 10000) return (Math.round(v / 1000) / 10) + (lang() === 'ko' ? '만' : '万');
+    } else if (v >= 1000000) {
+      return (Math.round(v / 100000) / 10) + 'M';
+    } else if (v >= 1000) {
+      return (Math.round(v / 100) / 10) + 'K';
+    }
+    return String(v);
+  }
+
+  function renderDkYoutube() {
+    var host = $('#dkYtGrid');
+    if (!host) return;
+    var data = LIVE.dkYt;
+    var note = $('#dkYtNote');
+    var count = $('#dkYtCount');
+    var list = data && Array.isArray(data.videos) ? data.videos : [];
+
+    if (!list.length) {
+      var msg = (LIVE.offline || !canUseApi() || (data && data.ok === false)) ? 'video.dkFallback' : 'video.dkEmpty';
+      host.innerHTML = '<p class="dy-empty">' + esc(T(msg)) + '</p>';
+      if (count) count.textContent = '';
+      if (note) note.textContent = '';
+      return;
+    }
+
+    host.innerHTML = list.slice(0, 10).map(function (v) {
+      return '<a class="dy-item" href="' + esc(v.url) + '" target="_blank" rel="noopener" data-video="' + esc(v.id) + '">' +
+        '<span class="dy-thumb"><img loading="lazy" src="' + esc(v.thumb) + '" alt="" width="320" height="180">' +
+          '<i class="dy-play" aria-hidden="true">▶</i></span>' +
+        '<b class="dy-title">' + esc(v.title) + '</b>' +
+        '<span class="dy-meta"><span class="dy-date">' + esc(dkDate(v.published)) + '</span>' +
+          '<span class="dy-views">' + esc(T('video.dkViews', { n: compactViews(v.views) })) + '</span></span>' +
+      '</a>';
+    }).join('');
+
+    if (count) count.textContent = T('video.count', { n: Math.min(list.length, 10) });
+    if (note) {
+      if (data.stale || data.source === 'snapshot') note.textContent = T('video.dkFallback');
+      else if (data.fetchedAt) note.textContent = T('video.dkNote', { time: window.I18N.stamp(new Date(data.fetchedAt)) });
+      else note.textContent = '';
+    }
   }
 
   /* 최근 공식 경기 다시보기: /api/official recent + 풀영상 VOD·하이라이트 */
@@ -742,8 +836,11 @@
   function renderVideoPanel() {
     var more = $('#videoMore');
     if (more) more.href = CHANNELS.dkYoutube;
+    var search = $('#videoSearch');
+    if (search && search.value !== state.videoQuery) search.value = state.videoQuery;
     renderVideoChannels();
     renderVideoStations();
+    renderDkYoutube();
     renderVideoFilters();
     renderVideoList();
     renderVideoVod();
@@ -991,6 +1088,7 @@
     official: null,
     solo: null,
     live: null,
+    dkYt: null,
     soloSource: 'snapshot',
     offline: false,
     lastSync: 0,
@@ -1311,9 +1409,10 @@
       LIVE.config ? Promise.resolve(LIVE.config) : apiGet('./api/config'),
       apiGet('./api/official?lang=' + lang()),
       apiGet('./api/solo'),
-      apiGet('./api/live')
+      apiGet('./api/live'),
+      apiGet('./api/dk-youtube')
     ]).then(function (res) {
-      var cfg = res[0], off = res[1], solo = res[2], live = res[3];
+      var cfg = res[0], off = res[1], solo = res[2], live = res[3], dkYt = res[4];
       if (cfg && cfg.ok) LIVE.config = cfg;
       if (!cfg && !off && !solo) {
         LIVE.offline = true;
@@ -1322,6 +1421,7 @@
       }
       if (off) LIVE.official = off;
       if (live && live.ok) LIVE.live = live;
+      if (dkYt) LIVE.dkYt = dkYt;
       if (solo) { LIVE.solo = solo; if (solo.source) LIVE.soloSource = solo.source; mergeSolo(solo); }
       LIVE.lastSync = Date.now();
       renderAll();
@@ -1484,8 +1584,21 @@
       renderVideoList();
       return;
     }
+    if (e.target.closest('#videoSearchClear')) {
+      state.videoQuery = '';
+      var box = $('#videoSearch');
+      if (box) { box.value = ''; box.focus(); }
+      renderVideoList();
+      return;
+    }
     var tab = e.target.closest('[data-tab]');
     if (tab) { switchTab(tab.getAttribute('data-tab')); return; }
+  });
+
+  document.addEventListener('input', function (e) {
+    if (!e.target || e.target.id !== 'videoSearch') return;
+    state.videoQuery = e.target.value || '';
+    renderVideoList();
   });
 
   function selectPlayer(key) {

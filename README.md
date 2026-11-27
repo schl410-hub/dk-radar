@@ -25,7 +25,7 @@
   - 앱을 새로고침하거나 다시 열면 **저장된 MY PICK 선수가 첫 화면**에 뜨고, 기본값은 도란입니다.
   - 다른 선수를 구경하는 동안에는 배너가 `미리보기 · 카나비` 처럼 표시되고, 그 상태에서 별을 누르면 그 선수가 새 MY PICK이 됩니다.
 - **최근 5경기 하이라이트**: 대형 W–L, 승률, KDA(합계·평균), 경기별 챔피언/KDA 카드
-- **영상 탭**: ① 생중계·공식 채널(LCK CHZZK·SOOP·YouTube, Dplus KIA YouTube) + 다음 경기 안내 ② 선수별 개인 방송국 5인 ③ 대표 하이라이트 10편(전체/선수별 필터 칩) ④ 최근 공식 경기 다시보기(VOD·하이라이트). 하이라이트 링크는 전부 oEmbed로 재생 가능 여부를 확인한 실제 영상입니다.
+- **영상 탭**: ① 생중계·공식 채널(LCK CHZZK·SOOP·YouTube, Dplus KIA YouTube) + 다음 경기 안내 ② 선수별 개인 방송국 5인 ③ **디플러스 기아 공식 유튜브** — 채널 RSS(`/api/dk-youtube`, 10분 캐시)에서 받은 최신 영상 10편을 썸네일·제목·업로드 날짜·조회수와 함께 2열 카드로 표시 ④ **대표 하이라이트 아카이브 31편** — 선수별 6~7편을 연도·대회·플레이 태그와 함께 모으고, 선수 필터 칩 + 검색창(챔피언·대회·키워드, 4개 국어 동시 검색) + 편수 배지로 찾아봅니다 ⑤ 최근 공식 경기 다시보기(VOD·하이라이트). 하이라이트 31편은 전부 YouTube oEmbed로 재생 가능 여부를 확인한 실제 영상이고, 채널은 LCK 공식 · LoL Esports 공식만 씁니다.
 - **방송국 · 전적 바로가기**: 배너·경기로그·기록실에서 선수 개인 방송국(CHZZK / SOOP)과 OP.GG(u.gg)로 바로 이동합니다. 확인된 채널만 연결했습니다 — 도란 SOOP·CHZZK, 카나비 CHZZK, 쇼메이커 CHZZK, 스매쉬 SOOP·CHZZK, 딜라이트 CHZZK.
 - **공식 경기 영상·생중계**: 생중계 채널은 영상 탭에 모았고, 홈에는 `영상 보러가기` 버튼만 둡니다. 공식일정 `NEXT` 카드는 영상 탭으로 이동하는 링크만 남겼습니다. 종료된 경기는 LoL Esports `getEventDetails`의 VOD 정보로 **언어별 풀영상**(한국어 SOOP, 해외 유튜브/트위치)과 **유튜브 하이라이트 검색**을 붙입니다(공식 VOD가 없으면 검색으로만 안내).
 - **선수 라이브 방송 감지 · 알림**: `/api/live` 가 5인의 SOOP·CHZZK 공개 API 를 조회해 방송 중인 선수를 알려 줍니다(45초 캐시). 방송 중이면 홈 5인 보드 타일·MY PICK·영상 탭 방송국 카드에 **LIVE** 배지와 방송 제목이 뜨고, 영상 탭 상단에 `지금 방송 중` 줄이 생깁니다. `/api/check` 는 5분마다 상태를 확인해 꺼져 있다가 켜진 방송은 구독 기기로 `🔴 [도란] SOOP 방송 시작` 푸시를 보내고(클릭하면 방송국으로 이동) Upstash Redis 에 상태를 남겨 중복 발송을 막습니다. 첫 점검은 기준값만 저장합니다.
@@ -45,6 +45,7 @@
 | `GET /api/official` | DK 다음 경기 + 최근 결과 + 경기별 VOD 링크 (LoL Esports 공개 API, 90초 캐시 · `?lang=ko\|en\|ja\|zh`) |
 | `GET /api/solo` | 5인 티어·LP·전적·인게임·최근 5경기 (Riot API, 45초 캐시) · 키 없으면 스냅샷 |
 | `GET /api/live` | 5인 라이브 방송 상태 (SOOP station API · CHZZK live-status, 45초 캐시) |
+| `GET /api/dk-youtube` | 디플러스 기아 공식 유튜브(@DplusKia_LOL) 최신 영상 10편 (채널 RSS, 10분 캐시 · 실패 시 마지막 확인본 스냅샷) |
 | `GET /api/config` | 프론트가 쓰는 공개 상태값(푸시 공개키·저장소·솔로 소스·마지막 점검) |
 | `POST /api/subscribe` | 기기 푸시 구독 + 알림 설정 저장 (`DELETE` 해지, `GET ?endpoint=` 확인) |
 | `GET /api/check` | 주기 점검 — 새 랭크 게임 / 새 일정 / 시작 임박 감지 후 푸시 (`?dry=1` 미리보기, `?test=1` 구독 기기로 테스트 푸시) |
@@ -54,6 +55,7 @@ BASE=https://dk-signal.vercel.app
 curl -s $BASE/api/official | head -c 400
 curl -s $BASE/api/solo | head -c 300
 curl -s $BASE/api/config
+curl -s $BASE/api/dk-youtube | head -c 400
 curl -s "$BASE/api/check?dry=1&token=$CHECK_SECRET"
 curl -s "$BASE/api/check?test=1&token=$CHECK_SECRET"   # 잠금화면 알림 확인
 ```
@@ -93,7 +95,7 @@ curl -s "$BASE/api/check?test=1&token=$CHECK_SECRET"   # 잠금화면 알림 확
 `data.js`의 5인 솔로랭크·대회 기록은 **2026-11-26에 확인한 KO.LOL · OP.GG · u.gg 공개 전적**이며, 서버 키가 없을 때의 기준값입니다.
 `api/_lib/snapshot.js` 는 `node tools/make_snapshot.js` 로 data.js 에서 자동 생성합니다(직접 수정 금지).
 
-방송국 링크는 2026-11-27에 CHZZK 채널 API·SOOP 스테이션 API로 실제 존재와 이름을 확인했고, 대표 하이라이트는 LCK 공식 유튜브에서 찾아 oEmbed로 재생 가능한 영상만 넣었습니다. 챔피언 이름 표는 Riot Data Dragon 16.23.1(ko_KR·en_US·ja_JP)에서 `tools/make_champions.py` 로 생성합니다.
+방송국 링크는 2026-11-27에 CHZZK 채널 API·SOOP 스테이션 API로 실제 존재와 이름을 확인했습니다. 대표 하이라이트 아카이브 31편(선수별 6~7편)은 LCK 공식 유튜브 · LoL Esports 공식 채널에서 찾아 YouTube oEmbed로 재생 가능 여부를 확인한 영상만 넣었고, 디플러스 기아 공식 유튜브 최신 영상은 `/api/dk-youtube` 가 채널 RSS에서 받아 옵니다(RSS 사본은 `node tools/make_dk_youtube_snapshot.js` 로 갱신). 챔피언 이름 표는 Riot Data Dragon 16.23.1(ko_KR·en_US·ja_JP)에서 `tools/make_champions.py` 로 생성합니다.
 
 2027 시즌 표기는 2025년부터 바뀐 LCK 체제(스프링·서머 스플릿 폐지, **LCK 컵 → 단일 정규 시즌**)를 따르고, 국제 대회 개최지는 **LoL e스포츠 2026-11-13 발표** 기준입니다.
 
@@ -103,7 +105,7 @@ curl -s "$BASE/api/check?test=1&token=$CHECK_SECRET"   # 잠금화면 알림 확
 index.html            화면 뼈대 (테마·언어 부트스트랩 포함, data-i18n 마커)
 styles.css            듀얼 테마 토큰 + 컴포넌트 스타일 (+ 언어·영상·링크 UI)
 i18n.js               KO·EN·JA·ZH 사전 + 날짜/요일 표기 + 언어 저장·전환
-data.js               선수·경기·대회 기록 (2026-11-26) · 방송국/하이라이트 링크 · 챔피언 이름 4개 언어
+data.js               선수·경기·대회 기록 (2026-11-26) · 방송국/하이라이트 아카이브 31편(태그 사전 포함) · 챔피언 이름 4개 언어
 app.js                탭/선수·MY PICK·테마·알림·언어, 서버 실시간 연동·푸시 구독
 sw.js                 서비스 워커 (캐시 + 웹 푸시 + 구독 갱신)
 manifest.json         PWA 설정 (manifest.webmanifest 와 동일 내용)
@@ -118,14 +120,15 @@ vercel.json           Cron(하루 1회) · 함수 실행시간 · /api 캐시 �
 package.json          의존성(web-push)
 tools/dev_server.js   로컬 서버(정적 + /api) · 픽스처 모드 · DK_LIVE_FAKE 라이브 배지 검증
 tools/fixtures/       검증용 고정 일정(다음 경기 없음/있음)
-tools/api_smoke.js    /api 함수 동작 검증(실 API 1회 + 가짜 Riot/Redis/SOOP/CHZZK)
+tools/api_smoke.js    /api 함수 동작 검증(실 API·YouTube RSS 1회 + 가짜 Riot/Redis/SOOP/CHZZK)
 tools/verify.py       390×844 브라우저 회귀 검증 87항목 + 스크린샷
-tools/verify_v3.py    다국어·영상·라이브 배지 검증 136항목 + 스크린샷(downloads/dk-signal-v3)
+tools/verify_v3.py    다국어·영상 아카이브·공식 유튜브·라이브 배지 검증 166항목 + 스크린샷(downloads/dk-signal-v3)
 tools/smoke_v3.py     빠른 화면 점검(스크린샷 없음)
 tools/make_champions.py  Riot Data Dragon → data.js 챔피언 이름 표 재생성
 tools/verify_api.py   자동 갱신·실시간 반영·오프라인 검증 + 스크린샷
 tools/make_snapshot.js data.js → api/_lib/snapshot.js
 tools/make_vapid.js   VAPID 키 생성
+tools/make_dk_youtube_snapshot.js  /api/dk-youtube 폴백 스냅샷 생성
 tools/make_preview.py 단일 파일 프리뷰 빌드
 tools/make_icons.py   아이콘 생성
 tools/make_font.py    Pretendard 서브셋 생성
@@ -134,14 +137,16 @@ tools/make_font.py    Pretendard 서브셋 생성
 ## 검증
 
 ```bash
-node tools/api_smoke.js                    # 서버 함수 75항목 (실제 LoL Esports API 1회 + 가짜 SOOP/CHZZK)
+python3 tools/verify_highlights.py          # 하이라이트 31편 oEmbed 재생 확인
+node tools/api_smoke.js                    # 서버 함수 89항목 (실제 LoL Esports API·YouTube RSS 1회 + 가짜 SOOP/CHZZK)
 
 LD_LIBRARY_PATH=... PLAYWRIGHT_BROWSERS_PATH=... python3 tools/verify.py       # 87/87
 LD_LIBRARY_PATH=... PLAYWRIGHT_BROWSERS_PATH=... python3 tools/verify_api.py   # 31/31
-LD_LIBRARY_PATH=... python3 tools/verify_v3.py                                 # 136/136 (다국어·영상·라이브)
+LD_LIBRARY_PATH=... python3 tools/verify_v3.py                                 # 166/166 (다국어·영상 아카이브·공식 유튜브·라이브)
 ```
 
+- `verify_highlights.py` 는 `data.js` 하이라이트 31편을 YouTube oEmbed 로 하나씩 확인합니다(영상이 내려가면 여기서 먼저 걸립니다).
 - `verify.py` 는 `tools/dev_server.js`(픽스처 `none`)를 직접 띄워 5탭, 5인 전환, 테마 저장, MY PICK, 알림 동기화, 테스트 푸시, 응원 저장, 콘솔 에러를 확인하고 `downloads/dk-radar/signal-*.png` 를 갱신합니다.
 - `verify_api.py` 는 다음 경기가 공개된 픽스처로 NEXT 카드 자동 갱신, 미공개 시 2027 LCK 컵 fallback, 실시간 솔로랭크 응답의 티어·인게임·전적 반영, 서버 미연결 시 화면 유지를 확인합니다.
-- `verify_v3.py` 는 KO/EN/JA/ZH 전환(탭·배너·타일·하이라이트·표·일정·기록·알림·응원·영상 탭), 새로고침 후 언어 유지, 브라우저 언어 자동 감지(en-US→EN, ja-JP→JA, zh-CN/zh-TW→ZH, 그 외→KO), 영상 탭 공식 채널 4곳·방송국 5인·필터별 하이라이트 10편 링크/썸네일/길이·VOD 링크, 라이브 배지(타일·MY PICK·영상 탭·방송국 카드·토글), 네 언어권에서의 가로 넘침, 콘솔 에러를 확인하고 `downloads/dk-signal-v3/*.png` 를 갱신합니다.
+- `verify_v3.py` 는 KO/EN/JA/ZH 전환(탭·배너·타일·하이라이트·표·일정·기록·알림·응원·영상 탭), 새로고침 후 언어 유지, 브라우저 언어 자동 감지(en-US→EN, ja-JP→JA, zh-CN/zh-TW→ZH, 그 외→KO), 영상 탭 공식 채널 4곳·방송국 5인·하이라이트 아카이브 31편(선수 필터·검색·썸네일·길이·연도)·디플러스 기아 공식 유튜브 10편(/api/dk-youtube)·VOD 링크, 라이브 배지(타일·MY PICK·영상 탭·방송국 카드·토글), 네 언어권에서의 가로 넘침, 콘솔 에러를 확인하고 `downloads/dk-signal-v3/*.png` 를 갱신합니다.
 - 로컬에서 눈으로 보기: `node tools/dev_server.js` → http://127.0.0.1:8765

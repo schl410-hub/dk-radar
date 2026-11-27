@@ -456,6 +456,52 @@ async function main() {
   `], { encoding: 'utf8', env: Object.assign({}, process.env) });
   check('subscribe without store → 503', /CODE 503 .*store_missing/.test(child.stdout || ''), (child.stdout || child.stderr || '').trim().split('\n').pop());
 
+  /* --- 9. 디플러스 기아 공식 유튜브 (/api/dk-youtube) --- */
+  const dkYtLib = require('../api/_lib/dk-youtube');
+  const parsed = dkYtLib.parseFeed('<feed><entry><yt:videoId>abc12345678</yt:videoId><title>A &amp; B</title>' +
+    '<published>2026-11-01T00:00:00+00:00</published><media:statistics views="123"/></entry></feed>');
+  check('dk youtube rss parse', parsed.length === 1 && parsed[0].title === 'A & B' && parsed[0].views === 123,
+    parsed[0] && parsed[0].title);
+  check('dk youtube canonical thumb', parsed[0] && parsed[0].thumb === 'https://i.ytimg.com/vi/abc12345678/hqdefault.jpg',
+    parsed[0] && parsed[0].thumb);
+
+  const dkYt = require('../api/dk-youtube');
+  const dkLive = await call(dkYt, { url: '/api/dk-youtube?refresh=1' });
+  check('dk youtube status 200', dkLive.status === 200, dkLive.status);
+  check('dk youtube ok', dkLive.json && dkLive.json.ok === true, dkLive.json && dkLive.json.error);
+  if (dkLive.json && dkLive.json.source === 'youtube-rss') {
+    const vids = dkLive.json.videos || [];
+    check('dk youtube live videos 10', vids.length === 10, vids.length);
+    check('dk youtube channel id', dkLive.json.channel && dkLive.json.channel.id === 'UCepHesz_5Lwr7qRaqjB-p1A',
+      dkLive.json.channel && dkLive.json.channel.id);
+    check('dk youtube video fields', vids.length > 0 && vids.every(function (v) {
+      return /^[-\w]{11}$/.test(v.id) && v.title &&
+        /^https:\/\/www\.youtube\.com\/watch\?v=/.test(v.url) &&
+        /^https:\/\/i\.ytimg\.com\//.test(v.thumb) &&
+        isFinite(Date.parse(v.published));
+    }), vids[0] && vids[0].title);
+    check('dk youtube sorted newest first',
+      vids.every(function (v, i) { return i === 0 || Date.parse(vids[i - 1].published) >= Date.parse(v.published); }),
+      vids[0] && vids[0].published);
+  } else {
+    check('dk youtube degrades to snapshot', dkLive.json && dkLive.json.source === 'snapshot' && dkLive.json.stale === true,
+      dkLive.json && dkLive.json.detail);
+  }
+
+  const dkCache = await call(dkYt, { url: '/api/dk-youtube' });
+  check('dk youtube cache served', dkCache.json && dkCache.json.servedFrom === 'cache', dkCache.json && dkCache.json.servedFrom);
+
+  /* RSS 장애 시 스냅샷 폴백 */
+  const savedFetch = global.fetch;
+  global.fetch = async function () { throw new Error('network down'); };
+  const dkDown = await call(dkYt, { url: '/api/dk-youtube?refresh=1' });
+  global.fetch = savedFetch;
+  check('dk youtube fallback 200', dkDown.status === 200, dkDown.status);
+  check('dk youtube fallback snapshot', dkDown.json && dkDown.json.ok === true && dkDown.json.source === 'snapshot' && dkDown.json.stale === true,
+    dkDown.json && (dkDown.json.source + ' · ' + dkDown.json.detail));
+  check('dk youtube fallback has videos', dkDown.json && Array.isArray(dkDown.json.videos) && dkDown.json.videos.length >= 6,
+    dkDown.json && dkDown.json.videos && dkDown.json.videos.length);
+
   redis.srv.close();
   riotSrv.srv.close();
   streamSrv.srv.close();
