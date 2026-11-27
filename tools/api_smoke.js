@@ -281,6 +281,9 @@ async function main() {
   check('official fixture none → next null', none.json && none.json.next === null, none.json && none.json.status);
   check('official fixture none → recent 4', none.json && none.json.recent.length === 4, none.json && none.json.recent.length);
   check('official fixture none → no_upcoming', none.json && none.json.status === 'no_upcoming', none.json && none.json.note);
+  check('official fixture none → korean note by default', none.json && /아직 공개되지/.test(none.json.note || ''), none.json && none.json.note);
+  const noneZh = await call(official, { url: '/api/official?refresh=1&lang=zh' });
+  check('official zh note localized', noneZh.json && /尚未公布/.test(noneZh.json.note || ''), noneZh.json && noneZh.json.note);
 
   withFixture('next');
   const nextFix = await call(official, { url: '/api/official?refresh=1' });

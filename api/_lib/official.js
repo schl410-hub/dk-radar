@@ -27,13 +27,39 @@ const PROVIDER_PREF = {
 
 /* 서버가 앱으로 그대로 돌려주는 안내 문구 (zh 는 중국어 간체) */
 const MESSAGES = {
-  ko: { unavailable: '공식 일정을 가져오지 못했어요' },
-  en: { unavailable: 'Could not load the official schedule' },
-  ja: { unavailable: '公式日程を取得できませんでした' },
-  zh: { unavailable: '获取官方赛程失败' }
+  ko: {
+    unavailable: '공식 일정을 가져오지 못했어요',
+    apiError: '일정 API 응답을 받지 못했어요',
+    noUpcoming: '다음 공식 경기가 아직 공개되지 않았어요'
+  },
+  en: {
+    unavailable: 'Could not load the official schedule',
+    apiError: 'No response from the schedule API',
+    noUpcoming: 'The next official match has not been published yet'
+  },
+  ja: {
+    unavailable: '公式日程を取得できませんでした',
+    apiError: '日程APIから応答がありませんでした',
+    noUpcoming: '次の公式戦はまだ公開されていません'
+  },
+  zh: {
+    unavailable: '获取官方赛程失败',
+    apiError: '没有收到赛程 API 的响应',
+    noUpcoming: '下一场官方比赛尚未公布'
+  }
 };
 function messageFor(lang, key) {
-  return (MESSAGES[lang] || MESSAGES.ko)[key];
+  const table = MESSAGES[lang] || MESSAGES.ko;
+  return table[key] || MESSAGES.ko[key] || key;
+}
+
+/* hl(ko-KR / en-US / ja-JP / zh-CN) → 앱 언어 키 */
+function langForHl(hl) {
+  const s = String(hl || '').toLowerCase();
+  if (s.indexOf('zh') === 0) return 'zh';
+  if (s.indexOf('ja') === 0) return 'ja';
+  if (s.indexOf('en') === 0) return 'en';
+  return 'ko';
 }
 
 function apiKey() {
@@ -304,7 +330,7 @@ async function getDkOfficial(options) {
       ok: false,
       source: 'lolesports',
       status: 'unavailable',
-      error: '일정 API 응답을 받지 못했어요',
+      error: messageFor(langForHl(hl), 'apiError'),
       detail: errors[0],
       fetchedAt: new Date().toISOString(),
       next: null,
@@ -329,11 +355,11 @@ async function getDkOfficial(options) {
     source: 'lolesports',
     status: upcoming.length ? 'scheduled' : 'no_upcoming',
     fetchedAt: new Date().toISOString(),
-    note: upcoming.length ? '' : '다음 공식 경기가 아직 공개되지 않았어요',
+    note: upcoming.length ? '' : messageFor(langForHl(hl), 'noUpcoming'),
     next: next || null,
     upcoming: upcoming.slice(0, 5),
     recent: recent.slice(0, 8)
   };
 }
 
-module.exports = { getDkOfficial, isDkTeam, hlFor, vodUrl, messageFor, PUBLIC_KEY, LCK_LEAGUE_ID };
+module.exports = { getDkOfficial, isDkTeam, hlFor, vodUrl, messageFor, langForHl, PUBLIC_KEY, LCK_LEAGUE_ID };
