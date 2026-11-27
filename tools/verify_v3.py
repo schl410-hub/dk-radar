@@ -181,6 +181,10 @@ async def main():
             check("en tabs", await page.eval_on_selector_all(".tab", "e=>e.map(x=>x.innerText)") ==
                   ["Home", "Schedule", "Match log", "Records"])
             check("en brand", await page.inner_text(".brand-sub") == "Dplus KIA tracker")
+            check("en panel aria labels",
+                  await page.eval_on_selector_all(".panel", "e=>e.map(x=>x.getAttribute('aria-label'))") ==
+                  ["Home", "Schedule", "Match log", "Records"],
+                  await page.eval_on_selector_all(".panel", "e=>e.map(x=>x.getAttribute('aria-label'))"))
             check("en theme label", (await page.inner_text("#themeTxt")) in ("Dark", "Soft"), await page.inner_text("#themeTxt"))
             check("en board title", "Squad status board" in await page.inner_text("#panel-feed"))
             pick = await page.inner_text("#pickBanner")
