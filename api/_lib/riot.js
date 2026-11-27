@@ -109,6 +109,7 @@ function mapMatch(match, puuid) {
     ts: endMs,
     champ: me.championName || '',
     role: POS_KO[me.teamPosition] || POS_KO[me.individualPosition] || '',
+    roleKey: me.teamPosition || me.individualPosition || '',
     win: !!me.win,
     kda: kills + '/' + deaths + '/' + assists,
     dur: duration(info.gameDuration),
@@ -146,14 +147,20 @@ async function playerSnapshot(player, options) {
       const entry = soloEntry(entries);
       if (entry) {
         out.tier = tierLabel(entry);
+        out.tierKey = String(entry.tier || '').toUpperCase();
+        out.tierRank = entry.rank || '';
         out.lp = (entry.leaguePoints || 0) + ' LP';
+        out.lpValue = entry.leaguePoints || 0;
         out.wins = entry.wins || 0;
         out.losses = entry.losses || 0;
         out.record = recordLabel(entry.wins, entry.losses);
         out.hotStreak = !!entry.hotStreak;
       } else {
         out.tier = '언랭크';
+        out.tierKey = '';
+        out.tierRank = '';
         out.lp = '-';
+        out.lpValue = null;
       }
     } else {
       out.status = 'partial';

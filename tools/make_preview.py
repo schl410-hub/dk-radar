@@ -8,6 +8,7 @@ import re
 root = pathlib.Path(__file__).resolve().parent.parent
 html = (root / 'index.html').read_text(encoding='utf-8')
 css = (root / 'styles.css').read_text(encoding='utf-8')
+i18n = (root / 'i18n.js').read_text(encoding='utf-8')
 data = (root / 'data.js').read_text(encoding='utf-8')
 app = (root / 'app.js').read_text(encoding='utf-8')
 
@@ -34,8 +35,9 @@ html = html.replace('<link rel="apple-touch-icon" href="./icons/apple-touch-icon
 html = html.replace('<img src="./icons/icon-192.png" alt="">',
                     '<img src="data:image/png;base64,%s" alt="">' % icon)
 html = html.replace('./logo/dpluskia.svg', 'data:image/svg+xml;base64,%s' % logo)
-html = html.replace('<script src="./data.js"></script>\n<script src="./app.js"></script>',
-                    '<script>\n' + data + '\n</script>\n<script>\n' + app + '\n</script>')
+html = html.replace(
+    '<script src="./i18n.js"></script>\n<script src="./data.js"></script>\n<script src="./app.js"></script>',
+    '<script>\n' + i18n + '\n</script>\n<script>\n' + data + '\n</script>\n<script>\n' + app + '\n</script>')
 
 # 프리뷰에서는 서비스워커 등록을 건너뜁니다.
 html = html.replace('<head>', '<head>\n<!-- 단일 파일 프리뷰 빌드 (자동 생성) -->\n<script>window.__DK_PREVIEW__ = true;</script>')

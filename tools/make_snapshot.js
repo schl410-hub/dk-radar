@@ -16,9 +16,15 @@ const players = data.PLAYERS.map(function (p) {
   return {
     key: p.key,
     nameKo: p.nameKo,
+    nameIntl: p.nameIntl,
     riotId: p.riotId,
     tier: p.tier,
+    tierKey: p.tierKey,
+    tierRank: p.tierRank,
     lp: p.lp,
+    lpValue: p.lpValue,
+    wins: p.wins,
+    losses: p.losses,
     record: p.record,
     opgg: p.opgg,
     matches: p.matches.slice(0, 10).map(function (m) {

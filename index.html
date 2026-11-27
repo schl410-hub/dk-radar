@@ -17,11 +17,13 @@
 <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
 <link rel="stylesheet" href="./styles.css">
 <script>
-/* 저장된 테마를 첫 페인트 전에 적용해 깜빡임을 막습니다. */
+/* 저장된 테마·언어를 첫 페인트 전에 적용해 깜빡임을 막습니다. */
 (function () {
   try {
     var t = localStorage.getItem('dk.signal.theme');
     if (t === 'mint' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+    var l = localStorage.getItem('dk.signal.lang');
+    if (l === 'ko' || l === 'en' || l === 'ja') document.documentElement.setAttribute('lang', l);
   } catch (e) {}
 })();
 </script>
@@ -32,11 +34,11 @@
 <div class="push-banner" id="pushBanner" role="status" aria-live="polite" hidden>
   <div class="pb-icon"><img src="./icons/icon-192.png" alt=""></div>
   <div class="pb-body">
-    <div class="pb-top"><span class="pb-app">딮기 시그널</span><span class="pb-time">지금</span></div>
+    <div class="pb-top"><span class="pb-app" data-i18n="app.short">딮기 시그널</span><span class="pb-time" data-i18n="banner.now">지금</span></div>
     <div class="pb-title" id="pbTitle">도란 · 테스트 알림</div>
-    <div class="pb-text" id="pbText">새 솔로랭크 소식이 이렇게 도착해요.</div>
+    <div class="pb-text" id="pbText" data-i18n="banner.bgText">새 솔로랭크 소식이 이렇게 도착해요.</div>
   </div>
-  <button class="pb-close" id="pbClose" type="button" aria-label="알림 닫기">
+  <button class="pb-close" id="pbClose" type="button" data-i18n-attr="aria-label:banner.close" aria-label="알림 닫기">
     <svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
   </button>
 </div>
@@ -44,38 +46,39 @@
 <div class="app">
   <header class="appbar">
     <div class="brand-row">
-      <a class="brand" href="./" aria-label="딮기 시그널 홈">
+      <a class="brand" href="./" data-i18n-attr="aria-label:brand.home" aria-label="딮기 시그널 홈">
         <span class="logo"><img src="./logo/dpluskia.svg" alt="Dplus KIA"></span>
         <span class="brand-text">
           <span class="brand-name">DK <b>SIGNAL</b></span>
-          <span class="brand-sub">딮기 시그널</span>
+          <span class="brand-sub" data-i18n="brand.sub">딮기 시그널</span>
         </span>
       </a>
       <div class="head-actions">
+        <div class="lang-switch" id="langSwitch" role="group" data-i18n-attr="aria-label:lang.label" aria-label="언어"></div>
         <button class="theme-btn" id="themeBtn" type="button" aria-pressed="false" aria-label="소프트 민트 테마로 전환" title="다크 / 소프트 테마 전환">
           <svg class="ic ic-moon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20.4 14.7A8.6 8.6 0 0 1 9.3 3.6a8.7 8.7 0 1 0 11.1 11.1Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
           <svg class="ic ic-sun" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.8"/><path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.4 5.4l1.6 1.6M17 17l1.6 1.6M18.6 5.4 17 7M7 17l-1.6 1.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
           <span id="themeTxt">다크</span>
         </button>
-        <button class="install-btn" id="installBtn" type="button" hidden>설치</button>
+        <button class="install-btn" id="installBtn" type="button" data-i18n="install" hidden>설치</button>
       </div>
     </div>
-    <nav class="tabs" role="tablist" aria-label="화면 선택">
+    <nav class="tabs" role="tablist" data-i18n-attr="aria-label:nav.aria" aria-label="화면 선택">
       <button class="tab is-active" role="tab" aria-selected="true" data-tab="feed">
         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" aria-hidden="true"><path d="M4 10.6 12 4l8 6.6V20a1 1 0 0 1-1 1h-4.4v-5.6H9.4V21H5a1 1 0 0 1-1-1v-9.4Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
-        홈
+        <span data-i18n="tab.feed">홈</span>
       </button>
       <button class="tab" role="tab" aria-selected="false" data-tab="official">
         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 10h17M8 3.5v3M16 3.5v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-        공식일정
+        <span data-i18n="tab.official">공식일정</span>
       </button>
       <button class="tab" role="tab" aria-selected="false" data-tab="solo">
         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" aria-hidden="true"><path d="M4 19.5V13M9.3 19.5V8.5M14.7 19.5v-7M20 19.5V5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        경기로그
+        <span data-i18n="tab.solo">경기로그</span>
       </button>
       <button class="tab" role="tab" aria-selected="false" data-tab="records">
         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" aria-hidden="true"><path d="M8 4h8v2.5a4 4 0 0 1-8 0V4z" stroke="currentColor" stroke-width="1.7"/><path d="M8 5H5v1.5A3.5 3.5 0 0 0 8.5 10M16 5h3v1.5A3.5 3.5 0 0 1 15.5 10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M12 10.5V15M9 19.5h6M10.5 15h3l.6 4.5h-4.2L10.5 15z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
-        기록실
+        <span data-i18n="tab.records">기록실</span>
       </button>
     </nav>
   </header>
@@ -85,38 +88,42 @@
     <section class="panel is-active" id="panel-feed" role="tabpanel" aria-label="홈">
       <div class="feed-meta">
         <b id="feedDate">2026.11.26 (목)</b><span class="dot2"></span>
-        <span>도란 · 카나비 · 쇼메이커 · 스매쉬 · 딜라이트</span>
+        <span id="feedNames">도란 · 카나비 · 쇼메이커 · 스매쉬 · 딜라이트</span>
         <span class="upd" id="checkedAt">17:07 확인</span>
         <span class="live-chip" id="liveChip" hidden>실시간</span>
       </div>
 
+      <section class="home-watch" id="homeWatch" aria-live="polite"></section>
+
       <section class="pick" id="pickBanner" aria-live="polite"></section>
 
-      <div class="sec"><b>5인 상태 보드</b><span class="sec-sub">타일을 눌러 둘러보기 · 별로 최애 고정</span></div>
+      <div class="sec"><b data-i18n="board.title">5인 상태 보드</b><span class="sec-sub" data-i18n="board.sub">타일을 눌러 둘러보기 · 별로 최애 고정</span></div>
       <div class="tiles" id="statusGrid"></div>
       <p class="board-note" id="boardNote">최근 솔로랭크 기록 기준 · 2026-11-26 확인</p>
 
       <section class="hl-card" id="highlightCard" aria-live="polite"></section>
 
+      <section class="card video-card" id="videoCard" aria-live="polite"></section>
+
       <section class="card notify-card">
         <div class="card-head">
           <div>
             <div class="eyebrow">NOTIFICATIONS</div>
-            <h2 class="card-title">알림 설정</h2>
+            <h2 class="card-title" data-i18n="notify.title">알림 설정</h2>
           </div>
           <span class="notify-summary" id="notifySummary">2개 켜짐</span>
         </div>
-        <div class="ng-head"><span>선수 솔랭 알림</span><span class="ng-sub">선수마다 따로 켜고 꺼요</span></div>
+        <div class="ng-head"><span data-i18n="notify.soloHead">선수 솔랭 알림</span><span class="ng-sub" data-i18n="notify.soloSub">선수마다 따로 켜고 꺼요</span></div>
         <ul class="notify-list" id="soloNotifyList"></ul>
         <div class="nr nr-official">
           <span class="nr-av">
             <svg viewBox="0 0 20 20" width="13" height="13" fill="none" aria-hidden="true"><path d="M4.7 13.2V9.4a5.3 5.3 0 0 1 10.6 0v3.8l1.2 1.5H3.5l1.2-1.5Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M8.3 16.6a1.85 1.85 0 0 0 3.4 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
           </span>
-          <span class="nr-text"><b>DK 공식 경기 알림</b><span>경기 일정·시작 소식</span></span>
+          <span class="nr-text"><b data-i18n="notify.official">DK 공식 경기 알림</b><span data-i18n="notify.officialSub">경기 일정·시작 소식</span></span>
           <button class="toggle" data-official-toggle type="button" role="switch" aria-checked="true" aria-label="DK 공식 경기 알림 끄기"><span></span></button>
         </div>
         <div class="ping-foot">
-          <button class="test-btn" id="testBtn" type="button">테스트 알림 보내기</button>
+          <button class="test-btn" id="testBtn" type="button" data-i18n="notify.test">테스트 알림 보내기</button>
           <span class="ping-hint" id="testNote">도란 솔랭 · 경기 알림 켜짐</span>
         </div>
         <p class="notify-note" id="pushStatus">서버 연결 확인 중…</p>
@@ -127,7 +134,7 @@
         <div class="card-head">
           <div>
             <div class="eyebrow">FAN CHEER</div>
-            <h2 class="card-title">한 줄 응원</h2>
+            <h2 class="card-title" data-i18n="cheer.title">한 줄 응원</h2>
           </div>
           <span class="cheer-count" id="cheerCount">0줄</span>
         </div>
@@ -139,14 +146,14 @@
         </form>
         <ul class="cheer-list" id="cheerList"></ul>
         <p class="cheer-empty" id="cheerEmpty">아직 남긴 응원이 없어요. 첫 한 줄을 남겨보세요.</p>
-        <p class="cheer-note">이 기기에만 저장돼요.</p>
+        <p class="cheer-note" data-i18n="cheer.note">이 기기에만 저장돼요.</p>
       </section>
 
       <section class="card solo-card">
         <div class="card-head">
           <div>
             <div class="eyebrow">RANKED SOLO / DUO</div>
-            <h2 class="section-title">최근 솔로랭크 전적</h2>
+            <h2 class="section-title" data-i18n="solo.title">최근 솔로랭크 전적</h2>
           </div>
           <a class="ghost-btn" id="soloOpgg" href="#" target="_blank" rel="noopener">OP.GG ↗</a>
         </div>
@@ -158,15 +165,15 @@
       </section>
 
       <section class="card roster-card">
-        <div class="eyebrow">DPLUS KIA · 2027 ROSTER</div>
-        <h2 class="section-title">도카쇼스딜</h2>
-        <p class="meta">2027 시즌 디플러스 기아 로스터 5인. 이름을 눌러 선수를 바꿀 수 있어요.</p>
+        <div class="eyebrow" data-i18n="roster.eyebrow">DPLUS KIA · 2027 ROSTER</div>
+        <h2 class="section-title" data-i18n="roster.title">도카쇼스딜</h2>
+        <p class="meta" data-i18n="roster.meta">2027 시즌 디플러스 기아 로스터 5인. 이름을 눌러 선수를 바꿀 수 있어요.</p>
         <ul class="roster" id="rosterList"></ul>
       </section>
 
       <footer class="foot">
-        <p><b>딮기 시그널</b> · 공식 경기는 LoL Esports에서 자동으로 받아 오고, 솔로랭크는 2026-11-26 공개 전적(KO.LOL·OP.GG·u.gg)을 기준값으로 두고 있어요. 아래 '자동 갱신' 안내를 확인해 주세요.</p>
-        <p class="foot-dim">이 앱은 팬이 만든 비공식 대시보드이며 디플러스 기아·라이엇 게임즈와 무관합니다.</p>
+        <p id="footAbout"><b>딮기 시그널</b> · 공식 경기는 LoL Esports에서 자동으로 받아 오고, 솔로랭크는 2026-11-26 공개 전적(KO.LOL·OP.GG·u.gg)을 기준값으로 두고 있어요.</p>
+        <p class="foot-dim" data-i18n="foot.disclaimer">이 앱은 팬이 만든 비공식 대시보드이며 디플러스 기아·라이엇 게임즈와 무관합니다.</p>
       </footer>
     </section>
 
@@ -174,8 +181,8 @@
     <section class="panel" id="panel-official" role="tabpanel" aria-label="공식일정" hidden>
       <div class="panel-head">
         <div class="eyebrow">OFFICIAL SCHEDULE</div>
-        <h2 class="panel-title">공식일정</h2>
-        <p class="panel-sub">다음 일정과 최근 공식 경기를 모아 봤어요. <span class="live-chip" id="officialChip" hidden>자동 갱신</span></p>
+        <h2 class="panel-title" data-i18n="official.title">공식일정</h2>
+        <p class="panel-sub"><span data-i18n="official.sub">다음 일정과 최근 공식 경기를 모아 봤어요.</span> <span class="live-chip" id="officialChip" hidden>자동 갱신</span></p>
       </div>
       <section class="card next-match" id="nextCard">
         <div class="next-top">
@@ -188,38 +195,41 @@
           <div class="next-teams"><span class="team dk">DK</span><span class="vs">VS</span><span class="team">TBD</span></div>
         </div>
         <p class="next-sync" id="nextSync">LoL Esports 일정 확인 중…</p>
+        <div class="watch-row" id="nextWatch"></div>
+        <p class="watch-note" id="nextWatchNote"></p>
         <div class="match-alert">
-          <span class="ma-text"><b>경기 알림</b><span>DK 공식 경기 일정·시작 소식</span></span>
+          <span class="ma-text"><b data-i18n="official.alertTitle">경기 알림</b><span data-i18n="official.alertSub">DK 공식 경기 일정·시작 소식</span></span>
           <button class="toggle" data-official-toggle type="button" role="switch" aria-checked="true" aria-label="DK 공식 경기 알림 끄기"><span></span></button>
         </div>
-        <a class="wide-btn" href="https://lolesports.com/ko-KR/schedule" target="_blank" rel="noopener">LoL Esports 일정 확인 ↗</a>
+        <a class="wide-btn" id="lolesportsLink" href="https://lolesports.com/ko-KR/schedule" target="_blank" rel="noopener" data-i18n="official.scheduleLink">LoL Esports 일정 확인 ↗</a>
       </section>
       <section class="card" id="officialRecentCard" hidden>
         <div class="eyebrow">LATEST RESULTS</div>
-        <h3 class="card-title">최근 DK 공식 경기</h3>
+        <h3 class="card-title" data-i18n="official.recent">최근 DK 공식 경기</h3>
         <ul class="path" id="officialRecent"></ul>
         <p class="board-note" id="officialRecentNote"></p>
+        <p class="watch-hint" id="officialVodNote" hidden></p>
       </section>
       <section class="card">
-        <div class="eyebrow">2027 SEASON ROADMAP</div>
-        <h3 class="card-title">2027 시즌 캘린더</h3>
-        <p class="meta">LCK는 2025년부터 스프링·서머 스플릿을 없애고 <b>LCK 컵 → 단일 정규 시즌</b>으로 치러요. 2027년은 여기에 <b>First Stand: All In</b>이 시즌 첫 국제 대회로 붙습니다.</p>
+        <div class="eyebrow" data-i18n="official.seasonEyebrow">2027 SEASON ROADMAP</div>
+        <h3 class="card-title" data-i18n="official.seasonTitle">2027 시즌 캘린더</h3>
+        <p class="meta" id="seasonMeta">LCK는 2025년부터 스프링·서머 스플릿을 없애고 <b>LCK 컵 → 단일 정규 시즌</b>으로 치러요.</p>
         <ul class="season-path" id="seasonPath"></ul>
-        <p class="board-note">2027 국제 대회 개최지는 2026-11-13 LoL e스포츠 발표 기준 · LCK 2027 세부 일정은 추후 공지</p>
+        <p class="board-note" id="seasonNote">2027 국제 대회 개최지는 2026-11-13 LoL e스포츠 발표 기준 · LCK 2027 세부 일정은 추후 공지</p>
       </section>
       <section class="card">
         <div class="eyebrow">LAST OFFICIAL GAME</div>
-        <h3 class="card-title">선수별 최근 공식 경기</h3>
+        <h3 class="card-title" data-i18n="official.lastTitle">선수별 최근 공식 경기</h3>
         <ul class="official-list" id="officialList"></ul>
       </section>
-      <footer class="foot"><p>경기 일정·결과는 LoL Esports 공개 일정에서 자동으로 받아옵니다.</p></footer>
+      <footer class="foot"><p data-i18n="foot.official">경기 일정·결과는 LoL Esports 공개 일정에서 자동으로 받아옵니다.</p></footer>
     </section>
 
     <!-- ================= 경기로그 ================= -->
     <section class="panel" id="panel-solo" role="tabpanel" aria-label="경기로그" hidden>
       <div class="panel-head">
         <div class="eyebrow">MATCH LOG</div>
-        <h2 class="panel-title">경기로그</h2>
+        <h2 class="panel-title" data-i18n="tab.solo">경기로그</h2>
         <p class="panel-sub" id="soloPanelMeta">선수를 고르면 솔로랭크 최근 경기가 바뀌어요.</p>
       </div>
       <div class="pills pills-flat" id="pillsSolo" role="tablist" aria-label="선수 선택"></div>
@@ -232,12 +242,13 @@
           <a class="ghost-btn" id="soloOpgg2" href="#" target="_blank" rel="noopener">OP.GG ↗</a>
         </div>
         <p class="meta" id="soloMeta2"></p>
+        <div class="link-row" id="soloLinks"></div>
         <p class="solo-note" id="soloNote"></p>
         <p class="live-line" id="soloLive"></p>
         <div class="chip-row" id="filterRow">
-          <button class="chip is-active" type="button" data-filter="all">전체</button>
-          <button class="chip" type="button" data-filter="win">승리</button>
-          <button class="chip" type="button" data-filter="lose">패배</button>
+          <button class="chip is-active" type="button" data-filter="all" data-i18n="solo.filter.all">전체</button>
+          <button class="chip" type="button" data-filter="win" data-i18n="solo.filter.win">승리</button>
+          <button class="chip" type="button" data-filter="lose" data-i18n="solo.filter.lose">패배</button>
         </div>
         <div class="table-wrap" id="soloTable2"></div>
         <a class="table-more" id="soloMore2" href="#" target="_blank" rel="noopener">OP.GG에서 전체 전적 보기 ↗</a>
@@ -249,25 +260,28 @@
     <section class="panel" id="panel-records" role="tabpanel" aria-label="기록실" hidden>
       <div class="panel-head">
         <div class="eyebrow">RECORDS</div>
-        <h2 class="panel-title">기록실</h2>
-        <p class="panel-sub">2026 시즌 기준 공개 기록이에요. 오른쪽 숫자는 세트 승·패입니다.</p>
+        <h2 class="panel-title" data-i18n="records.title">기록실</h2>
+        <p class="panel-sub" data-i18n="records.sub">2026 시즌 기준 공개 기록이에요. 오른쪽 숫자는 세트 승·패입니다.</p>
       </div>
       <div class="pills pills-flat" id="pillsRecords" role="tablist" aria-label="선수 선택"></div>
       <section class="card">
-        <div class="eyebrow">2026 SEASON</div>
+        <div class="eyebrow" data-i18n="records.season">2026 시즌</div>
         <h3 class="card-title" id="recordsWho">도란 · 2026 시즌</h3>
+        <div class="link-row" id="recordsLinks"></div>
         <ul class="records" id="recordsList"></ul>
       </section>
+      <section class="card video-card" id="videoCardRecords" aria-live="polite"></section>
       <section class="card">
         <div class="eyebrow">ALL PLAYERS</div>
-        <h3 class="card-title">2026 월즈 결과</h3>
+        <h3 class="card-title" data-i18n="records.worlds">2026 월즈 결과</h3>
         <ul class="worlds-list" id="worldsList"></ul>
       </section>
-      <footer class="foot"><p>2026 시즌 대회 기록은 KO.LOL 공개 데이터를 옮겼어요. 우승·준우승 표기는 확인된 대회만 적었습니다.</p></footer>
+      <footer class="foot"><p data-i18n="foot.records">2026 시즌 대회 기록은 KO.LOL 공개 데이터를 옮겼어요.</p></footer>
     </section>
   </main>
 </div>
 
+<script src="./i18n.js"></script>
 <script src="./data.js"></script>
 <script src="./app.js"></script>
 </body>

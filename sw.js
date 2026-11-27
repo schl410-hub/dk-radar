@@ -1,9 +1,10 @@
 /* 딮기 시그널 서비스 워커 · 오프라인 캐시 + 웹 푸시 */
-const CACHE = 'dk-signal-v4';
+const CACHE = 'dk-signal-v5';
 const ASSETS = [
   './',
   './index.html',
   './styles.css',
+  './i18n.js',
   './data.js',
   './app.js',
   './manifest.webmanifest',
