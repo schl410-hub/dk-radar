@@ -464,12 +464,18 @@ async function main() {
     parsed[0] && parsed[0].title);
   check('dk youtube canonical thumb', parsed[0] && parsed[0].thumb === 'https://i.ytimg.com/vi/abc12345678/hqdefault.jpg',
     parsed[0] && parsed[0].thumb);
+  const proxied = dkYtLib.parseProxy({ status: 'ok', items: [
+    { title: 'A &amp; B', pubDate: '2026-11-16 06:00:15', link: 'https://www.youtube.com/watch?v=abc12345678',
+      guid: 'yt:video:abc12345678', thumbnail: 'https://i4.ytimg.com/vi/abc12345678/hqdefault.jpg' }] });
+  check('dk youtube proxy parse', proxied.length === 1 && proxied[0].id === 'abc12345678' &&
+    proxied[0].published === '2026-11-16T06:00:15Z' && proxied[0].title === 'A & B',
+    proxied[0] && (proxied[0].published + ' · ' + proxied[0].title));
 
   const dkYt = require('../api/dk-youtube');
   const dkLive = await call(dkYt, { url: '/api/dk-youtube?refresh=1' });
   check('dk youtube status 200', dkLive.status === 200, dkLive.status);
   check('dk youtube ok', dkLive.json && dkLive.json.ok === true, dkLive.json && dkLive.json.error);
-  if (dkLive.json && dkLive.json.source === 'youtube-rss') {
+  if (dkLive.json && String(dkLive.json.source || '').indexOf('youtube-') === 0) {
     const vids = dkLive.json.videos || [];
     check('dk youtube live videos 10', vids.length === 10, vids.length);
     check('dk youtube channel id', dkLive.json.channel && dkLive.json.channel.id === 'UCepHesz_5Lwr7qRaqjB-p1A',

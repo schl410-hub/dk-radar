@@ -1,12 +1,13 @@
 /* GET /api/dk-youtube — 디플러스 기아 공식 유튜브(@DplusKia_LOL) 최신 영상
  *
  *   ?refresh=1 : 캐시 건너뛰기
+ *   ?probe=1   : 소스별 응답 상태만 돌려줍니다 (배포 환경 진단용)
  *
  * 채널 RSS(공개 Atom 피드)를 10분 캐시로 감싸 돌려줍니다.
  * RSS 가 막히면 api/_lib/dk-youtube-snapshot.js 의 마지막 확인본을 stale=true 로 내려줍니다.
  */
 const { json, fail } = require('./_lib/http');
-const { fetchDkYoutube } = require('./_lib/dk-youtube');
+const lib = require('./_lib/dk-youtube');
 const snapshot = require('./_lib/dk-youtube-snapshot');
 const store = require('./_lib/store');
 
@@ -19,6 +20,10 @@ module.exports = async function handler(req, res) {
 
   const url = new URL(req.url || '/api/dk-youtube', 'https://dk-signal.vercel.app');
   const refresh = url.searchParams.get('refresh') === '1';
+  if (url.searchParams.get('probe') === '1') {
+    const probes = await lib.probe();
+    return json(res, 200, { ok: true, probe: probes });
+  }
 
   if (!refresh) {
     try {
@@ -30,7 +35,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    const live = await fetchDkYoutube();
+    const live = await lib.fetchDkYoutube();
     try { await store.setJSON(CACHE_KEY, live, CACHE_TTL); } catch (e) { /* 저장 실패는 무시 */ }
     return json(res, 200, Object.assign({}, live, { servedFrom: 'live' }));
   } catch (e) {

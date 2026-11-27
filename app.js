@@ -772,7 +772,7 @@
           '<i class="dy-play" aria-hidden="true">▶</i></span>' +
         '<b class="dy-title">' + esc(v.title) + '</b>' +
         '<span class="dy-meta"><span class="dy-date">' + esc(dkDate(v.published)) + '</span>' +
-          '<span class="dy-views">' + esc(T('video.dkViews', { n: compactViews(v.views) })) + '</span></span>' +
+          (v.views ? '<span class="dy-views">' + esc(T('video.dkViews', { n: compactViews(v.views) })) + '</span>' : '') + '</span>' +
       '</a>';
     }).join('');
 
