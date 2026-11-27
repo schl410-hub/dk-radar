@@ -69,6 +69,11 @@ def main():
     print("archive videos:", len(items), "| playlists:", len(data["playlists"]))
     failures = []
 
+    # v3.5: 아카이브는 100편 이상을 유지합니다(영상이 내려가면 여기서 먼저 걸립니다).
+    if len(items) < 100:
+        failures.append("count:%d" % len(items))
+        print("FAIL archive dropped below 100 videos:", len(items))
+
     # 1) 영상이 실제로 있는지
     for it in items:
         try:
