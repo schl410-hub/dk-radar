@@ -2251,6 +2251,10 @@ html[data-theme="mint"] .in-sec.is-warn { border-color: rgba(190, 120, 10, .38);
   .brand-text { border-left: 0; padding-left: 0; }
 }
 
+/* 라틴 문자 이름(ShowMaker 등)이 잘리지 않게: 내용 폭 기준으로 나눠 가집니다 */
+html[lang="en"] .pick-switch .psw,
+html[lang="vi"] .pick-switch .psw { flex: 1 1 auto; font-size: 9.5px; padding: 6px 4px; }
+
 </style>
 <script>
 /* 저장된 테마·언어를 첫 페인트 전에 적용해 깜빡임을 막습니다. */
