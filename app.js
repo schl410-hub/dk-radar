@@ -28,6 +28,7 @@
     filter: 'all',
     videoPlayer: 'all',
     videoQuery: '',
+    videoSort: 'player',
     checked: new Date(LAST_CHECKED)
   };
 
@@ -697,18 +698,34 @@
     var tags = (v.tags || []).slice(0, 2).map(function (key) {
       return '<span class="vc-tag">' + esc(tagText(key)) + '</span>';
     }).join('');
+    var team = v.team
+      ? '<span class="vc-team' + (v.team === 'DK' ? ' is-now' : '') + '">' + esc(v.team) + '</span>'
+      : '';
     return '<li>' +
       '<a class="vc-item" href="' + ytWatch(v.id) + '" target="_blank" rel="noopener" data-video="' + v.id + '">' +
         '<span class="vc-thumb"><img loading="lazy" src="' + ytThumb(v.id) + '" alt="" width="168" height="94"><i class="vc-len">' + esc(v.len) + '</i></span>' +
         '<span class="vc-body">' +
           (withWho ? '<span class="vc-who">' + pName(p) + '<i>' + p.pos + '</i></span>' : '') +
           '<b class="vc-title">' + L(v.match) + '</b>' +
-          '<span class="vc-meta">' + L(v.event) + '</span>' +
-          '<span class="vc-tags"><span class="vc-badge">' + esc(v.channel) + '</span>' +
-            '<span class="vc-yr">' + esc(v.year) + '</span>' + tags +
+          '<span class="vc-meta">' + L(v.event) + ' · ' + esc(v.channel) + '</span>' +
+          '<span class="vc-tags">' + team + '<span class="vc-yr">' + esc(v.year) + '</span>' + tags +
             '<span class="vc-len-txt">' + T('video.len', { len: v.len }) + '</span></span>' +
         '</span>' +
       '</a>' +
+    '</li>';
+  }
+
+  /* 묶음 머리: 선수 · 지난 소속 → DK 2027 · 편수 */
+  function hlGroupHead(p, n) {
+    var teams = [];
+    (p.highlights || []).forEach(function (h) {
+      if (h.team && h.team !== 'DK' && teams.indexOf(h.team) < 0) teams.push(h.team);
+    });
+    var arc = teams.length ? teams.join(' · ') + ' → DK 2027' : 'DK 2027';
+    return '<li class="hl-group">' +
+      '<span class="hl-g-name">' + pName(p) + '<i>' + p.pos + '</i></span>' +
+      '<span class="hl-g-arc">' + esc(arc) + '</span>' +
+      '<span class="hl-g-n">' + esc(T('video.count', { n: n })) + '</span>' +
     '</li>';
   }
 
@@ -719,13 +736,43 @@
     var list = state.videoPlayer === 'all' ? all : all.filter(function (e) { return e.p.key === state.videoPlayer; });
     var q = state.videoQuery;
     if (q) list = list.filter(function (e) { return hlMatches(e, q); });
-    host.innerHTML = list.length
-      ? list.map(function (e) { return videoItemHTML(e, state.videoPlayer === 'all'); }).join('')
+
+    /* 정렬: 선수별(기본, 선수 순서 + 그 안에서 최신 연도순) / 최신순(연도 내림차순) */
+    var byYear = function (a, b) { return b.v.year - a.v.year; };
+    var order = PLAYERS.map(function (p) { return p.key; });
+    var html = '';
+    if (state.videoSort === 'recent') {
+      list = list.slice().sort(function (a, b) {
+        if (b.v.year !== a.v.year) return b.v.year - a.v.year;
+        return order.indexOf(a.p.key) - order.indexOf(b.p.key);
+      });
+      html = list.map(function (e) { return videoItemHTML(e, true); }).join('');
+    } else if (state.videoPlayer === 'all') {
+      PLAYERS.forEach(function (p) {
+        var rows = list.filter(function (e) { return e.p.key === p.key; }).sort(byYear);
+        if (!rows.length) return;
+        html += hlGroupHead(p, rows.length) +
+          rows.map(function (e) { return videoItemHTML(e, false); }).join('');
+      });
+    } else {
+      var cur = PLAYERS.filter(function (p) { return p.key === state.videoPlayer; })[0] || current();
+      list = list.slice().sort(byYear);
+      html = (list.length ? hlGroupHead(cur, list.length) : '') +
+        list.map(function (e) { return videoItemHTML(e, false); }).join('');
+    }
+
+    host.innerHTML = list.length || html
+      ? html
       : '<li class="vc-empty">' + (q ? esc(T('video.searchEmpty', { q: q })) : T('video.empty')) + '</li>';
     var count = $('#videoCount');
     if (count) count.textContent = T('video.count', { n: list.length });
     var clear = $('#videoSearchClear');
     if (clear) clear.hidden = !q;
+    $$('[data-video-sort]').forEach(function (b) {
+      var on = b.getAttribute('data-video-sort') === state.videoSort;
+      b.classList.toggle('is-active', on);
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
   }
 
   /* ---------- 디플러스 기아 공식 유튜브 최신 영상 (/api/dk-youtube) ---------- */
@@ -1581,6 +1628,12 @@
     if (vidChip) {
       state.videoPlayer = vidChip.getAttribute('data-video-filter');
       renderVideoFilters();
+      renderVideoList();
+      return;
+    }
+    var sortBtn = e.target.closest('[data-video-sort]');
+    if (sortBtn) {
+      state.videoSort = sortBtn.getAttribute('data-video-sort');
       renderVideoList();
       return;
     }

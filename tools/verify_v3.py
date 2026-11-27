@@ -152,23 +152,56 @@ async def main():
             check(f"video highlights = {TOTAL_VIDEOS}", total_items == TOTAL_VIDEOS, total_items)
             check("video highlight count badge", await page.inner_text("#videoCount") == f"{TOTAL_VIDEOS}편",
                   await page.inner_text("#videoCount"))
+
+            # 선수별 묶음 머리 (전체 보기 기본 정렬)
+            groups = await page.eval_on_selector_all(".hl-group .hl-g-name", "e=>e.map(x=>x.firstChild.textContent.trim())")
+            check("highlight groups = 5 players", groups ==
+                  ["도란", "카나비", "쇼메이커", "스매쉬", "딜라이트"], groups)
+            arcs = await page.eval_on_selector_all(".hl-group .hl-g-arc", "e=>e.map(x=>x.textContent)")
+            check("group team arc", arcs[0] == "T1 · Gen.G · HLE · DRX → DK 2027" and arcs[2] == "DK 2027", arcs)
+            group_counts = await page.eval_on_selector_all(".hl-group .hl-g-n", "e=>e.map(x=>x.textContent)")
+            check("group counts", group_counts == ["7편", "6편", "6편", "6편", "6편"], group_counts)
+
             all_hrefs = await page.eval_on_selector_all("#videoList .vc-item", "e=>e.map(x=>x.href)")
-            want_all = []
-            for key in ["doran", "kanavi", "showmaker", "smash", "delight"]:
-                want_all += [f"https://www.youtube.com/watch?v={i}" for i in PLAYER_VIDEOS[key]]
-            check("video highlights order (all)", all_hrefs == want_all, all_hrefs[:3])
+            want_ids = set(v for ids in PLAYER_VIDEOS.values() for v in ids)
+            check("video highlights complete", set(h.split("v=")[1] for h in all_hrefs) == want_ids,
+                  len(all_hrefs))
             check("video highlights unique", len(set(all_hrefs)) == len(all_hrefs), len(all_hrefs))
             no_len = await page.eval_on_selector_all(
                 "#videoList .vc-len", "e=>e.map(x=>x.textContent).filter(t=>!t.includes(':'))")
             check("every highlight shows a duration", no_len == [], no_len)
-            years = await page.eval_on_selector_all("#videoList .vc-yr", "e=>e.map(x=>x.textContent)")
-            check("every highlight shows a year", years and all(y.isdigit() for y in years), years[:5])
+            years = [int(y) for y in await page.eval_on_selector_all("#videoList .vc-yr", "e=>e.map(x=>x.textContent)")]
+            check("every highlight shows a year", years and all(y >= 2019 for y in years), years[:6])
+            # 묶음 안에서는 최신 연도가 위로
+            per_group = await page.eval_on_selector(
+                "#videoList",
+                "root=>{const groups=[];let cur=null;Array.from(root.children).forEach(el=>{"
+                "if(el.classList.contains('hl-group')){cur=[];groups.push(cur);return;}"
+                "const y=el.querySelector('.vc-yr');if(cur&&y)cur.push(Number(y.textContent));});return groups;}")
+            check("years descend inside each group",
+                  all(ys == sorted(ys, reverse=True) for ys in per_group if ys), per_group)
+            teams = await page.eval_on_selector_all("#videoList .vc-team", "e=>e.map(x=>x.textContent)")
+            check("team badge on every card", len(teams) == TOTAL_VIDEOS, len(teams))
+            check("current team (DK) highlighted", await page.eval_on_selector_all("#videoList .vc-team.is-now", "e=>e.length") == 9)
+
+            # 최신순 정렬
+            await page.click('[data-video-sort="recent"]')
+            await page.wait_for_timeout(300)
+            check("recent sort removes groups", await page.eval_on_selector_all(".hl-group", "e=>e.length") == 0)
+            recent_years = [int(y) for y in await page.eval_on_selector_all("#videoList .vc-yr", "e=>e.map(x=>x.textContent)")]
+            check("recent sort newest first", recent_years == sorted(recent_years, reverse=True), recent_years[:8])
+            check("recent sort shows player label",
+                  await page.eval_on_selector_all("#videoList .vc-who", "e=>e.length") == TOTAL_VIDEOS)
+            await page.click('[data-video-sort="player"]')
+            await page.wait_for_timeout(300)
+            check("back to player sort", await page.eval_on_selector_all(".hl-group", "e=>e.length") == 5)
+
             for key, ids in PLAYER_VIDEOS.items():
                 await page.click(f'#videoFilters [data-video-filter="{key}"]')
                 await page.wait_for_timeout(220)
                 hrefs = await page.eval_on_selector_all("#videoList .vc-item", "e=>e.map(x=>x.href)")
-                want = [f"https://www.youtube.com/watch?v={i}" for i in ids]
-                check(f"{key} highlight filter", hrefs == want, hrefs)
+                check(f"{key} highlight filter", set(h.split("v=")[1] for h in hrefs) == set(ids), hrefs)
+                check(f"{key} filter keeps one group", await page.eval_on_selector_all(".hl-group", "e=>e.length") == 1)
                 thumbs = await page.eval_on_selector_all(
                     "#videoList .vc-thumb img", "e=>e.map(x=>[x.complete, x.naturalWidth])")
                 check(f"{key} highlight thumbs render", thumbs and all(w > 0 for _, w in thumbs), thumbs)

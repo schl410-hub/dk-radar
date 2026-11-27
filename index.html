@@ -289,12 +289,16 @@
         </div>
         <p class="vc-sub"><span data-i18n="video.highlightsSub">5인 대표 장면을 연도·대회별로 모은 아카이브예요.</span> <span class="vc-count" id="videoCount"></span></p>
         <div class="chip-row vid-filters" id="videoFilters" role="tablist" data-i18n-attr="aria-label:video.filtersAria" aria-label="선수별 하이라이트 필터"></div>
-        <div class="hl-search">
+        <div class="hl-tools">
           <input class="hl-search-input" id="videoSearch" type="search" autocomplete="off"
                  placeholder="챔피언 · 대회 · 키워드로 찾기"
                  data-i18n-attr="placeholder:video.searchPlaceholder;aria-label:video.searchAria"
                  aria-label="하이라이트 검색">
           <button class="hl-search-clear" id="videoSearchClear" type="button" hidden data-i18n-attr="aria-label:video.clearSearch" aria-label="검색 지우기">✕</button>
+          <div class="hl-sort" id="videoSort" role="group" data-i18n-attr="aria-label:video.sortAria" aria-label="하이라이트 정렬">
+            <button class="chip is-active" type="button" data-video-sort="player" data-i18n="video.sortPlayer">선수별</button>
+            <button class="chip" type="button" data-video-sort="recent" data-i18n="video.sortRecent">최신순</button>
+          </div>
         </div>
         <ul class="vc-list" id="videoList"></ul>
       </section>
