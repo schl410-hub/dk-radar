@@ -1608,3 +1608,166 @@ html[data-theme="mint"] .vp-veil { background: rgba(18, 48, 42, .48); }
   border-radius: 999px; padding: 9px 11px;
 }
 .vp-open:hover { filter: brightness(1.05); }
+
+/* ================= v3.4: 이벤트 D-DAY · 인게임 레이더 · 내전/프로 매치업 ================= */
+
+/* ---------- 이벤트 · D-DAY 스트립 (MY PICK 아래) ---------- */
+.events {
+  display: flex; gap: 8px; align-items: stretch;
+  margin: 9px 0 0; padding: 2px 16px 4px;
+  overflow-x: auto; overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory; scrollbar-width: none;
+}
+.events::-webkit-scrollbar { display: none; }
+.events[hidden] { display: none; }
+.ev-card {
+  position: relative; flex: 0 0 auto; width: 224px; box-sizing: border-box;
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 10px 12px 9px; border-radius: 16px;
+  background: var(--card); border: 1px solid var(--card-border);
+  box-shadow: var(--card-shadow), var(--card-inset);
+  color: inherit; text-decoration: none; overflow: hidden;
+  scroll-snap-align: start;
+}
+.ev-card::after {
+  content: ''; position: absolute; width: 120px; height: 120px; right: -48px; top: -54px;
+  border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, var(--accent-soft), transparent 70%);
+}
+.ev-card.is-awards { border-color: var(--accent-line); background: linear-gradient(155deg, var(--accent-soft) 0%, var(--card) 62%); }
+a.ev-card:hover, a.ev-card:focus-visible { border-color: var(--accent-line); }
+.ev-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; position: relative; z-index: 1; }
+.ev-kind {
+  display: inline-flex; align-items: center; gap: 4px; min-width: 0;
+  font-size: 8.5px; font-weight: 800; letter-spacing: -.01em; color: var(--ink-2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ev-kind i { font-style: normal; font-size: 11px; line-height: 1; }
+.ev-est-tag {
+  font-style: normal; font-size: 6.5px; font-weight: 800; letter-spacing: 0;
+  color: var(--muted); background: var(--chip-bg); border-radius: 4px; padding: 1px 3px;
+}
+.ev-dd {
+  flex: none; font-size: 13px; font-weight: 900; letter-spacing: -.03em;
+  color: var(--accent); font-variant-numeric: tabular-nums;
+}
+.ev-card.is-birthday .ev-dd { color: var(--ink-2); }
+.ev-sub { font-size: 8px; line-height: 1.5; color: var(--muted); position: relative; z-index: 1; }
+.ev-note { font-size: 7.5px; line-height: 1.5; color: var(--muted-2); position: relative; z-index: 1; }
+.ev-go { margin-top: 2px; font-size: 7.5px; font-weight: 800; color: var(--accent); position: relative; z-index: 1; }
+
+/* ---------- MY PICK 안의 인게임 줄 ---------- */
+.pick-live {
+  display: flex; align-items: center; gap: 6px; width: 100%;
+  margin-top: 9px; padding: 8px 10px; box-sizing: border-box;
+  border-radius: 12px; font-family: inherit; text-align: left; color: var(--ink);
+  background: rgba(255, 107, 122, .11); border: 1px solid rgba(255, 107, 122, .32);
+  cursor: pointer; position: relative; z-index: 1;
+}
+.pick-live:hover { background: rgba(255, 107, 122, .16); }
+.pick-live.is-plain { background: rgba(255, 107, 122, .07); border-style: dashed; cursor: default; }
+.pl-dot {
+  flex: none; width: 6px; height: 6px; border-radius: 50%; background: #FF6B7A;
+  box-shadow: 0 0 8px rgba(255, 107, 122, .8); animation: livePulse 1.4s ease-in-out infinite;
+}
+.pl-text {
+  flex: 1 1 auto; min-width: 0; font-size: 9.5px; font-weight: 800; letter-spacing: -.01em;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.pl-go { flex: none; font-size: 7.5px; font-weight: 800; color: #FF9AA5; white-space: nowrap; }
+html[data-theme="mint"] .pick-live { background: rgba(224, 58, 82, .08); border-color: rgba(224, 58, 82, .26); }
+html[data-theme="mint"] .pl-go { color: #C4384F; }
+html[data-theme="mint"] .pl-dot { background: #E03A52; box-shadow: 0 0 7px rgba(224, 58, 82, .55); }
+
+.pick-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 7px; position: relative; z-index: 1; }
+
+/* ---------- 매치업 배지 ---------- */
+.mu {
+  display: inline-flex; align-items: center; gap: 2px;
+  font-size: 7.5px; font-weight: 800; letter-spacing: .01em; line-height: 1.3;
+  padding: 2px 6px; border-radius: 999px; white-space: nowrap;
+  color: var(--ink-2); background: var(--chip-bg); border: 1px solid var(--line);
+}
+.mu-duo { color: #00E6B8; border-color: rgba(0, 230, 184, .30); background: rgba(0, 230, 184, .10); }
+.mu-rival { color: #FF8E9B; border-color: rgba(255, 142, 155, .32); background: rgba(255, 142, 155, .10); }
+.mu-with { color: #7FCBFF; border-color: rgba(127, 203, 255, .30); background: rgba(127, 203, 255, .10); }
+.mu-vs { color: #FFC46B; border-color: rgba(255, 196, 107, .30); background: rgba(255, 196, 107, .10); }
+html[data-theme="mint"] .mu-duo { color: #00876C; background: rgba(0, 196, 154, .13); border-color: rgba(0, 196, 154, .32); }
+html[data-theme="mint"] .mu-rival { color: #C4384F; background: rgba(224, 58, 82, .10); border-color: rgba(224, 58, 82, .26); }
+html[data-theme="mint"] .mu-with { color: #1669A8; background: rgba(22, 105, 168, .10); border-color: rgba(22, 105, 168, .24); }
+html[data-theme="mint"] .mu-vs { color: #9A6413; background: rgba(196, 133, 26, .12); border-color: rgba(196, 133, 26, .26); }
+.mu-row { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 2px; }
+
+/* 타일 · 표 안의 인게임/매치업 표시 */
+.t-live.is-live {
+  background: rgba(255, 107, 122, .13); color: #FF8E9B;
+  max-width: 100%; overflow: hidden; cursor: pointer;
+}
+.t-live.is-live i { background: #FF6B7A; box-shadow: 0 0 6px rgba(255, 107, 122, .7); }
+.t-live-tx { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.t-live-go { font-style: normal; opacity: .8; }
+.t-mu { display: block; margin-top: 3px; max-width: 100%; overflow: hidden; white-space: nowrap; }
+.t-mu .mu { font-size: 6.8px; padding: 1px 4px; }
+html[data-theme="mint"] .t-live.is-live { background: rgba(224, 58, 82, .10); color: #C4384F; }
+
+/* ---------- 인게임 시트 (아래에서 올라오는 모달) ---------- */
+body.is-sheet { overflow: hidden; }
+.lg-modal { position: fixed; inset: 0; z-index: 95; display: flex; align-items: flex-end; justify-content: center; }
+.lg-modal[hidden] { display: none; }
+.lg-veil { position: absolute; inset: 0; background: rgba(3, 7, 12, .72); backdrop-filter: blur(6px); }
+html[data-theme="mint"] .lg-veil { background: rgba(18, 48, 42, .42); }
+.lg-sheet {
+  position: relative; z-index: 1; width: min(100%, 560px);
+  max-height: calc(100% - 20px); overflow: auto; box-sizing: border-box;
+  padding: 12px 14px calc(14px + env(safe-area-inset-bottom));
+  border-radius: 22px 22px 0 0;
+  background: var(--card); border: 1px solid var(--card-border);
+  box-shadow: 0 -14px 46px rgba(0, 0, 0, .55);
+  backdrop-filter: blur(var(--blur));
+}
+@media (min-width: 560px) {
+  .lg-modal { align-items: center; }
+  .lg-sheet { border-radius: 20px; }
+}
+.lg-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.lg-title { flex: 1 1 auto; min-width: 0; font-size: 11px; font-weight: 800; letter-spacing: -.02em; color: var(--ink); }
+.lg-close {
+  flex: none; width: 26px; height: 26px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800; line-height: 1;
+  color: var(--ink-2); background: var(--chip-bg); border: 1px solid var(--line); cursor: pointer;
+}
+.lg-live { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; font-size: 8px; color: var(--muted); }
+.lg-live b { font-size: 8.5px; font-weight: 800; color: var(--ink-2); }
+.lg-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: #FF6B7A;
+  box-shadow: 0 0 8px rgba(255, 107, 122, .8); animation: livePulse 1.4s ease-in-out infinite;
+}
+.lg-tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 2px 0 8px; }
+.lg-grid { display: flex; flex-direction: column; gap: 8px; }
+.lg-team {
+  border-radius: 14px; padding: 8px 9px;
+  background: rgba(255, 255, 255, .022); border: 1px solid var(--line);
+}
+.lg-team.is-blue { border-color: rgba(110, 180, 255, .22); }
+.lg-team.is-red { border-color: rgba(255, 120, 140, .22); }
+.lg-team-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  font-size: 7.5px; font-weight: 800; letter-spacing: .06em; color: var(--muted); margin-bottom: 5px;
+}
+.lg-team-head em { font-style: normal; opacity: .65; letter-spacing: .08em; }
+.lg-team ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.lg-p { display: flex; align-items: center; gap: 7px; padding: 3px 4px; border-radius: 8px; }
+.lg-p.is-dk { background: var(--accent-soft); }
+.lg-p.is-me { box-shadow: inset 0 0 0 1px var(--accent-line); }
+.lg-p.is-pro { background: rgba(255, 196, 107, .09); }
+.lg-ch { width: 22px; height: 22px; border-radius: 6px; object-fit: cover; background: var(--chip-bg); flex: none; }
+.lg-pc { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1 1 auto; }
+.lg-pc b { font-size: 9px; font-weight: 800; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lg-sp { display: flex; gap: 2px; }
+.lg-spell-ico { width: 11px; height: 11px; border-radius: 3px; opacity: .92; }
+.lg-who { flex: none; font-size: 7.5px; font-weight: 800; color: var(--accent); white-space: nowrap; }
+.lg-p.is-pro .lg-who { color: #FFC46B; }
+html[data-theme="mint"] .lg-p.is-pro { background: rgba(196, 133, 26, .10); }
+html[data-theme="mint"] .lg-p.is-pro .lg-who { color: #9A6413; }
+.lg-note { margin-top: 9px; font-size: 7.5px; line-height: 1.5; color: var(--muted-2); }

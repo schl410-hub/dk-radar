@@ -73,6 +73,7 @@ const PLAYERS = [
     pos: 'TOP',
     posKo: '탑',
     riotId: '어리고싶다#KR1',
+    birthday: '2000-07-22',
     tier: '다이아몬드 1',
     tierKey: 'DIAMOND',
     tierRank: 'I',
@@ -150,6 +151,7 @@ const PLAYERS = [
     pos: 'JGL',
     posKo: '정글',
     riotId: 'vinaka#KR1',
+    birthday: '2000-11-02',
     tier: '다이아몬드 2',
     tierKey: 'DIAMOND',
     tierRank: 'II',
@@ -223,6 +225,7 @@ const PLAYERS = [
     pos: 'MID',
     posKo: '미드',
     riotId: 'DK ShowMaker#KR1',
+    birthday: '2000-07-22',
     tier: '마스터',
     tierKey: 'MASTER',
     tierRank: '',
@@ -301,6 +304,7 @@ const PLAYERS = [
     pos: 'BOT',
     posKo: '원딜',
     riotId: 'DK Smash#KR7',
+    birthday: '2006-07-20',
     tier: '마스터',
     tierKey: 'MASTER',
     tierRank: '',
@@ -370,6 +374,7 @@ const PLAYERS = [
     pos: 'SUP',
     posKo: '서폿',
     riotId: '죽각딜#KR02',
+    birthday: '2002-09-12',
     tier: '마스터',
     tierKey: 'MASTER',
     tierRank: '',
@@ -739,3 +744,76 @@ const DK_VIDEOS = [
     event: { ko: '2026 월드 챔피언십', en: 'Worlds 2026', ja: '2026 ワールズ', zh: '2026 世界赛' },
     point: { ko: '2026 월즈 3분 요약', en: 'Worlds 2026 in three minutes', ja: '2026 ワールズ 3分まとめ', zh: '2026 世界赛三分钟回顾' } }
 ];
+
+/* 소환사 주문 이름 (Riot 은 숫자 id → 영어 이름만 줍니다. 화면에서 네 언어로 바꿔 씁니다) */
+const SPELLS = {
+  'Flash': ['점멸', 'Flash', 'フラッシュ', '闪现'],
+  'Teleport': ['순간이동', 'Teleport', 'テレポート', '传送'],
+  'Ignite': ['점화', 'Ignite', 'イグナイト', '引燃'],
+  'Ghost': ['유체화', 'Ghost', 'ゴースト', '幽灵疾步'],
+  'Heal': ['회복', 'Heal', 'ヒール', '治疗术'],
+  'Smite': ['강타', 'Smite', 'スマイト', '惩戒'],
+  'Barrier': ['방어막', 'Barrier', 'バリア', '屏障'],
+  'Exhaust': ['탈진', 'Exhaust', '疲労', '虚弱'],
+  'Cleanse': ['정화', 'Cleanse', 'クレンズ', '净化'],
+  'Mark': ['표식', 'Mark', 'マーク', '标记'],
+  'Snowball': ['눈덩이', 'Snowball', 'スノーボール', '雪球']
+};
+
+/* 홈 상단 이벤트 · D-DAY (2026-11-27 확인)
+ *  - 2026 LCK 어워드: 12월 16일(수) 치지직 롤파크 개최 · CHZZK/SOOP 생중계 (라이엇 게임즈 11-05 발표)
+ *    팬 팀 투표(업비트 ALL-TIME HIGH)는 11-26 23:59 마감, 올해의 선수·포지션별 선수는 선정단 투표로 시상식 당일 공개.
+ *  - 2027 LCK 컵: 개막일 공식 발표 전(1월~2월 예정) — 2026 시즌 개막일(1/14)을 기준으로 '예상' 카운트다운만 표시합니다.
+ *  날짜가 확정되거나 새 이벤트가 생기면 이 표만 고치면 됩니다. (지난 이벤트는 앱이 자동으로 숨깁니다) */
+const EVENTS = [
+  {
+    id: 'lck-awards-2026',
+    date: '2026-12-16',
+    kind: 'awards',
+    title: { ko: '2026 LCK 어워드', en: '2026 LCK Awards', ja: '2026 LCKアワード', zh: '2026 LCK 颁奖礼' },
+    sub: {
+      ko: '치지직 롤파크 · CHZZK·SOOP 생중계',
+      en: 'CHZZK LoL Park, Seoul · live on CHZZK & SOOP',
+      ja: 'CHZZK LoL Park・CHZZK/SOOP 生中継',
+      zh: 'CHZZK LoL Park · CHZZK/SOOP 直播'
+    },
+    note: {
+      ko: 'DK 스매쉬 신인왕 · 팬 팀 투표 11.26 마감',
+      en: 'DK Smash won Rookie of the Year · fan team vote closed 11/26',
+      ja: 'DK スマッシュ新人王・ファン投票は11/26終了',
+      zh: 'DK Smash 最佳新人 · 粉丝投票 11/26 截止'
+    },
+    url: 'https://lolesports.com/ko-KR/news/2026-lck-awards-voting-method-and-criteria'
+  },
+  {
+    id: 'lck-cup-2027',
+    date: '2027-01-14',
+    tentative: true,
+    kind: 'season',
+    title: { ko: '2027 LCK 컵', en: '2027 LCK Cup', ja: '2027 LCKカップ', zh: '2027 LCK 杯' },
+    sub: {
+      ko: '개막일 미발표 · 1월 중순 예상',
+      en: 'Opening day not announced · mid-January expected',
+      ja: '開幕日未発表・1月中旬の見込み',
+      zh: '开幕日未公布 · 预计1月中旬'
+    },
+    note: {
+      ko: '2026 시즌은 1월 14일 개막 · 확정되면 알려드려요',
+      en: 'The 2026 season opened on Jan 14 — this updates when LCK confirms',
+      ja: '2026シーズンは1月14日開幕・確定次第更新',
+      zh: '2026 赛季 1月14日开幕 · 确定后更新'
+    },
+    url: 'https://lolesports.com/ko-KR/schedule'
+  }
+];
+
+/* Data Dragon 이미지 CDN (챔피언·스펠 아이콘) — api/_lib/champions.js 와 같은 버전 */
+const DD_CDN = 'https://ddragon.leagueoflegends.com/cdn/16.23.1';
+
+/* Riot 은 스펠 숫자 id → 영어 이름('Flash')을 주고, 아이콘 파일 이름은 'SummonerFlash' 입니다. */
+const SPELL_IMG = {
+  'Flash': 'SummonerFlash', 'Teleport': 'SummonerTeleport', 'Ignite': 'SummonerDot',
+  'Ghost': 'SummonerHaste', 'Heal': 'SummonerHeal', 'Smite': 'SummonerSmite',
+  'Barrier': 'SummonerBarrier', 'Exhaust': 'SummonerExhaust', 'Cleanse': 'SummonerBoost',
+  'Mark': 'SummonerSnowball', 'Snowball': 'SummonerSnowball'
+};

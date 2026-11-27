@@ -72,6 +72,7 @@ function startMockRedis() {
 const riotState = {
   matchIds: {},          /* puuid -> [{id, ...}] */
   inGame: {},            /* puuid -> bool */
+  games: {},             /* puuid -> Spectator-V5 응답 (양 팀 참가자) */
   requests: 0
 };
 
@@ -82,6 +83,30 @@ function idsFor(puuid) {
 function mockMatch(id, puuid, opts) {
   const o = opts || {};
   const end = Date.now() - (o.agoMinutes || 30) * 60000;
+  const parts = [
+    {
+      puuid: puuid, championName: o.champ || '카밀', teamPosition: o.pos || 'TOP',
+      kills: o.kills === undefined ? 8 : o.kills,
+      deaths: o.deaths === undefined ? 2 : o.deaths,
+      assists: o.assists === undefined ? 9 : o.assists,
+      win: o.win === undefined ? true : o.win,
+      teamId: o.teamId || 100,
+      riotIdGameName: o.gameName || '',
+      riotIdTagline: o.tagLine || ''
+    }
+  ];
+  (o.mates || []).forEach(function (m) {
+    parts.push({
+      puuid: m.puuid, championName: m.champ || '아지르', teamPosition: m.pos || 'MIDDLE',
+      kills: m.kills === undefined ? 2 : m.kills, deaths: m.deaths === undefined ? 4 : m.deaths,
+      assists: m.assists === undefined ? 6 : m.assists,
+      win: m.win === undefined ? (o.win === undefined ? true : o.win) : !!m.win,
+      teamId: m.teamId || 100,
+      riotIdGameName: m.gameName || '',
+      riotIdTagline: m.tagLine || ''
+    });
+  });
+  parts.push({ puuid: 'someone-else', championName: '이렐리아', teamPosition: 'BOTTOM', kills: 1, deaths: 5, assists: 2, win: !(o.win === undefined ? true : o.win), teamId: 200 });
   return {
     metadata: { matchId: id },
     info: {
@@ -89,16 +114,7 @@ function mockMatch(id, puuid, opts) {
       gameEndTimestamp: end,
       gameDuration: o.duration || 1452,
       queueId: 420,
-      participants: [
-        {
-          puuid: puuid, championName: o.champ || '카밀', teamPosition: o.pos || 'TOP',
-          kills: o.kills === undefined ? 8 : o.kills,
-          deaths: o.deaths === undefined ? 2 : o.deaths,
-          assists: o.assists === undefined ? 9 : o.assists,
-          win: o.win === undefined ? true : o.win
-        },
-        { puuid: 'someone-else', championName: '아지르', teamPosition: 'MIDDLE', kills: 1, deaths: 5, assists: 2, win: false }
-      ]
+      participants: parts
     }
   };
 }
@@ -113,6 +129,10 @@ function startMockRiot() {
         res.end(JSON.stringify(obj));
       };
       let m;
+      if ((m = /^\/riot\/account\/v1\/accounts\/by-puuid\/(.+)$/.exec(url.pathname))) {
+        const puuid = decodeURIComponent(m[1]);
+        return send(200, { puuid: puuid, gameName: String(puuid).replace(/^puuid:/, ''), tagLine: 'KR1' });
+      }
       if ((m = /^\/riot\/account\/v1\/accounts\/by-riot-id\/([^/]+)\/([^/]+)$/.exec(url.pathname))) {
         const name = decodeURIComponent(m[1]);
         return send(200, { puuid: 'puuid:' + name, gameName: name, tagLine: decodeURIComponent(m[2]) });
@@ -126,6 +146,7 @@ function startMockRiot() {
       }
       if ((m = /^\/lol\/spectator\/v5\/active-games\/by-summoner\/(.+)$/.exec(url.pathname))) {
         const puuid = decodeURIComponent(m[1]);
+        if (riotState.games[puuid]) return send(200, riotState.games[puuid]);
         if (riotState.inGame[puuid]) {
           return send(200, { gameId: 1, participants: [{ puuid: puuid, championId: 141 }] });
         }
@@ -329,6 +350,85 @@ async function main() {
   check('solo riot → empty player ok', !!sm && sm.status === 'ok' && sm.matches.length === 0 && sm.tier === '마스터', sm && (sm.status + ' ' + sm.tier));
   check('solo riot → no secret leak', assertNoSecrets(liveSolo.json));
 
+  /* --- 4-1. 인게임 레이더(Spectator-V5) · 내전/프로 매치업 --- */
+  const filler = ['a', 'b', 'c', 'd', 'e', 'f'];
+  const gameParticipants = [
+    { puuid: 'puuid:어리고싶다', championId: 157, spell1Id: 4, spell2Id: 12, teamId: 100 },
+    { puuid: 'puuid:vinaka', championId: 64, spell1Id: 4, spell2Id: 11, teamId: 100 },
+    { puuid: 'puuid:DK ShowMaker', championId: 103, spell1Id: 4, spell2Id: 14, teamId: 200 },
+    { puuid: 'puuid:Hide on bush', championId: 238, spell1Id: 4, spell2Id: 14, teamId: 100 }
+  ];
+  filler.forEach(function (f, i) {
+    gameParticipants.push({ puuid: 'puuid:filler-' + f, championId: 1 + i, spell1Id: 4, spell2Id: 7, teamId: i < 2 ? 100 : 200 });
+  });
+  riotState.games['puuid:어리고싶다'] = {
+    gameId: 99112233,
+    gameStartTime: Date.now() - 13 * 60000,
+    gameLength: 780,
+    gameQueueConfigId: 420,
+    gameMode: 'CLASSIC',
+    participants: gameParticipants
+  };
+  riotState.matchIds['puuid:어리고싶다'] = [
+    {
+      id: 'KR_100', puuid: 'puuid:어리고싶다', champ: '카밀', teamId: 100, awayMinutes: 12,
+      mates: [
+        { puuid: 'puuid:DK ShowMaker', teamId: 200, champ: '아지르' },
+        { puuid: 'puuid:Hide on bush', teamId: 100, champ: '야스오', gameName: 'Hide on bush', tagLine: 'KR1' }
+      ]
+    },
+    { id: 'KR_1', puuid: 'puuid:어리고싶다', champ: '카밀' }
+  ];
+
+  const radar = await call(solo, { url: '/api/solo?refresh=1' });
+  const lgList = (radar.json && radar.json.liveGames) || [];
+  check('radar → liveGames has doran', lgList.length === 2 && lgList.some(function (g) { return g.playerKey === 'doran'; }),
+        lgList.map(function (g) { return g.playerKey + ':' + g.gameId; }).join(' '));
+  const lg = lgList.filter(function (g) { return g.playerKey === 'doran'; })[0];
+  check('radar → two teams of 5', !!lg && lg.teams.length === 2 && lg.teams.every(function (t) { return t.players.length === 5; }),
+        lg && lg.teams.map(function (t) { return t.teamId + ':' + t.players.length; }).join(' '));
+  check('radar → champion by id', !!lg && lg.me && lg.me.champion === 'Yasuo' && lg.me.spell2 === 'Teleport',
+        lg && lg.me && (lg.me.champion + ' ' + lg.me.spell1 + '/' + lg.me.spell2));
+  check('radar → queue key', !!lg && lg.queueKey === 'solo' && lg.queueId === 420, lg && lg.queueKey);
+  check('radar → dk ally/enemy', !!lg && lg.dk.allies.length === 1 && lg.dk.allies[0].key === 'kanavi' &&
+        lg.dk.enemies.length === 1 && lg.dk.enemies[0].key === 'showmaker',
+        lg && JSON.stringify({ allies: lg.dk.allies.map(function (a) { return a.key; }), enemies: lg.dk.enemies.map(function (a) { return a.key; }) }));
+  check('radar → pro detected', !!lg && lg.pros.length === 1 && lg.pros[0].slug === 'faker' && lg.pros[0].ally === true,
+        lg && JSON.stringify(lg.pros));
+  const tagTypes = (lg && lg.tags || []).map(function (t) { return t.type; }).sort().join(',');
+  check('radar → tags duo/rival/with', tagTypes === 'duo,rival,with', tagTypes);
+  const doranLive = radar.json.players.filter(function (p) { return p.key === 'doran'; })[0];
+  check('radar → player liveGame summary', !!doranLive.liveGame && doranLive.liveGame.champion === 'Yasuo' &&
+        doranLive.liveGame.queueKey === 'solo' && doranLive.inGame === true, doranLive && JSON.stringify(doranLive.liveGame));
+  check('radar → raw spectator not leaked', !('liveRaw' in doranLive), Object.keys(doranLive).join(','));
+
+  const muTags = (radar.json.matchups && radar.json.matchups.KR_100) || [];
+  const muTypes = muTags.map(function (t) { return t.type; }).sort().join(',');
+  check('matchup → rival + with/vs in one game', muTypes === 'rival,vs,with', muTypes);
+  check('matchup → rival names', muTags.some(function (t) {
+    return t.type === 'rival' && t.keys.indexOf('doran') > -1 && t.keys.indexOf('showmaker') > -1;
+  }), JSON.stringify(muTags.filter(function (t) { return t.type === 'rival'; })));
+  check('matchup → pro tag by exact riot id', muTags.some(function (t) {
+    return t.type === 'with' && t.pro && t.pro.slug === 'faker';
+  }), JSON.stringify(muTags));
+  check('matchup → player tag', !!doranLive.tag && doranLive.tag.type === 'rival', doranLive.tag && doranLive.tag.type);
+  check('matchup → pro index resolved', radar.json.proIndex && radar.json.proIndex.resolved >= 1,
+        radar.json.proIndex && (radar.json.proIndex.resolved + '/' + radar.json.proIndex.total));
+
+  /* 내전이 아닌 듀오(아군) 판정 */
+  riotState.matchIds['puuid:vinaka'] = [
+    { id: 'KR_101', puuid: 'puuid:vinaka', champ: '자르반 4세', teamId: 100, win: false,
+      mates: [{ puuid: 'puuid:어리고싶다', teamId: 100, champ: '카밀' }] }
+  ];
+  const duoRes = await call(solo, { url: '/api/solo?refresh=1' });
+  const duoTags = (duoRes.json.matchups && duoRes.json.matchups.KR_101) || [];
+  check('matchup → duo when same team', duoTags.length === 1 && duoTags[0].type === 'duo',
+        JSON.stringify(duoTags.map(function (t) { return t.type; })));
+  check('matchup → row uses own participant', duoRes.json.players.filter(function (p) {
+    return p.key === 'kanavi';
+  })[0].matches[0].kda === '8/2/9' && duoRes.json.players.filter(function (p) { return p.key === 'kanavi'; })[0].matches[0].champ === '자르반 4세',
+        JSON.stringify(duoRes.json.players.filter(function (p) { return p.key === 'kanavi'; })[0].matches[0]));
+
   /* --- 5. 구독 --- */
   const subscribe = require('../api/subscribe');
   const ecdh = crypto.createECDH('prime256v1');
@@ -419,6 +519,27 @@ async function main() {
   check('check run3 no duplicate push', run3.json.pushed === 0, run3.json.pushed);
   check('check run3 live quiet', run3.json.live && run3.json.live.liveCount === 2 && run3.json.live.pushes.length === 0,
         run3.json.live && JSON.stringify(run3.json.live.players.map(function (p) { return p.key + ':' + p.live; })));
+
+  /* --- 6-2. 인게임 알림: 같은 게임은 한 번만, 새 게임이면 다시 --- */
+  check('check ingame counts baseline game', run3.json.ingame && run3.json.ingame.inGameCount === 2,
+        run3.json.ingame && JSON.stringify(run3.json.ingame.players.map(function (p) { return p.key + ':' + p.inGame; })));
+  const igQuiet = await call(checkFn, { url: '/api/check?only=ingame&token=smoke-secret&dry=1' });
+  check('check ingame no duplicate', igQuiet.json.ingame.pushes.length === 0, JSON.stringify(igQuiet.json.ingame.pushes));
+
+  riotState.games['puuid:어리고싶다'] = Object.assign({}, riotState.games['puuid:어리고싶다'], {
+    gameId: 99112444, gameStartTime: Date.now() - 60 * 1000, gameLength: 60
+  });
+  const igPush = await call(checkFn, { url: '/api/check?only=ingame&token=smoke-secret' });
+  const igEvent = (igPush.json.ingame.pushes || [])[0];
+  check('check ingame new game push', !!igEvent && igEvent.player === 'doran' && igEvent.gameId === 99112444,
+        igEvent && JSON.stringify({ player: igEvent.player, gameId: igEvent.gameId }));
+  check('check ingame push target = solo prefs', !!igEvent && igEvent.targets === 1, igEvent && igEvent.targets);
+  check('check ingame push title', !!igEvent && /도란/.test(igEvent.preview.title) && /게임 시작/.test(igEvent.preview.title),
+        igEvent && igEvent.preview.title);
+  check('check ingame push body has matchups', !!igEvent && /Yasuo/.test(igEvent.preview.body) && /🤝/.test(igEvent.preview.body),
+        igEvent && igEvent.preview.body);
+  const igAgain = await call(checkFn, { url: '/api/check?only=ingame&token=smoke-secret' });
+  check('check ingame same game quiet', igAgain.json.ingame.pushes.length === 0, JSON.stringify(igAgain.json.ingame.pushes));
 
   const testPush = await call(checkFn, { url: '/api/check?token=smoke-secret&test=1&dry=1' });
   check('check test push targets subscriber', !!testPush.json.test && testPush.json.test.targets === 1, testPush.json.test && testPush.json.test.targets);

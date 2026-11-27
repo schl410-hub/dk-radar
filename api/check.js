@@ -3,6 +3,8 @@
  *  1) DK 공식 경기: 다음 경기가 새로 잡히면 / 시작 40분 전이면 푸시
  *  2) 5인 솔로랭크: 새로 끝난 랭크 게임이 있으면 그 선수를 켜 둔 기기에 푸시
  *  3) 5인 라이브 방송: 꺼져 있다가 방송을 켜면(SOOP·CHZZK) '방송 시작' 푸시
+ *  4) 5인 인게임: 새 게임에 들어가면 '🔴 게임 시작'(Spectator-V5 · dk:state.ingame 으로 중복 방지)
+ *     알림 대상은 prefs.ingame 이 있으면 그것을, 없으면 선수별 솔랭 알림(prefs.solo)을 따릅니다.
  *
  * 부르는 곳 : Vercel Cron(하루 1회) + 외부 크론(5분 간격 권장, 예: cron-job.org)
  * 보호      : CHECK_SECRET(또는 CRON_SECRET) 이 있으면 Bearer 토큰 또는 ?token= 이 필요합니다.
@@ -16,6 +18,8 @@ const riot = require('./_lib/riot');
 const { PLAYERS } = require('./_lib/players');
 const { getDkOfficial } = require('./_lib/official');
 const { getLive } = require('./_lib/live');
+const { loadProIndex } = require('./_lib/pros');
+const { buildLiveGame } = require('./_lib/ingame');
 
 const STATE_KEY = 'dk:state';
 const SUBS_KEY = 'dk:subs';
@@ -216,6 +220,88 @@ async function checkOfficial(state, subs, dry) {
   return out;
 }
 
+/* 인게임: 새 게임에 들어가면 알립니다. 같은 게임은 state.ingame 에 gameId 를 남겨 두 번 보내지 않습니다.
+ * 솔랭 알림을 켠 기기로 보내고(prefs.ingame 이 있으면 그 목록을 우선), 게임이 끝나면 상태를 지웁니다. */
+async function checkIngame(state, subs, dry) {
+  const out = { status: 'no_key', players: [], pushes: [] };
+  if (!riot.hasKey()) return out;
+
+  state.ingame = state.ingame || {};
+  const first = !state.ingame.initialized;
+  let proIndex = { byPuuid: {}, byRiotId: {}, resolved: 0, total: 0 };
+  try { proIndex = await loadProIndex(store, riot, 0); } catch (e) { /* 매치업 표시만 비게 됩니다 */ }
+
+  const dkByPuuid = {};
+  const puuids = {};
+  for (const player of PLAYERS) {
+    try {
+      const puuid = await puuidFor(player);
+      puuids[player.key] = puuid;
+      dkByPuuid[puuid] = player;
+    } catch (e) { /* 계정 조회 실패는 인게임 아님으로 */ }
+  }
+
+  for (const player of PLAYERS) {
+    const puuid = puuids[player.key];
+    const rec = { key: player.key, inGame: false, was: !!state.ingame[player.key], notified: false };
+    if (!puuid) { rec.status = 'no_puuid'; out.players.push(rec); continue; }
+    let game = null;
+    try {
+      game = await riot.spectator(puuid);
+    } catch (e) {
+      rec.status = e.status === 429 ? 'rate_limited' : 'error';
+      rec.error = String(e.message || e).slice(0, 80);
+      out.players.push(rec);
+      continue;
+    }
+
+    if (!game || !game.gameId) {
+      state.ingame[player.key] = null;
+      out.players.push(rec);
+      continue;
+    }
+
+    rec.inGame = true;
+    rec.gameId = Number(game.gameId);
+    const prev = state.ingame[player.key];
+    const prevId = prev && prev.gameId ? Number(prev.gameId) : 0;
+
+    if (!first && rec.gameId !== prevId) {
+      const built = buildLiveGame(game, { mePuuid: puuid, meKey: player.key, dkByPuuid: dkByPuuid, proByPuuid: proIndex.byPuuid });
+      const me = (built && built.me) || {};
+      const extra = [];
+      if (built) {
+        built.dk.allies.forEach(function (a) { extra.push('🤝 ' + a.nameKo); });
+        built.dk.enemies.forEach(function (a) { extra.push('🔥 vs ' + a.nameKo); });
+        built.pros.forEach(function (p) { extra.push((p.ally ? '🤝 with ' : '⚔️ vs ') + p.name); });
+      }
+      const payload = {
+        title: '🔴 ' + player.nameKo + ' · 게임 시작',
+        body: (me.champion ? me.champion + ' · ' : '') + (extra.length ? extra.join(' · ') : '지금 인게임에 들어갔어요'),
+        tag: 'ingame-' + player.key + '-' + rec.gameId,
+        url: './?tab=feed&player=' + player.key,
+        kind: 'ingame',
+        player: player.key
+      };
+      const res = await broadcast(subs, function (prefs) {
+        if (prefs.ingame === false) return false;
+        if (Array.isArray(prefs.ingame)) return prefs.ingame.indexOf(player.key) > -1;
+        return Array.isArray(prefs.solo) && prefs.solo.indexOf(player.key) > -1;
+      }, payload, dry);
+      rec.notified = true;
+      out.pushes.push(Object.assign({ player: player.key, gameId: rec.gameId }, res));
+    }
+
+    state.ingame[player.key] = { gameId: rec.gameId, since: new Date().toISOString() };
+    out.players.push(rec);
+  }
+
+  state.ingame.initialized = true;
+  out.status = out.players.some(function (p) { return p.status === 'rate_limited'; }) ? 'rate_limited' : 'checked';
+  out.inGameCount = out.players.filter(function (p) { return p.inGame; }).length;
+  return out;
+}
+
 /* 라이브 방송: 이전에 꺼져 있던 선수가 방송을 켜면 알립니다. 첫 실행은 기준값만 저장합니다. */
 async function checkLive(state, subs, dry) {
   const out = { status: 'checked', players: [], pushes: [] };
@@ -276,7 +362,7 @@ module.exports = async function handler(req, res) {
 
   let state = null;
   try { state = await store.getJSON(STATE_KEY); } catch (e) { state = null; }
-  state = state || { version: 3, official: {}, solo: {}, live: {} };
+  state = state || { version: 3, official: {}, solo: {}, live: {}, ingame: {} };
 
   const subs = await loadSubs();
   const targets = {
@@ -306,7 +392,10 @@ module.exports = async function handler(req, res) {
   const solo = (only === 'official' || only === 'live') ? { status: 'skipped' } : await checkSolo(state, subs, dry).catch(function (e) {
     return { status: 'error', error: String(e && e.message ? e.message : e) };
   });
-  const live = (only === 'official' || only === 'solo') ? { status: 'skipped', players: [], pushes: [] } : await checkLive(state, subs, dry).catch(function (e) {
+  const live = (only === 'official' || only === 'solo' || only === 'ingame') ? { status: 'skipped', players: [], pushes: [] } : await checkLive(state, subs, dry).catch(function (e) {
+    return { status: 'error', error: String(e && e.message ? e.message : e), players: [], pushes: [] };
+  });
+  const ingame = (only === 'official' || only === 'solo' || only === 'live') ? { status: 'skipped', players: [], pushes: [] } : await checkIngame(state, subs, dry).catch(function (e) {
     return { status: 'error', error: String(e && e.message ? e.message : e), players: [], pushes: [] };
   });
 
@@ -314,7 +403,8 @@ module.exports = async function handler(req, res) {
   const goneIds = [].concat(
     (official.pushes || []).reduce(function (a, p) { return a.concat(p.gone || []); }, []),
     (solo.pushes || []).reduce(function (a, p) { return a.concat(p.gone || []); }, []),
-    (live.pushes || []).reduce(function (a, p) { return a.concat(p.gone || []); }, [])
+    (live.pushes || []).reduce(function (a, p) { return a.concat(p.gone || []); }, []),
+    (ingame.pushes || []).reduce(function (a, p) { return a.concat(p.gone || []); }, [])
   );
   let pruned = 0;
   if (goneIds.length && store.durable()) {
@@ -327,13 +417,14 @@ module.exports = async function handler(req, res) {
     at: new Date().toISOString(),
     tookMs: Date.now() - started,
     dry: dry,
-    pushed: (official.pushes || []).length + (solo.pushes || []).length + (live.pushes || []).length,
+    pushed: (official.pushes || []).length + (solo.pushes || []).length + (live.pushes || []).length + (ingame.pushes || []).length,
     pruned: pruned,
     targets: targets,
     pushReady: push.ready(),
     test: testResult,
     official: { status: official.status, next: official.next || null, pushes: official.pushes || [] },
     live: { status: live.status, liveCount: live.liveCount || 0, players: live.players || [], pushes: live.pushes || [] },
+    ingame: { status: ingame.status, inGameCount: ingame.inGameCount || 0, players: ingame.players || [], pushes: ingame.pushes || [] },
     solo: { status: solo.status, players: (solo.players || []).map(function (p) {
       return { key: p.key, status: p.status, latestId: p.latestId || null, isNew: !!p.isNew };
     }), pushes: solo.pushes || [] }

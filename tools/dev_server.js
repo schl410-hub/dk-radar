@@ -91,6 +91,117 @@ function serveStatic(req, res, pathname) {
   });
 }
 
+/* DK_INGAME_FAKE=1: 실제 인게임이 없을 때도 '게임 중' 배지·시트·매치업 UI 를 검증할 수 있게
+ * /api/solo 응답에 가짜 liveGames · matchups · tag 를 끼워 넣습니다. (응답 본문만 손봅니다) */
+function fakeIngame(data) {
+  if (!data || !Array.isArray(data.players) || data.players.length !== 5) return;
+  const now = Date.now();
+  const start = now - 13 * 60000;
+  const p = function (championId, champion, spell1, spell2, teamId, who, me) {
+    return { championId: championId, champion: champion, spell1Id: 4, spell1: spell1, spell2Id: 12, spell2: spell2, teamId: teamId, me: !!me, who: who || null };
+  };
+  const alleyA = p(157, 'Yasuo', 'Flash', 'Teleport', 100,
+    { kind: 'dk', key: 'doran', nameKo: '도란', mine: true }, true);
+  const alleyB = p(64, 'LeeSin', 'Flash', 'Smite', 100, { kind: 'dk', key: 'kanavi', nameKo: '카나비' });
+  const proAlly = p(268, 'Azir', 'Flash', 'Ignite', 100, { kind: 'pro', slug: 'faker', name: 'Faker', nameKo: '페이커', team: 'T1', role: 'MIDDLE' });
+  const proEnemy = p(103, 'Ahri', 'Flash', 'Ignite', 200, { kind: 'pro', slug: 'chovy', name: 'Chovy', nameKo: '쵸비', team: 'GEN', role: 'MIDDLE' });
+  const rival = p(55, 'Katarina', 'Flash', 'Ignite', 200, { kind: 'dk', key: 'showmaker', nameKo: '쇼메이커' });
+  const anon = function (id, champ, team) { return p(id, champ, 'Flash', 'Heal', team, null); };
+
+  const game = {
+    playerKey: 'doran',
+    gameId: 99112233,
+    gameStartTime: start,
+    gameLength: 780,
+    queueId: 420,
+    queueKey: 'solo',
+    mode: 'CLASSIC',
+    me: { key: 'doran', teamId: 100, championId: 157, champion: 'Yasuo', spell1: 'Flash', spell2: 'Teleport' },
+    teams: [
+      { teamId: 100, side: 'blue', players: [alleyA, alleyB, proAlly, anon(17, 'Teemo', 100), anon(99, 'Lux', 100)] },
+      { teamId: 200, side: 'red', players: [rival, proEnemy, anon(22, 'Ashe', 200), anon(89, 'Leona', 200), anon(40, 'Janna', 200)] }
+    ],
+    dk: {
+      allies: [{ key: 'kanavi', nameKo: '카나비', champion: 'LeeSin' }],
+      enemies: [{ key: 'showmaker', nameKo: '쇼메이커', champion: 'Katarina' }]
+    },
+    pros: [
+      { slug: 'faker', name: 'Faker', nameKo: '페이커', team: 'T1', role: 'MIDDLE', ally: true, champion: 'Azir' },
+      { slug: 'chovy', name: 'Chovy', nameKo: '쵸비', team: 'GEN', role: 'MIDDLE', ally: false, champion: 'Ahri' }
+    ],
+    tags: [
+      { type: 'duo', keys: ['doran', 'kanavi'], names: ['도란', '카나비'], ally: true, champion: 'LeeSin' },
+      { type: 'rival', keys: ['doran', 'showmaker'], names: ['도란', '쇼메이커'], ally: false, champion: 'Katarina' },
+      { type: 'with', keys: ['doran'], names: ['도란'], ally: true, champion: 'Azir', pro: { slug: 'faker', name: 'Faker', nameKo: '페이커', team: 'T1', role: 'MIDDLE' } },
+      { type: 'vs', keys: ['doran'], names: ['도란'], ally: false, champion: 'Ahri', pro: { slug: 'chovy', name: 'Chovy', nameKo: '쵸비', team: 'GEN', role: 'MIDDLE' } }
+    ]
+  };
+  const kanaviGame = Object.assign({}, game, {
+    playerKey: 'kanavi',
+    me: { key: 'kanavi', teamId: 100, championId: 64, champion: 'LeeSin', spell1: 'Flash', spell2: 'Smite' }
+  });
+  data.liveGames = [game, kanaviGame];
+
+  /* 스냅샷 데이터에는 matchId 가 없을 수 있어, 행마다 하나씩 붙여 매치업 배지를 붙입니다. */
+  data.players.forEach(function (row) {
+    (row.matches || []).forEach(function (m, i) {
+      if (!m.matchId) m.matchId = 'fake-' + row.key + '-' + i;
+    });
+  });
+  const firstMatch = function (key) {
+    const row = data.players.filter(function (x) { return x.key === key; })[0];
+    return row && row.matches && row.matches[0] ? row.matches[0].matchId : null;
+  };
+  const dMatch = firstMatch('doran');
+  const sMatch = firstMatch('smash');
+  data.matchups = {};
+  if (dMatch) data.matchups[dMatch] = [
+    { type: 'duo', keys: ['doran', 'kanavi'], names: ['도란', '카나비'], ally: true, matchId: dMatch },
+    { type: 'vs', key: 'doran', name: '도란', pro: { slug: 'chovy', name: 'Chovy', nameKo: '쵸비', team: 'GEN', role: 'MIDDLE' }, ally: false, matchId: dMatch }
+  ];
+  if (sMatch) data.matchups[sMatch] = [
+    { type: 'rival', keys: ['smash', 'showmaker'], names: ['스매쉬', '쇼메이커'], ally: false, matchId: sMatch }
+  ];
+
+  data.players.forEach(function (row) {
+    row.tag = null;
+    if (row.key === 'doran') row.tag = { type: 'rival', keys: ['doran', 'showmaker'], names: ['도란', '쇼메이커'], ally: false, matchId: dMatch };
+    if (row.key === 'kanavi') row.tag = { type: 'duo', keys: ['doran', 'kanavi'], names: ['도란', '카나비'], ally: true, matchId: dMatch };
+    if (row.key === 'showmaker') row.tag = { type: 'rival', keys: ['doran', 'showmaker'], names: ['도란', '쇼메이커'], ally: false, matchId: dMatch };
+    if (row.key === 'smash') row.tag = { type: 'rival', keys: ['smash', 'showmaker'], names: ['스매쉬', '쇼메이커'], ally: false, matchId: sMatch };
+    if (row.key === 'doran' || row.key === 'kanavi') {
+      const g = row.key === 'doran' ? game : kanaviGame;
+      row.inGame = true;
+      row.liveGame = {
+        gameId: g.gameId, gameStartTime: g.gameStartTime, gameLength: g.gameLength,
+        queueKey: g.queueKey, queueId: g.queueId,
+        champion: g.me.champion, championId: g.me.championId,
+        spell1: g.me.spell1, spell2: g.me.spell2, tags: g.tags
+      };
+    }
+  });
+  data.ingameFake = true;
+}
+
+if (process.env.DK_INGAME_FAKE === '1') {
+  const realSolo = HANDLERS['/api/solo'];
+  HANDLERS['/api/solo'] = function (req, res) {
+    const realSend = res.send.bind(res);
+    res.send = function (body) {
+      let out = body;
+      if (typeof body === 'string') {
+        try {
+          const data = JSON.parse(body);
+          fakeIngame(data);
+          out = JSON.stringify(data);
+        } catch (e) { out = body; }
+      }
+      return realSend(out);
+    };
+    return realSolo(req, res);
+  };
+}
+
 const server = http.createServer(function (req, res) {
   const url = new URL(req.url, 'http://127.0.0.1:' + PORT);
   const handler = HANDLERS[url.pathname];

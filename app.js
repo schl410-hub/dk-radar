@@ -448,6 +448,20 @@
       '<p class="link-note">' + T('links.note') + '</p>';
   }
 
+  /* MY PICK 안의 '지금 게임 중' 줄 — 누르면 양 팀 챔피언 시트가 열립니다. */
+  function pickLiveHTML(p) {
+    var g = liveGameOf(p.key);
+    if (g) {
+      return '<button class="pick-live" type="button" data-live="' + p.key + '" aria-label="' + esc(T('ingame.openAria', { name: pName(p) })) + '">' +
+        '<i class="pl-dot" aria-hidden="true"></i><b class="pl-text">' + esc(liveBadgeText(g)) + '</b>' +
+        '<span class="pl-go">' + T('ingame.detail') + ' ›</span></button>';
+    }
+    if (p.inGame) {
+      return '<span class="pick-live is-plain"><i class="pl-dot" aria-hidden="true"></i><b class="pl-text">' + T('pick.inGame') + '</b></span>';
+    }
+    return '';
+  }
+
   function renderPick() {
     var host = $('#pickBanner');
     if (!host) return;
@@ -482,9 +496,11 @@
         '</div>' +
       '</div>' +
       '<div class="pick-foot">' +
-        '<span class="riot">' + p.riotId + (p.inGame ? '<span class="live-in"><i></i>' + T('pick.inGame') + '</span>' : '') + '</span>' +
+        '<span class="riot">' + p.riotId + '</span>' +
         '<span class="rec">' + T('pick.lastGame', { d: matchDate(last.d), t: last.t, champ: champText(last.champ), kda: last.kda, result: T(last.win ? 'result.win' : 'result.lose') }) + '</span>' +
       '</div>' +
+      pickLiveHTML(p) +
+      (p.tag ? '<div class="pick-tags">' + tagHTML(p.tag) + '</div>' : '') +
       '<div class="pick-links">' + streamLinksHTML(p) + '</div>';
     if (!pinned) {
       var hint = document.createElement('p');
@@ -515,12 +531,219 @@
         '<span class="t-name">' + pName(p) + '<em>' + pReal(p) + '</em></span>' +
         (liveOf(p.key) ? '<span class="t-onair"><i></i>' + T('live.badge') + '</span>' : '') +
         '<span class="t-tier">' + tierShort(p) + '<span class="t-dot">·</span><b>' + lpText(p) + '</b></span>' +
-        (p.inGame ? '<span class="t-live"><i></i>' + T('pick.inGame') + '</span>' : '') +
+        (liveGameOf(p.key)
+          ? '<span class="t-live is-live" title="' + esc(T('ingame.openAria', { name: pName(p) })) + '"><i></i><span class="t-live-tx">' + esc(liveBadgeText(liveGameOf(p.key))) + '</span></span>'
+          : (p.inGame ? '<span class="t-live"><i></i>' + T('pick.inGame') + '</span>' : '')) +
+        (p.tag ? '<span class="t-mu">' + tagHTML(p.tag, true) + '</span>' : '') +
         '<span class="bars">' + bars + '</span>' +
         (active ? '<span class="t-foot"><span class="chipk">' + T('pick.recent5') + ' <b>' + wl(t.w, t.l) + '</b></span><span class="chipk">KDA <b>' + t.kda + '</b></span>' +
           (p.key === myPick ? '<span class="chipk chipk-fav">' + STAR_ON + T('pick.pinned') + '</span>' : '') + '</span>' : '') +
       '</button>';
     }).join('');
+  }
+
+  /* ---------- 이벤트 · D-DAY ---------- */
+  function isoDate(iso) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ''));
+    if (!m) return null;
+    return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  }
+  function daysUntil(iso) {
+    var t = isoDate(iso);
+    if (!t) return null;
+    var now = new Date();
+    var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return Math.round((t - today) / 86400000);
+  }
+  /* 생일은 해마다 돌아오므로 다음 생일까지 남은 날을 셉니다. */
+  function nextBirthday(iso) {
+    var m = /^\d{4}-(\d{2})-(\d{2})/.exec(String(iso || ''));
+    if (!m) return null;
+    var now = new Date();
+    var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var t = new Date(now.getFullYear(), Number(m[1]) - 1, Number(m[2]));
+    if (t < today) t = new Date(now.getFullYear() + 1, Number(m[1]) - 1, Number(m[2]));
+    return { days: Math.round((t - today) / 86400000), md: window.I18N.shortDate(t), date: t };
+  }
+  function ddayText(n) { return n <= 0 ? T('event.today') : T('event.dday', { n: n }); }
+
+  function eventCardHTML(ev, n) {
+    var icon = ev.kind === 'awards' ? '🏆' : '📅';
+    return '<a class="ev-card is-' + ev.kind + (ev.tentative ? ' is-est' : '') + '" href="' + esc(ev.url) + '" target="_blank" rel="noopener">' +
+      '<span class="ev-top"><span class="ev-kind"><i aria-hidden="true">' + icon + '</i>' + esc(L(ev.title)) +
+        (ev.tentative ? '<em class="ev-est-tag">' + T('event.tentative') + '</em>' : '') + '</span>' +
+        '<b class="ev-dd">' + ddayText(n) + '</b></span>' +
+      '<span class="ev-sub">' + esc(L(ev.sub)) + '</span>' +
+      (ev.note ? '<span class="ev-note">' + esc(L(ev.note)) + '</span>' : '') +
+      '<span class="ev-go">' + T('event.link') + '</span>' +
+    '</a>';
+  }
+
+  function birthdayCardHTML(p, b) {
+    return '<div class="ev-card is-birthday">' +
+      '<span class="ev-top"><span class="ev-kind"><i aria-hidden="true">🎂</i>' + esc(T('event.birthday', { name: pName(p) })) + '</span>' +
+        '<b class="ev-dd">' + ddayText(b.days) + '</b></span>' +
+      '<span class="ev-sub">' + esc(T('event.birthdaySub', { md: b.md })) + '</span>' +
+    '</div>';
+  }
+
+  function renderEvents() {
+    var host = $('#eventStrip');
+    if (!host) return;
+    var cards = [];
+    (typeof EVENTS !== 'undefined' ? EVENTS : []).forEach(function (ev) {
+      var n = daysUntil(ev.date);
+      if (n === null || n < 0) return; /* 지난 일정은 자동으로 숨김 */
+      cards.push({ days: n, html: eventCardHTML(ev, n) });
+    });
+    var best = null;
+    PLAYERS.forEach(function (p) {
+      var b = nextBirthday(p.birthday);
+      if (!b) return;
+      if (!best || b.days < best.b.days) best = { p: p, b: b };
+    });
+    if (best) cards.push({ days: best.b.days, html: birthdayCardHTML(best.p, best.b) });
+    cards.sort(function (a, b) { return a.days - b.days; });
+    var show = cards.slice(0, 3);
+    host.innerHTML = show.map(function (c) { return c.html; }).join('');
+    host.hidden = !show.length;
+  }
+
+  /* ---------- 인게임 레이더 (Spectator-V5) ---------- */
+  function liveGameOf(key) {
+    var list = (LIVE.solo && LIVE.solo.liveGames) || [];
+    for (var i = 0; i < list.length; i++) if (list[i].playerKey === key) return list[i];
+    return null;
+  }
+  function liveMinutes(g) {
+    if (!g || !g.gameStartTime) return 0;
+    return Math.max(0, Math.floor((Date.now() - Number(g.gameStartTime)) / 60000));
+  }
+  function liveBadgeText(g) {
+    var champ = (g && (g.champion || (g.me && g.me.champion))) || '';
+    var n = liveMinutes(g);
+    return champ ? T('ingame.badge', { champ: champText(champ), n: n }) : T('ingame.elapsed', { n: n });
+  }
+  function champImg(name) {
+    if (!name) return '';
+    return (typeof DD_CDN !== 'undefined' ? DD_CDN : '') + '/img/champion/' + encodeURIComponent(name) + '.png';
+  }
+  function spellImg(name) {
+    if (!name) return '';
+    var file = (typeof SPELL_IMG !== 'undefined' && SPELL_IMG[name]) ? SPELL_IMG[name] : name;
+    var label = (typeof SPELLS !== 'undefined' && SPELLS[name]) ? (SPELLS[name][lang() === 'ko' ? 0 : (lang() === 'ja' ? 2 : (lang() === 'zh' ? 3 : 1))] || name) : name;
+    return '<img class="lg-spell-ico" src="' + (typeof DD_CDN !== 'undefined' ? DD_CDN : '') + '/img/spell/' + encodeURIComponent(file) + '.png" alt="' + esc(label) + '" title="' + esc(label) + '" loading="lazy">';
+  }
+  function playerNameByKey(key) {
+    for (var i = 0; i < PLAYERS.length; i++) if (PLAYERS[i].key === key) return pName(PLAYERS[i]);
+    return key || '';
+  }
+  function proLabel(pro) {
+    if (!pro) return '';
+    if (typeof pro === 'string') return pro;
+    var name = lang() === 'ko' ? (pro.nameKo || pro.name) : pro.name;
+    return pro.team ? name + ' (' + pro.team + ')' : name;
+  }
+
+  /* 같은 판 매치업 배지 — 내전/듀오는 DK 5인끼리, with/vs 는 타 팀 프로 선수 */
+  function tagHTML(tag, compact) {
+    if (!tag) return '';
+    var a, b;
+    if (tag.type === 'duo' || tag.type === 'rival') {
+      var ks = tag.keys || (tag.key ? [tag.key] : []);
+      a = playerNameByKey(ks[0]);
+      b = playerNameByKey(ks[1]);
+      if (!b && tag.nameKo) b = tag.nameKo;
+      if (!a && tag.nameKo) a = tag.nameKo;
+      if (!compact) {
+        return '<span class="mu mu-' + tag.type + '">' +
+          T(tag.type === 'duo' ? 'mu.duo' : 'mu.rival', { a: a, b: b }) + '</span>';
+      }
+      return '<span class="mu mu-' + tag.type + '">' +
+        (tag.type === 'duo' ? '🤝 ' + a + '·' + b : '🔥 ' + a + ' vs ' + b) + '</span>';
+    }
+    if (tag.type === 'with' || tag.type === 'vs') {
+      var pro = (tag.pro && typeof tag.pro === 'object') ? tag.pro : { slug: tag.pro, name: tag.name, nameKo: tag.nameKo, team: tag.team };
+      if (!compact) return '<span class="mu mu-' + tag.type + '">' + T(tag.type === 'with' ? 'mu.with' : 'mu.vs', { pro: proLabel(pro) }) + '</span>';
+      return '<span class="mu mu-' + tag.type + '">' + (tag.type === 'with' ? '🤝 ' : '⚔️ ') + esc(lang() === 'ko' ? (pro.nameKo || pro.name) : pro.name) + '</span>';
+    }
+    return '';
+  }
+
+  function matchTagsHTML(matchId) {
+    var box = (LIVE.solo && LIVE.solo.matchups) || {};
+    var list = (matchId && box[matchId]) || [];
+    if (!list.length) return '';
+    var seen = {};
+    var out = [];
+    list.forEach(function (t) {
+      var sig = t.type + ':' + (t.keys ? t.keys.slice().sort().join('-') : (t.pro ? t.pro.slug : ''));
+      if (seen[sig]) return;
+      seen[sig] = 1;
+      out.push(tagHTML(t, true));
+    });
+    return '<span class="mu-row">' + out.slice(0, 2).join('') + '</span>';
+  }
+
+  /* 인게임 시트(모달) */
+  var lgOpenKey = null;
+  function lgTeamHTML(team, ally) {
+    var rows = (team.players || []).map(function (pl) {
+      var cls = 'lg-p';
+      var who = '';
+      if (pl.who && pl.who.kind === 'dk') {
+        cls += ' is-dk' + (pl.me ? ' is-me' : '');
+        who = 'DK ' + playerNameByKey(pl.who.key);
+      } else if (pl.who && pl.who.kind === 'pro') {
+        cls += ' is-pro';
+        who = (pl.who.team ? pl.who.team + ' ' : '') + (lang() === 'ko' ? (pl.who.nameKo || pl.who.name) : pl.who.name);
+      }
+      return '<li class="' + cls + '">' +
+        (pl.champion ? '<img class="lg-ch" src="' + champImg(pl.champion) + '" alt="' + esc(champText(pl.champion)) + '" loading="lazy">' : '<span class="lg-ch"></span>') +
+        '<span class="lg-pc"><b>' + esc(champText(pl.champion)) + '</b>' +
+          '<span class="lg-sp">' + spellImg(pl.spell1) + spellImg(pl.spell2) + '</span></span>' +
+        (who ? '<span class="lg-who">' + esc(who) + '</span>' : '') +
+      '</li>';
+    }).join('');
+    return '<section class="lg-team ' + (ally ? 'is-ally' : 'is-enemy') + ' is-' + (team.side === 'blue' ? 'blue' : (team.side === 'red' ? 'red' : 'other')) + '">' +
+      '<div class="lg-team-head"><span>' + T(ally ? 'ingame.ally' : 'ingame.enemy') + '</span><em>' + (team.side === 'blue' ? 'BLUE' : (team.side === 'red' ? 'RED' : 'TEAM')) + '</em></div>' +
+      '<ul>' + rows + '</ul>' +
+    '</section>';
+  }
+
+  function openLive(key) {
+    var host = $('#lgModal');
+    var body = $('#lgBody');
+    if (!host || !body) return;
+    var g = liveGameOf(key);
+    if (!g) { closeLive(); return; }
+    lgOpenKey = key;
+    var p = player(key);
+    $('#lgTitle').textContent = '🔴 ' + T('ingame.title') + ' · ' + pName(p);
+    var myTeam = (g.me && g.me.teamId) || 100;
+    var ally = (g.teams || []).filter(function (t) { return t.teamId === myTeam; })[0];
+    var foes = (g.teams || []).filter(function (t) { return t.teamId !== myTeam; });
+    var tags = (g.tags || []).map(function (t) { return tagHTML(t); }).join('');
+    body.innerHTML =
+      '<p class="lg-live"><i class="lg-dot" aria-hidden="true"></i><b>' + esc(T('ingame.queue.' + (g.queueKey || 'other'))) + '</b><span>' + esc(T('ingame.elapsed', { n: liveMinutes(g) })) + '</span></p>' +
+      (tags ? '<div class="lg-tags">' + tags + '</div>' : '') +
+      '<div class="lg-grid">' +
+        (ally ? lgTeamHTML(ally, true) : '') +
+        foes.map(function (t) { return lgTeamHTML(t, false); }).join('') +
+      '</div>' +
+      '<p class="lg-note">' + esc(T('ingame.note')) + '</p>';
+    host.hidden = false;
+    document.body.classList.add('is-sheet');
+    var close = $('#lgClose');
+    if (close) close.focus();
+  }
+
+  function closeLive() {
+    var host = $('#lgModal');
+    if (!host) return;
+    host.hidden = true;
+    lgOpenKey = null;
+    document.body.classList.remove('is-sheet');
   }
 
   /* ---------- 최근 5경기 하이라이트 ---------- */
@@ -1194,7 +1417,7 @@
     var body = rows.map(function (m) {
       return '<tr>' +
         '<td class="c-when">' + matchDate(m.d) + ' ' + m.t + (m.srv ? '<span class="srv">' + m.srv + '</span>' : '') + '</td>' +
-        '<td class="c-champ">' + champText(m.champ) + '</td>' +
+        '<td class="c-champ">' + champText(m.champ) + matchTagsHTML(m.matchId) + '</td>' +
         '<td class="c-role">' + roleText(m.role) + '</td>' +
         '<td class="c-res"><span class="badge ' + (m.win ? 'win' : 'lose') + '">' + T(m.win ? 'result.win' : 'result.lose') + '</span></td>' +
         '<td class="c-kda">' + m.kda + (m.perfect ? '<span class="perfect" title="' + T('solo.perfect') + '">P</span>' : '') + '</td>' +
@@ -1599,28 +1822,39 @@
   }
 
   function mergeSolo(data) {
-    if (!data || !Array.isArray(data.players) || data.source !== 'riot') return;
+    if (!data || !Array.isArray(data.players)) return;
+    /* 전적·티어는 Riot 실시간일 때만 덮어씁니다. 인게임·매치업 배지는 응답에 있으면 그대로 씁니다. */
+    var isRiot = data.source === 'riot';
     data.players.forEach(function (sp) {
       var p = null;
       for (var i = 0; i < PLAYERS.length; i++) if (PLAYERS[i].key === sp.key) p = PLAYERS[i];
       if (!p) return;
-      if (sp.tierKey) p.tierKey = sp.tierKey;
-      if (sp.tierRank != null) p.tierRank = sp.tierRank;
-      if (sp.tier) p.tier = sp.tier;
-      if (sp.lpValue != null) p.lpValue = sp.lpValue;
-      if (sp.lp) p.lp = sp.lp;
-      if (sp.wins != null) p.wins = sp.wins;
-      if (sp.losses != null) p.losses = sp.losses;
-      if (sp.record) p.record = sp.record;
+      if (isRiot) {
+        if (sp.tierKey) p.tierKey = sp.tierKey;
+        if (sp.tierRank != null) p.tierRank = sp.tierRank;
+        if (sp.tier) p.tier = sp.tier;
+        if (sp.lpValue != null) p.lpValue = sp.lpValue;
+        if (sp.lp) p.lp = sp.lp;
+        if (sp.wins != null) p.wins = sp.wins;
+        if (sp.losses != null) p.losses = sp.losses;
+        if (sp.record) p.record = sp.record;
+      }
       p.inGame = !!sp.inGame;
-      if (Array.isArray(sp.matches) && sp.matches.length) {
+      if (sp.liveGame) p.liveChamp = sp.liveGame.champion || '';
+      p.tag = sp.tag || null;
+      if (isRiot && Array.isArray(sp.matches) && sp.matches.length) {
         var seen = {};
         sp.matches.forEach(function (m) { seen[m.d + m.t + m.champ] = true; });
         var extra = p.matches.filter(function (m) { return !seen[m.d + m.t + m.champ]; });
         p.matches = sp.matches.concat(extra).slice(0, 15);
+      } else if (Array.isArray(sp.matches) && sp.matches.length) {
+        /* 스냅샷 모드에서도 서버가 준 matchId 를 붙여 두면 매치업 배지를 표에 쓸 수 있습니다. */
+        var bySig = {};
+        sp.matches.forEach(function (m) { if (m.matchId) bySig[m.d + m.t + m.champ] = m.matchId; });
+        p.matches.forEach(function (m) { var hit = bySig[m.d + m.t + m.champ]; if (hit) m.matchId = hit; });
       }
     });
-    if (data.fetchedAt) state.checked = new Date(data.fetchedAt);
+    if (isRiot && data.fetchedAt) state.checked = new Date(data.fetchedAt);
   }
 
   function refreshLive() {
@@ -1731,6 +1965,7 @@
   /* ---------- 전체 렌더 ---------- */
   function renderAll() {
     renderPills();
+    renderEvents();
     renderPick();
     renderTiles();
     renderHighlight();
@@ -1745,6 +1980,16 @@
 
   /* ---------- 이벤트 ---------- */
   document.addEventListener('click', function (e) {
+    /* 인게임 배지·칩을 누르면 양 팀 챔피언 시트를 엽니다 (타일 선택보다 먼저) */
+    var liveHit = e.target.closest('[data-live]');
+    if (liveHit) {
+      e.preventDefault();
+      e.stopPropagation();
+      openLive(liveHit.getAttribute('data-live'));
+      return;
+    }
+    var lgDone = e.target.closest('#lgClose, #lgVeil');
+    if (lgDone) { closeLive(); return; }
     var langBtn = e.target.closest('[data-lang]');
     if (langBtn) {
       var code = langBtn.getAttribute('data-lang');
@@ -2062,6 +2307,11 @@
 
   window.addEventListener('online', function () { setNote(T('banner.online')); });
 
+  /* 인게임 시트: Esc 로 닫기 */
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && lgOpenKey) closeLive();
+  });
+
   /* ---------- 언어 변경 ---------- */
   window.I18N.onChange(function () {
     /* ?lang= 로 들어온 경우, 사용자가 바꾼 언어를 주소에도 반영해 새로고침 때 되돌아가지 않게 합니다. */
@@ -2075,6 +2325,7 @@
     applyStatic();
     renderLangSwitch();
     updateThemeUI();
+    if (lgOpenKey) closeLive();
     renderAll();
     applyLiveStatus();
     if (canUseApi() && !LIVE.offline) refreshLive();
@@ -2091,6 +2342,14 @@
   setInterval(function () {
     if (!document.hidden && !LIVE.offline) refreshLive();
   }, LIVE_INTERVAL);
+  /* 인게임 경과 시간은 1분 단위로 다시 그립니다(서버 호출 없이 로컬 계산). */
+  setInterval(function () {
+    if (LIVE.solo && LIVE.solo.liveGames && LIVE.solo.liveGames.length) {
+      renderPick();
+      renderTiles();
+      if (lgOpenKey) openLive(lgOpenKey);
+    }
+  }, 30000);
   document.addEventListener('visibilitychange', function () {
     if (!document.hidden && Date.now() - LIVE.lastSync > LIVE_INTERVAL) refreshLive();
   });

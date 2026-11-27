@@ -8,6 +8,7 @@ const { PLAYERS, POS_KO, TIER_KO, splitRiotId, byKey } = require('./players');
 const ASIA = process.env.RIOT_ASIA_BASE || 'https://asia.api.riotgames.com';
 const KR = process.env.RIOT_KR_BASE || 'https://kr.api.riotgames.com';
 const RANKED_SOLO_QUEUE = '420';
+const MATCH_TTL = 21600; /* 6시간 · 끝난 경기 상세는 다시 받지 않음 */
 
 function hasKey() {
   return !!process.env.RIOT_API_KEY;
@@ -34,6 +35,11 @@ async function accountPuuid(riotId) {
   const id = splitRiotId(riotId);
   const data = await riotGet(ASIA, '/riot/account/v1/accounts/by-riot-id/' + enc(id.gameName) + '/' + enc(id.tagLine));
   return data.puuid;
+}
+
+/* PUUID → Riot ID (인게임 참가자 닉네임 확인용) */
+async function accountByPuuid(puuid) {
+  return riotGet(ASIA, '/riot/account/v1/accounts/by-puuid/' + enc(puuid));
 }
 
 async function summoner(puuid) {
@@ -91,33 +97,73 @@ function duration(seconds) {
   return (m < 10 ? '0' : '') + m + ':' + (r < 10 ? '0' : '') + r;
 }
 
-/* Match-V5 응답 → 앱의 전적 행 모양 */
-function mapMatch(match, puuid) {
+/* Match-V5 응답 → 공용 '참가자 요약' (한 판을 DK 5인이 같이 봐도 조회는 한 번)
+ *  - 내전·듀오·프로 매치업 판정에 필요한 참가자 정보를 모두 담습니다. */
+function summarizeMatch(match) {
   const info = match && match.info;
   if (!info || !Array.isArray(info.participants)) return null;
-  const me = info.participants.filter(function (p) { return p.puuid === puuid; })[0];
-  if (!me) return null;
   const endMs = info.gameEndTimestamp || info.gameCreation || 0;
-  const when = kst(new Date(endMs).toISOString());
-  const kills = me.kills || 0;
-  const deaths = me.deaths || 0;
-  const assists = me.assists || 0;
   return {
-    matchId: match.metadata ? match.metadata.matchId : info.gameId,
-    d: when ? when.shortDate : '',
-    t: when ? when.time : '',
-    ts: endMs,
-    champ: me.championName || '',
-    role: POS_KO[me.teamPosition] || POS_KO[me.individualPosition] || '',
-    roleKey: me.teamPosition || me.individualPosition || '',
-    win: !!me.win,
-    kda: kills + '/' + deaths + '/' + assists,
-    dur: duration(info.gameDuration),
-    perfect: deaths === 0 && kills > 0
+    matchId: (match.metadata && match.metadata.matchId) || String(info.gameId || ''),
+    at: endMs,
+    queueId: info.queueId || 0,
+    gameDuration: info.gameDuration || 0,
+    participants: info.participants.map(function (p) {
+      return {
+        puuid: p.puuid || '',
+        gameName: p.riotIdGameName || p.summonerName || '',
+        tagLine: p.riotIdTagline || '',
+        teamId: Number(p.teamId) || 0,
+        championName: p.championName || '',
+        teamPosition: p.teamPosition || p.individualPosition || '',
+        kills: p.kills || 0,
+        deaths: p.deaths || 0,
+        assists: p.assists || 0,
+        win: !!p.win
+      };
+    })
   };
 }
 
-/* 한 선수: 계정 → 티어 → 인게임 → 최근 경기 */
+/* 참가자 요약 → 한 선수의 전적 행 */
+function rowFromSummary(summary, puuid) {
+  if (!summary || !Array.isArray(summary.participants)) return null;
+  const me = summary.participants.filter(function (p) { return p.puuid === puuid; })[0];
+  if (!me) return null;
+  const when = kst(new Date(summary.at || 0).toISOString());
+  return {
+    matchId: summary.matchId,
+    d: when ? when.shortDate : '',
+    t: when ? when.time : '',
+    ts: summary.at || 0,
+    champ: me.championName || '',
+    role: POS_KO[me.teamPosition] || '',
+    roleKey: me.teamPosition || '',
+    win: !!me.win,
+    kda: me.kills + '/' + me.deaths + '/' + me.assists,
+    dur: duration(summary.gameDuration),
+    perfect: me.deaths === 0 && me.kills > 0
+  };
+}
+
+/* Match-V5 응답 → 앱의 전적 행 모양 (한 판만 볼 때 쓰는 예전 경로 · /api/check 등) */
+function mapMatch(match, puuid) {
+  return rowFromSummary(summarizeMatch(match), puuid);
+}
+
+/* 끝난 경기 상세를 한 번만 받아 공용 캐시에 두는 도우미 */
+function summaryCache(store) {
+  return {
+    get: function (id) { return store.getJSON('dk:riot:mv5:' + id); },
+    set: function (id, summary) { return store.setJSON('dk:riot:mv5:' + id, summary, MATCH_TTL); }
+  };
+}
+
+/* 한 선수: 계정 → 티어 → 인게임 → 최근 경기
+ *  opts.summaries : { get(id), set(id, summary) }  — 같은 판을 두 번 받지 않는 공용 캐시
+ *  opts.collected : {}  — 이번 응답에서 확인한 참가자 요약을 모아 둡니다(매치업 판정용)
+ *  opts.live      : ''  — 인게임 원본을 out.liveRaw 에 담아 둡니다(응답 전에 지웁니다)
+ */
 async function playerSnapshot(player, options) {
   const opts = options || {};
   const out = {
@@ -167,26 +213,30 @@ async function playerSnapshot(player, options) {
       out.leagueError = entries && entries.message ? entries.message : 'tier_error';
     }
 
-    if (live && live.participants) {
+    if (live && Array.isArray(live.participants)) {
       out.inGame = true;
+      out.liveRaw = live;
       const meLive = live.participants.filter(function (p) { return p.puuid === puuid; })[0];
       if (meLive && meLive.championId) out.inGameChampId = meLive.championId;
+      if (Number(live.gameStartTime)) out.gameStartTime = Number(live.gameStartTime);
     }
 
     const ids = await matchIds(puuid, opts.count || 5);
     out.matchIds = ids;
-    const cache = opts.cache || null;
+    const cache = opts.summaries || null;
+    const collected = opts.collected || null;
     const rows = await Promise.all(ids.map(async function (id) {
+      let summary = null;
       if (cache) {
-        try {
-          const hit = await cache.getMatch(id);
-          if (hit) return hit;
-        } catch (e) { /* 캐시 실패는 무시하고 직접 조회 */ }
+        try { summary = await cache.get(id); } catch (e) { summary = null; }
       }
-      const detail = await matchDetail(id).catch(function () { return null; });
-      const row = detail ? mapMatch(detail, puuid) : null;
-      if (row && cache) { try { await cache.setMatch(id, row); } catch (e) {} }
-      return row;
+      if (!summary) {
+        const detail = await matchDetail(id).catch(function () { return null; });
+        summary = detail ? summarizeMatch(detail) : null;
+        if (summary && cache) { try { await cache.set(id, summary); } catch (e) {} }
+      }
+      if (summary && collected) collected[id] = summary;
+      return summary ? rowFromSummary(summary, puuid) : null;
     }));
     out.matches = rows.filter(Boolean);
     if (!out.matches.length && ids.length) out.status = 'partial';
@@ -198,6 +248,7 @@ async function playerSnapshot(player, options) {
 }
 
 module.exports = {
-  hasKey, accountPuuid, summoner, leagueEntries, spectator, matchIds, matchDetail,
-  playerSnapshot, mapMatch, tierLabel, recordLabel, PLAYERS, byKey
+  hasKey, accountPuuid, accountByPuuid, summoner, leagueEntries, spectator, matchIds, matchDetail,
+  playerSnapshot, mapMatch, summarizeMatch, rowFromSummary, summaryCache,
+  tierLabel, recordLabel, PLAYERS, byKey
 };
