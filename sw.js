@@ -1,5 +1,5 @@
 /* 딮기 시그널 서비스 워커 · 오프라인 캐시 + 웹 푸시 */
-const CACHE = 'dk-signal-v6';
+const CACHE = 'dk-signal-v7';
 const ASSETS = [
   './',
   './index.html',
@@ -115,6 +115,18 @@ self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const data = event.notification.data || {};
   const target = data.url || './';
+
+  /* 라이브 방송 알림처럼 외부 URL(SOOP·CHZZK)은 새 창으로 엽니다. */
+  let external = false;
+  try {
+    const u = new URL(target, self.location.origin);
+    external = u.origin !== self.location.origin;
+  } catch (e) { external = false; }
+  if (external && self.clients.openWindow) {
+    event.waitUntil(self.clients.openWindow(target));
+    return;
+  }
+
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
       for (const client of list) {
