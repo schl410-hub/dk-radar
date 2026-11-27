@@ -15,9 +15,9 @@
   - **솔로랭크**: `RIOT_API_KEY` 가 있으면 5인 티어·LP·시즌 전적·인게임 여부·최근 5경기를 실시간으로 받아 화면(타일·배너·전적표)에 반영하고, 없으면 `data.js` 스냅샷(2026-11-26)으로 안전하게 대체하며 상태 문구를 표시합니다.
   - 앱을 열어 둔 동안 90초마다 자동 확인하고, 상단에 `실시간` / `자동 갱신` 칩과 마지막 확인 시각을 보여 줍니다.
 - **웹 푸시 (VAPID)**: 선수별 솔랭 ON/OFF + DK 공식 경기 ON/OFF 설정이 서버 구독 정보와 함께 저장됩니다. 서버가 5분마다 새 랭크 게임(챔피언·KDA·승패)과 새 공식 일정·경기 시작 40분 전을 감지해 구독 기기로 보냅니다. 준비가 안 된 상태에서는 화면에 무엇이 빠졌는지 그대로 표시합니다.
-- **다국어 (KO · EN · JA)**: 헤더 `KO · EN · JA` 세그먼트로 즉시 전환. 탭·배지·선수명/포지션/티어·공식 일정·경기표·알림 문구·테스트 알림·날짜 표기까지 화면 전체와 `document.title`·`<html lang>`·미리보기 문구가 함께 바뀝니다. `localStorage`(`dk.signal.lang`) 저장값 → 없으면 `navigator.language`(ja/en/ko) → 기본 `ko`.
+- **다국어 (KO · EN · JA · ZH)**: 헤더 `KO · EN · JA · ZH` 세그먼트로 즉시 전환. 탭·배지·선수명/실명/포지션/티어·공식 일정·경기표·영상 탭·알림 문구·테스트 알림·날짜 표기·챔피언 이름(Data Dragon zh_CN)까지 화면 전체와 `document.title`·`<html lang>`(zh-CN)·미리보기 문구가 함께 바뀝니다. `localStorage`(`dk.signal.lang`) 저장값 → 없으면 `navigator.language`(zh 계열→zh, ja/en/ko) → 기본 `ko`.
 - **실시간 테마 전환**: 헤더 우측 `다크 / 소프트` 버튼. 선택은 `localStorage`에 저장되고 첫 페인트 전에 적용됩니다.
-- **탭 4개**: 홈 / 공식일정 / 경기로그 / 기록실
+- **탭 5개**: 홈 / 공식일정 / 영상 / 경기로그 / 기록실 (360~430px 모바일에서도 한 줄 유지)
 - **5인 상태 보드**: 도란 · 카나비 · 쇼메이커 · 스매쉬 · 딜라이트 타일을 누르면 최애 포커스 배너·하이라이트·전적표가 함께 바뀝니다. 인게임이면 `인게임` 배지가 붙습니다(키 설정 시).
 - **최애 포커스 배너 + MY PICK 고정**
   - 배너 안 **선수 퀵 스위처**(도란·카나비·쇼메이커·스매쉬·딜라이트 칩)로 바로 선수를 바꿔 볼 수 있습니다.
@@ -25,15 +25,16 @@
   - 앱을 새로고침하거나 다시 열면 **저장된 MY PICK 선수가 첫 화면**에 뜨고, 기본값은 도란입니다.
   - 다른 선수를 구경하는 동안에는 배너가 `미리보기 · 카나비` 처럼 표시되고, 그 상태에서 별을 누르면 그 선수가 새 MY PICK이 됩니다.
 - **최근 5경기 하이라이트**: 대형 W–L, 승률, KDA(합계·평균), 경기별 챔피언/KDA 카드
-- **선수 대표 하이라이트 (유튜브)**: 선수마다 LCK 공식 유튜브 하이라이트 2편(경기·대회·길이·썸네일). 홈과 기록실 양쪽에 붙고, 선수를 바꾸면 함께 바뀝니다. 링크는 전부 oEmbed로 재생 가능 여부를 확인한 실제 영상입니다.
+- **영상 탭**: ① 생중계·공식 채널(LCK CHZZK·SOOP·YouTube, Dplus KIA YouTube) + 다음 경기 안내 ② 선수별 개인 방송국 5인 ③ 대표 하이라이트 10편(전체/선수별 필터 칩) ④ 최근 공식 경기 다시보기(VOD·하이라이트). 하이라이트 링크는 전부 oEmbed로 재생 가능 여부를 확인한 실제 영상입니다.
 - **방송국 · 전적 바로가기**: 배너·경기로그·기록실에서 선수 개인 방송국(CHZZK / SOOP)과 OP.GG(u.gg)로 바로 이동합니다. 확인된 채널만 연결했습니다 — 도란 SOOP·CHZZK, 카나비 CHZZK, 쇼메이커 CHZZK, 스매쉬 SOOP·CHZZK, 딜라이트 CHZZK.
-- **공식 경기 영상·생중계**: 홈 상단 스트립과 공식일정 `NEXT` 카드에 **CHZZK LCK · SOOP LCK · LCK 유튜브** 바로가기. 종료된 경기는 LoL Esports `getEventDetails`의 VOD 정보로 **언어별 풀영상**(한국어 SOOP, 해외 유튜브/트위치)과 **유튜브 하이라이트 검색**을 붙입니다(공식 VOD가 없으면 검색으로만 안내).
-- **알림 설정**: 선수별 솔랭 알림(기본 도란만 ON), DK 공식 경기 알림(일정·시작). 홈·공식일정 두 곳 동기화, 서버 구독 정보와 자동 연동.
+- **공식 경기 영상·생중계**: 생중계 채널은 영상 탭에 모았고, 홈에는 `영상 보러가기` 버튼만 둡니다. 공식일정 `NEXT` 카드는 영상 탭으로 이동하는 링크만 남겼습니다. 종료된 경기는 LoL Esports `getEventDetails`의 VOD 정보로 **언어별 풀영상**(한국어 SOOP, 해외 유튜브/트위치)과 **유튜브 하이라이트 검색**을 붙입니다(공식 VOD가 없으면 검색으로만 안내).
+- **선수 라이브 방송 감지 · 알림**: `/api/live` 가 5인의 SOOP·CHZZK 공개 API 를 조회해 방송 중인 선수를 알려 줍니다(45초 캐시). 방송 중이면 홈 5인 보드 타일·MY PICK·영상 탭 방송국 카드에 **LIVE** 배지와 방송 제목이 뜨고, 영상 탭 상단에 `지금 방송 중` 줄이 생깁니다. `/api/check` 는 5분마다 상태를 확인해 꺼져 있다가 켜진 방송은 구독 기기로 `🔴 [도란] SOOP 방송 시작` 푸시를 보내고(클릭하면 방송국으로 이동) Upstash Redis 에 상태를 남겨 중복 발송을 막습니다. 첫 점검은 기준값만 저장합니다.
+- **알림 설정**: 선수별 솔랭 알림(기본 도란만 ON), DK 공식 경기 알림(일정·시작), **선수 라이브 방송 알림**(기본 ON). 홈·공식일정 두 곳 동기화, 서버 구독 정보와 자동 연동.
   - **테스트 알림**은 현재 선수의 솔랭 알림 → 경기 알림 순서로 켜진 설정을 골라 실제 서비스워커 알림을 보냅니다.
 - **한 줄 응원**: 선택 선수에게 응원 한 줄을 남기고 기기에 저장(최대 5줄, 삭제 가능)
 - **솔로랭크 카드**: 티어/LP·시즌 전적·최근 경기 표(챔피언, 포지션, 승패, K/D/A, 시간)
 - **경기로그 탭**: 승/패 필터
-- **공식일정 탭**: NEXT 카드(자동 갱신·경기 알림 토글), 최근 DK 공식 경기, **2027 시즌 캘린더**(LCK 컵 → First Stand: All In(중국) → LCK 정규 시즌 → MSI 2027(발렌시아) → 월즈 2027(나고야·수원·서울)), 선수별 최근 공식 경기
+- **공식일정 탭**: NEXT 카드(자동 갱신·경기 알림 토글·영상 탭 링크), 최근 DK 공식 경기, **2027 시즌 캘린더**(LCK 컵 → First Stand: All In(중국) → LCK 정규 시즌 → MSI 2027(발렌시아) → 월즈 2027(나고야·수원·서울)), 선수별 최근 공식 경기
 - **기록실 탭**: 2026 시즌 대회별 세트 전적, 월즈 결과
 - **PWA**: manifest + 서비스 워커 오프라인 캐시(`/api/*` 는 캐시하지 않음), 푸시·알림 클릭·구독 갱신 핸들러, 로고 기반 아이콘
 
@@ -41,8 +42,9 @@
 
 | 경로 | 하는 일 |
 | --- | --- |
-| `GET /api/official` | DK 다음 경기 + 최근 결과 + 경기별 VOD 링크 (LoL Esports 공개 API, 90초 캐시 · `?lang=ko\|en\|ja`) |
+| `GET /api/official` | DK 다음 경기 + 최근 결과 + 경기별 VOD 링크 (LoL Esports 공개 API, 90초 캐시 · `?lang=ko\|en\|ja\|zh`) |
 | `GET /api/solo` | 5인 티어·LP·전적·인게임·최근 5경기 (Riot API, 45초 캐시) · 키 없으면 스냅샷 |
+| `GET /api/live` | 5인 라이브 방송 상태 (SOOP station API · CHZZK live-status, 45초 캐시) |
 | `GET /api/config` | 프론트가 쓰는 공개 상태값(푸시 공개키·저장소·솔로 소스·마지막 점검) |
 | `POST /api/subscribe` | 기기 푸시 구독 + 알림 설정 저장 (`DELETE` 해지, `GET ?endpoint=` 확인) |
 | `GET /api/check` | 주기 점검 — 새 랭크 게임 / 새 일정 / 시작 임박 감지 후 푸시 (`?dry=1` 미리보기, `?test=1` 구독 기기로 테스트 푸시) |
@@ -100,8 +102,8 @@ curl -s "$BASE/api/check?test=1&token=$CHECK_SECRET"   # 잠금화면 알림 확
 ```
 index.html            화면 뼈대 (테마·언어 부트스트랩 포함, data-i18n 마커)
 styles.css            듀얼 테마 토큰 + 컴포넌트 스타일 (+ 언어·영상·링크 UI)
-i18n.js               KO·EN·JA 사전 + 날짜/요일 표기 + 언어 저장·전환
-data.js               선수·경기·대회 기록 (2026-11-26) · 방송국/하이라이트 링크 · 챔피언 이름 3개 언어
+i18n.js               KO·EN·JA·ZH 사전 + 날짜/요일 표기 + 언어 저장·전환
+data.js               선수·경기·대회 기록 (2026-11-26) · 방송국/하이라이트 링크 · 챔피언 이름 4개 언어
 app.js                탭/선수·MY PICK·테마·알림·언어, 서버 실시간 연동·푸시 구독
 sw.js                 서비스 워커 (캐시 + 웹 푸시 + 구독 갱신)
 manifest.json         PWA 설정 (manifest.webmanifest 와 동일 내용)
@@ -109,15 +111,16 @@ api/official.js       DK 공식 일정
 api/solo.js           솔로랭크
 api/config.js         프론트용 공개 설정
 api/subscribe.js      푸시 구독 저장/해지
-api/check.js          주기 점검·푸시 발송
+api/check.js          주기 점검·푸시 발송 (공식 경기·솔랭·라이브 방송)
+api/live.js           선수 라이브 방송 상태(SOOP·CHZZK)
 api/_lib/             공식 일정·Riot·저장소·푸시·HTTP 유틸, 스냅샷(자동 생성)
 vercel.json           Cron(하루 1회) · 함수 실행시간 · /api 캐시 금지 헤더
 package.json          의존성(web-push)
-tools/dev_server.js   로컬 서버(정적 + /api) · 픽스처 모드
+tools/dev_server.js   로컬 서버(정적 + /api) · 픽스처 모드 · DK_LIVE_FAKE 라이브 배지 검증
 tools/fixtures/       검증용 고정 일정(다음 경기 없음/있음)
-tools/api_smoke.js    /api 함수 동작 검증(실 API 1회 + 가짜 Riot/Redis)
-tools/verify.py       390×844 브라우저 회귀 검증 86항목 + 스크린샷
-tools/verify_v3.py    다국어·영상·방송국 링크 검증 84항목 + 스크린샷(downloads/dk-signal-v3)
+tools/api_smoke.js    /api 함수 동작 검증(실 API 1회 + 가짜 Riot/Redis/SOOP/CHZZK)
+tools/verify.py       390×844 브라우저 회귀 검증 87항목 + 스크린샷
+tools/verify_v3.py    다국어·영상·라이브 배지 검증 136항목 + 스크린샷(downloads/dk-signal-v3)
 tools/smoke_v3.py     빠른 화면 점검(스크린샷 없음)
 tools/make_champions.py  Riot Data Dragon → data.js 챔피언 이름 표 재생성
 tools/verify_api.py   자동 갱신·실시간 반영·오프라인 검증 + 스크린샷
@@ -131,14 +134,14 @@ tools/make_font.py    Pretendard 서브셋 생성
 ## 검증
 
 ```bash
-node tools/api_smoke.js                    # 서버 함수 58항목 (실제 LoL Esports API 1회 포함)
+node tools/api_smoke.js                    # 서버 함수 75항목 (실제 LoL Esports API 1회 + 가짜 SOOP/CHZZK)
 
-LD_LIBRARY_PATH=... PLAYWRIGHT_BROWSERS_PATH=... python3 tools/verify.py       # 86/86
+LD_LIBRARY_PATH=... PLAYWRIGHT_BROWSERS_PATH=... python3 tools/verify.py       # 87/87
 LD_LIBRARY_PATH=... PLAYWRIGHT_BROWSERS_PATH=... python3 tools/verify_api.py   # 31/31
-LD_LIBRARY_PATH=... python3 tools/verify_v3.py                                 # 84/84 (다국어·영상)
+LD_LIBRARY_PATH=... python3 tools/verify_v3.py                                 # 136/136 (다국어·영상·라이브)
 ```
 
-- `verify.py` 는 `tools/dev_server.js`(픽스처 `none`)를 직접 띄워 4탭, 5인 전환, 테마 저장, MY PICK, 알림 동기화, 테스트 푸시, 응원 저장, 콘솔 에러를 확인하고 `downloads/dk-radar/signal-*.png` 를 갱신합니다.
+- `verify.py` 는 `tools/dev_server.js`(픽스처 `none`)를 직접 띄워 5탭, 5인 전환, 테마 저장, MY PICK, 알림 동기화, 테스트 푸시, 응원 저장, 콘솔 에러를 확인하고 `downloads/dk-radar/signal-*.png` 를 갱신합니다.
 - `verify_api.py` 는 다음 경기가 공개된 픽스처로 NEXT 카드 자동 갱신, 미공개 시 2027 LCK 컵 fallback, 실시간 솔로랭크 응답의 티어·인게임·전적 반영, 서버 미연결 시 화면 유지를 확인합니다.
-- `verify_v3.py` 는 KO/EN/JA 전환(탭·배너·타일·하이라이트·표·일정·기록·알림·응원), 새로고침 후 언어 유지, 브라우저 언어 자동 감지(en-US→EN, ja-JP→JA, 그 외→KO), 선수별 방송국 5명·하이라이트 10편 링크/썸네일/길이, 공식일정 생중계·VOD 링크, 두 언어권에서의 가로 넘침, 콘솔 에러를 확인하고 `downloads/dk-signal-v3/*.png` 를 갱신합니다.
+- `verify_v3.py` 는 KO/EN/JA/ZH 전환(탭·배너·타일·하이라이트·표·일정·기록·알림·응원·영상 탭), 새로고침 후 언어 유지, 브라우저 언어 자동 감지(en-US→EN, ja-JP→JA, zh-CN/zh-TW→ZH, 그 외→KO), 영상 탭 공식 채널 4곳·방송국 5인·필터별 하이라이트 10편 링크/썸네일/길이·VOD 링크, 라이브 배지(타일·MY PICK·영상 탭·방송국 카드·토글), 네 언어권에서의 가로 넘침, 콘솔 에러를 확인하고 `downloads/dk-signal-v3/*.png` 를 갱신합니다.
 - 로컬에서 눈으로 보기: `node tools/dev_server.js` → http://127.0.0.1:8765

@@ -49,8 +49,30 @@ const HANDLERS = {
   '/api/solo': require('../api/solo'),
   '/api/config': require('../api/config'),
   '/api/subscribe': require('../api/subscribe'),
-  '/api/check': require('../api/check')
+  '/api/check': require('../api/check'),
+  '/api/live': require('../api/live')
 };
+
+/* DK_LIVE_FAKE=1: 실제 방송이 없을 때도 라이브 배지 UI 를 검증할 수 있게 가짜 상태를 돌려줍니다. */
+if (process.env.DK_LIVE_FAKE === '1') {
+  HANDLERS['/api/live'] = function (req, res) {
+    var players = {};
+    ['doran', 'kanavi', 'showmaker', 'smash', 'delight'].forEach(function (k) { players[k] = { key: k, live: false }; });
+    players.doran = {
+      key: 'doran', nameKo: '도란', live: true, platform: 'soop', station: 'choi15778',
+      title: '솔랭 가즈아', viewers: 3120, startedAt: new Date().toISOString(),
+      url: 'https://ch.sooplive.co.kr/choi15778'
+    };
+    players.delight = {
+      key: 'delight', nameKo: '딜라이트', live: true, platform: 'chzzk', station: '59dd654778e3d0b64f3ed06baece805d',
+      title: 'DK Delight', viewers: 540, startedAt: new Date().toISOString(),
+      url: 'https://chzzk.naver.com/59dd654778e3d0b64f3ed06baece805d'
+    };
+    var body = { ok: true, at: new Date().toISOString(), servedFrom: 'fake', liveCount: 2, players: players };
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+    res.end(JSON.stringify(body));
+  };
+}
 
 function serveStatic(req, res, pathname) {
   let rel = decodeURIComponent(pathname.split('?')[0]);

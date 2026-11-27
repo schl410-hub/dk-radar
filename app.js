@@ -26,6 +26,7 @@
     player: 'doran',
     tab: 'feed',
     filter: 'all',
+    videoPlayer: 'all',
     checked: new Date(LAST_CHECKED)
   };
 
@@ -55,6 +56,9 @@
     return store.get(soloKey(k), def) === '1';
   }
   var officialOn = store.get(OFFICIAL_KEY, '1') === '1';
+  /* 라이브 방송 알림: 선수가 SOOP·CHZZK에서 방송을 켰을 때 (기본 켜짐) */
+  var LIVE_KEY = 'dk.signal.live';
+  var liveAlerts = store.get(LIVE_KEY, '1') === '1';
 
   /* ---------- 데이터 헬퍼 ---------- */
   function player(key) {
@@ -63,14 +67,29 @@
   }
   function current() { return player(state.player); }
 
+  /* 라이브 방송 상태 (/api/live): 방송 중이면 그 선수의 정보를 돌려줍니다. */
+  function liveOf(key) {
+    var d = LIVE.live;
+    if (!d || !d.ok || !d.players) return null;
+    var row = d.players[key];
+    return row && row.live ? row : null;
+  }
+  function liveBadge(key, cls) {
+    var row = liveOf(key);
+    if (!row) return '';
+    return '<span class="onair' + (cls ? ' ' + cls : '') + '"><i></i>' + T('live.badge') + '</span>';
+  }
+
   function pName(p) {
     if (lang() === 'ko') return p.nameKo;
     if (lang() === 'ja') return p.nameJa || p.nameIntl || p.nameKo;
+    if (lang() === 'zh') return p.nameZh || p.nameIntl || p.nameKo;
     return p.nameIntl || p.nameEn || p.nameKo;
   }
   function pReal(p) {
     if (lang() === 'ko') return p.real;
     if (lang() === 'ja') return p.realJa || p.realEn || p.real;
+    if (lang() === 'zh') return p.realZh || p.realEn || p.real;
     return p.realEn || p.real;
   }
   function pAvatar(p) {
@@ -168,23 +187,25 @@
   function normChamp(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
   function champIndex() {
     if (CHAMP_INDEX) return CHAMP_INDEX;
-    CHAMP_INDEX = { ko: {}, en: {}, ja: {} };
+    CHAMP_INDEX = { ko: {}, en: {}, ja: {}, zh: {} };
     Object.keys(CHAMPIONS || {}).forEach(function (id) {
       var row = CHAMPIONS[id];
       if (!row || !row.length) return;
       CHAMP_INDEX.ko[row[0]] = row;
       CHAMP_INDEX.en[normChamp(row[1])] = row;
       CHAMP_INDEX.ja[row[2]] = row;
+      if (row[3]) CHAMP_INDEX.zh[row[3]] = row;
     });
     return CHAMP_INDEX;
   }
   function champText(name) {
     if (name == null) return '';
     var idx = champIndex();
-    var row = idx.ko[name] || idx.en[normChamp(name)] || idx.ja[name];
+    var row = idx.ko[name] || idx.en[normChamp(name)] || idx.ja[name] || idx.zh[name];
     if (!row) return name;
     if (lang() === 'ko') return row[0];
     if (lang() === 'ja') return row[2];
+    if (lang() === 'zh') return row[3] || row[0];
     return row[1];
   }
 
@@ -447,7 +468,7 @@
       '<div class="pick-main">' +
         avatar(p) +
         '<div class="pick-id">' +
-          '<div class="pick-name">' + pName(p) + '<em>' + pReal(p) + '</em></div>' +
+          '<div class="pick-name">' + pName(p) + '<em>' + pReal(p) + '</em>' + liveBadge(p.key, 'pick-onair') + '</div>' +
           '<div class="pick-tier">' + tierText(p) + '<span class="sep">·</span><span class="lp">' + lpText(p) + '</span><span class="sep">·</span>' + winRateText(p) + '</div>' +
         '</div>' +
         '<div class="pick-form">' +
@@ -488,6 +509,7 @@
           '<span class="t-st"><i class="' + (last.win ? 'w' : 'l') + '"></i>' + relDay(last.d) + '</span>' +
         '</span>' +
         '<span class="t-name">' + pName(p) + '<em>' + pReal(p) + '</em></span>' +
+        (liveOf(p.key) ? '<span class="t-onair"><i></i>' + T('live.badge') + '</span>' : '') +
         '<span class="t-tier">' + tierShort(p) + '<span class="t-dot">·</span><b>' + lpText(p) + '</b></span>' +
         (p.inGame ? '<span class="t-live"><i></i>' + T('pick.inGame') + '</span>' : '') +
         '<span class="bars">' + bars + '</span>' +
@@ -532,41 +554,199 @@
         '<a href="' + p.opgg + '" target="_blank" rel="noopener">' + T('hl.allStats') + '</a></div>';
   }
 
-  /* ---------- 선수 대표 하이라이트 (유튜브) ---------- */
+  /* ---------- 영상 탭 (생중계 · 방송국 · 하이라이트 · 다시보기) ---------- */
   function ytWatch(id) { return 'https://www.youtube.com/watch?v=' + id; }
   function ytThumb(id) { return 'https://i.ytimg.com/vi/' + id + '/hqdefault.jpg'; }
 
-  function videoCardHTML(p) {
-    var list = (p.highlights || []).map(function (v) {
-      return '<li>' +
-        '<a class="vc-item" href="' + ytWatch(v.id) + '" target="_blank" rel="noopener" data-video="' + v.id + '">' +
-          '<span class="vc-thumb"><img loading="lazy" src="' + ytThumb(v.id) + '" alt="" width="168" height="94"><i class="vc-len">' + v.len + '</i></span>' +
-          '<span class="vc-body">' +
-            '<b class="vc-title">' + L(v.match) + '</b>' +
-            '<span class="vc-meta">' + L(v.event) + '</span>' +
-            '<span class="vc-tags"><span class="vc-badge">' + T('video.badge') + '</span>' +
-              '<span class="vc-len-txt">' + T('video.len', { len: v.len }) + '</span></span>' +
-          '</span>' +
-        '</a>' +
-      '</li>';
-    }).join('');
-    return '<div class="card-head">' +
-        '<div>' +
-          '<div class="eyebrow">HIGHLIGHTS · YOUTUBE</div>' +
-          '<h3 class="card-title">' + T('video.title') + '</h3>' +
-        '</div>' +
-        '<a class="ghost-btn" href="' + CHANNELS.dkYoutube + '" target="_blank" rel="noopener">' + T('video.more') + '</a>' +
-      '</div>' +
-      '<p class="vc-sub">' + T('video.sub', { name: pName(p) }) + '</p>' +
-      (list ? '<ul class="vc-list">' + list + '</ul>' : '<p class="vc-sub">' + T('video.empty') + '</p>');
+  /* 공식 채널 4곳 (2026-11-27 확인) */
+  var VIDEO_CHANNELS = [
+    { url: CHANNELS.lckChzzk, name: 'CHZZK', cls: 'is-chzzk', sub: 'video.chanLckChzzk', aria: 'video.chzzkAria' },
+    { url: CHANNELS.lckSoop, name: 'SOOP', cls: 'is-soop', sub: 'video.chanLckSoop', aria: 'video.soopAria' },
+    { url: CHANNELS.lckYoutube, name: 'YouTube', cls: 'is-youtube', sub: 'video.chanLckYt', aria: 'video.youtubeAria' },
+    { url: CHANNELS.dkYoutube, name: 'YouTube', cls: 'is-youtube', sub: 'video.chanDkYt', aria: 'video.dkYtAria' }
+  ];
+
+  function renderVideoChannels() {
+    var host = $('#videoChannels');
+    if (host) {
+      host.innerHTML = VIDEO_CHANNELS.map(function (c) {
+        return '<a class="chan ' + c.cls + '" href="' + c.url + '" target="_blank" rel="noopener" aria-label="' + esc(T(c.aria)) + '">' +
+          '<span class="chan-top"><i class="dot"></i>' + c.name + '<span class="chan-go" aria-hidden="true">↗</span></span>' +
+          '<span class="chan-sub">' + esc(T(c.sub)) + '</span>' +
+        '</a>';
+      }).join('');
+    }
+
+    var data = LIVE.official;
+    var line = $('#videoNextLine');
+    if (line) {
+      var next = data && data.ok ? data.next : null;
+      if (next) {
+        var opp = (next.opponent && (next.opponent.code || next.opponent.name)) || 'TBD';
+        line.className = 'next-line';
+        line.innerHTML = '<i class="nl-dot" aria-hidden="true"></i><b>' + T('official.next') + '</b> DK vs ' + esc(opp) +
+          '<span class="nl-sub">' + esc(eventDate(next)) + ' ' + esc(next.time || '') + '</span>';
+      } else {
+        line.className = 'next-line is-empty';
+        line.innerHTML = '<b>' + T('official.next') + '</b><span class="nl-sub">' + T('video.noNext') + '</span>';
+      }
+    }
+
+    /* 지금 방송 중인 선수 (SOOP·CHZZK) */
+    var onair = $('#videoOnAir');
+    if (onair) {
+      var rows = PLAYERS.map(function (p) { return { p: p, lv: liveOf(p.key) }; }).filter(function (r) { return r.lv; });
+      if (rows.length) {
+        onair.hidden = false;
+        onair.innerHTML = '<b>' + T('live.onAir') + '</b>' + rows.map(function (r) {
+          return '<a class="oa" href="' + esc(r.lv.url || '#') + '" target="_blank" rel="noopener">' +
+            '<i class="oa-dot"></i>' + pName(r.p) +
+            '<em>' + (r.lv.platform === 'soop' ? T('video.soop') : T('video.chzzk')) + '</em></a>';
+        }).join('');
+      } else {
+        onair.hidden = true;
+        onair.innerHTML = '';
+      }
+    }
   }
 
-  function renderVideoCards() {
-    var p = current();
-    ['#videoCard', '#videoCardRecords'].forEach(function (sel) {
-      var host = $(sel);
-      if (host) host.innerHTML = videoCardHTML(p);
+  function renderVideoStations() {
+    var host = $('#videoStations');
+    if (!host) return;
+    host.innerHTML = PLAYERS.map(function (p) {
+      var lv = liveOf(p.key);
+      var handles = (p.streams || []).map(function (s) { return s.handle; }).filter(Boolean).join(' · ');
+      var chips = (p.streams || []).map(function (s) {
+        var meta = PLATFORM[s.platform] || { label: String(s.platform || '').toUpperCase(), cls: '' };
+        var label = s.platform === 'chzzk' ? T('video.chzzk') : (s.platform === 'soop' ? T('video.soop') : meta.label);
+        var on = lv && lv.platform === s.platform ? ' is-onair' : '';
+        return '<a class="link-chip ' + meta.cls + on + '" href="' + s.url + '" target="_blank" rel="noopener"' +
+          ' title="' + esc(s.handle || label) + '"' +
+          ' aria-label="' + esc(T('video.stationAria', { name: pName(p), platform: label })) + '">' +
+          '<i class="dot"></i>' + label + '<em>' + (on ? T('live.stream') : T('links.stream')) + '</em></a>';
+      }).join('');
+      return '<li class="st-row' + (lv ? ' is-onair' : '') + '">' +
+        '<span class="st-head">' +
+          '<span class="st-av" aria-hidden="true">' + pAvatar(p) + '</span>' +
+          '<span class="st-id"><b>' + pName(p) + '<em>' + pReal(p) + '</em><span class="st-pos">' + p.pos + '</span></b>' +
+            (lv && lv.title ? '<span class="st-title">' + esc(lv.title) + '</span>' : '') +
+            '<span class="st-handle">' + esc(handles || p.riotId) + '</span>' +
+          '</span>' +
+          (lv ? '<span class="onair st-onair"><i></i>' + T('live.badge') + '</span>' : '') +
+        '</span>' +
+        '<span class="st-links">' + (chips || '<span class="st-none">' + T('links.noStream') + '</span>') + '</span>' +
+      '</li>';
+    }).join('');
+  }
+
+  /* 대표 하이라이트: 5인 × 2편 = 10편, 선수별 필터 */
+  function allHighlights() {
+    var out = [];
+    PLAYERS.forEach(function (p) {
+      (p.highlights || []).forEach(function (v) { out.push({ p: p, v: v }); });
     });
+    return out;
+  }
+
+  function renderVideoFilters() {
+    var host = $('#videoFilters');
+    if (!host) return;
+    var cur = state.videoPlayer;
+    var chips = [{ key: 'all', label: T('video.filterAll') }].concat(PLAYERS.map(function (p) {
+      return { key: p.key, label: pName(p) };
+    }));
+    host.innerHTML = chips.map(function (c) {
+      var on = c.key === cur;
+      return '<button class="chip' + (on ? ' is-active' : '') + '" type="button" role="tab" aria-selected="' + on + '"' +
+        ' data-video-filter="' + c.key + '">' + esc(c.label) + '</button>';
+    }).join('');
+  }
+
+  function videoItemHTML(entry, withWho) {
+    var v = entry.v, p = entry.p;
+    return '<li>' +
+      '<a class="vc-item" href="' + ytWatch(v.id) + '" target="_blank" rel="noopener" data-video="' + v.id + '">' +
+        '<span class="vc-thumb"><img loading="lazy" src="' + ytThumb(v.id) + '" alt="" width="168" height="94"><i class="vc-len">' + esc(v.len) + '</i></span>' +
+        '<span class="vc-body">' +
+          (withWho ? '<span class="vc-who">' + pName(p) + '<i>' + p.pos + '</i></span>' : '') +
+          '<b class="vc-title">' + L(v.match) + '</b>' +
+          '<span class="vc-meta">' + L(v.event) + '</span>' +
+          '<span class="vc-tags"><span class="vc-badge">' + T('video.badge') + '</span>' +
+            '<span class="vc-len-txt">' + T('video.len', { len: v.len }) + '</span></span>' +
+        '</span>' +
+      '</a>' +
+    '</li>';
+  }
+
+  function renderVideoList() {
+    var host = $('#videoList');
+    if (!host) return;
+    var all = allHighlights();
+    var list = state.videoPlayer === 'all' ? all : all.filter(function (e) { return e.p.key === state.videoPlayer; });
+    host.innerHTML = list.length
+      ? list.map(function (e) { return videoItemHTML(e, state.videoPlayer === 'all'); }).join('')
+      : '<li class="vc-empty">' + T('video.empty') + '</li>';
+    var count = $('#videoCount');
+    if (count) count.textContent = T('video.count', { n: list.length });
+  }
+
+  /* 최근 공식 경기 다시보기: /api/official recent + 풀영상 VOD·하이라이트 */
+  function renderVideoVod() {
+    var host = $('#videoVodList');
+    if (!host) return;
+    var data = LIVE.official;
+    var rows = data && data.ok && Array.isArray(data.recent) ? data.recent : [];
+    var note = $('#videoVodNote');
+    var hint = $('#videoVodHint');
+
+    if (!rows.length) {
+      /* 서버 연결 전: 저장해 둔 2026 월즈 여정에 유튜브 검색 링크만 붙입니다. */
+      host.innerHTML = DK_PATH.map(function (g) {
+        var q = [T('video.worldsQuery'), 'DK vs ' + g.opp, L(g.date), T('video.highlight')].join(' ');
+        return '<li class="path-row has-vid">' +
+          '<div class="p-line">' +
+            '<span class="p-round">' + L(g.round) + '</span>' +
+            '<span class="p-teams">DK <b class="' + (g.win ? 'w' : 'l') + '">' + esc(g.score) + '</b> ' + esc(g.opp) + '</span>' +
+            '<span class="p-res ' + (g.win ? 'w' : 'l') + '">' + (g.win ? T('result.win') : T('result.lose')) + ' · ' + L(g.date) + '</span>' +
+          '</div>' +
+          '<div class="p-vid"><a class="vid-chip is-hl" href="' + ytSearch(q) + '" target="_blank" rel="noopener">' + T('video.highlight') + ' ↗</a></div>' +
+        '</li>';
+      }).join('');
+      if (note) note.textContent = T('video.vodFallbackNote');
+      if (hint) hint.hidden = true;
+      return;
+    }
+
+    host.innerHTML = rows.slice(0, 6).map(function (g) {
+      var opp = g.opponent || {};
+      var win = g.win === true ? 'w' : (g.win === false ? 'l' : '');
+      var res = g.win === true ? T('result.win') : (g.win === false ? T('result.lose') : '');
+      return '<li class="path-row has-vid">' +
+        '<div class="p-line">' +
+          '<span class="p-round">' + esc(blockText(g.block) || leagueName(g.league) || '') + '</span>' +
+          '<span class="p-teams">DK <b class="' + win + '">' + esc(g.score || '-') + '</b> ' + esc(opp.code || opp.name || '') + '</span>' +
+          '<span class="p-res ' + win + '">' + (res ? res + ' · ' : '') + esc(eventDate(g)) + '</span>' +
+        '</div>' +
+        '<div class="p-vid">' + matchVideosHTML(g) + '</div>' +
+      '</li>';
+    }).join('');
+    if (note) {
+      note.textContent = T('video.vodNote', { time: data.fetchedAt ? clockOf(new Date(data.fetchedAt)) : '?' });
+    }
+    if (hint) {
+      hint.hidden = false;
+      hint.textContent = T('video.searchNote');
+    }
+  }
+
+  function renderVideoPanel() {
+    var more = $('#videoMore');
+    if (more) more.href = CHANNELS.dkYoutube;
+    renderVideoChannels();
+    renderVideoStations();
+    renderVideoFilters();
+    renderVideoList();
+    renderVideoVod();
   }
 
   /* ---------- 한 줄 응원 ---------- */
@@ -647,9 +827,13 @@
       btn.setAttribute('aria-checked', String(officialOn));
       btn.setAttribute('aria-label', T(officialOn ? 'notify.officialToggleOn' : 'notify.officialToggleOff'));
     });
+    $$('[data-live-toggle]').forEach(function (btn) {
+      btn.setAttribute('aria-checked', String(liveAlerts));
+      btn.setAttribute('aria-label', T(liveAlerts ? 'notify.liveToggleOn' : 'notify.liveToggleOff'));
+    });
     var sum = $('#notifySummary');
     if (sum) {
-      var n = PLAYERS.filter(function (p) { return isSoloOn(p.key); }).length + (officialOn ? 1 : 0);
+      var n = PLAYERS.filter(function (p) { return isSoloOn(p.key); }).length + (officialOn ? 1 : 0) + (liveAlerts ? 1 : 0);
       sum.textContent = n ? T('notify.summaryOn', { n: n }) : T('notify.summaryOff');
     }
     setNote('');
@@ -657,9 +841,11 @@
 
   function notifyStatusText() {
     var p = current();
-    if (isSoloOn(p.key) && officialOn) return T('notify.statusBoth', { name: pName(p) });
+    if (isSoloOn(p.key) && officialOn && liveAlerts) return T('notify.statusBoth', { name: pName(p) }) + ' · ' + T('notify.statusLive');
+    if (isSoloOn(p.key) && (officialOn || liveAlerts)) return T('notify.statusBoth', { name: pName(p) });
     if (isSoloOn(p.key)) return T('notify.statusSolo', { name: pName(p) });
     if (officialOn) return T('notify.statusOfficial');
+    if (liveAlerts) return T('notify.statusLive');
     return T('notify.statusNone');
   }
 
@@ -757,7 +943,6 @@
   function renderOfficial() {
     renderSeason();
     renderNextCard();
-    renderNextWatch();
     renderOfficialRecent();
     var list = $('#officialList');
     if (list) {
@@ -805,6 +990,7 @@
     config: null,
     official: null,
     solo: null,
+    live: null,
     soloSource: 'snapshot',
     offline: false,
     lastSync: 0,
@@ -866,9 +1052,9 @@
       if (BLOCKS[i].ko === s || BLOCKS[i].ja === s || normBlock(BLOCKS[i].en) === n || normBlock(BLOCKS[i].ko) === n) return L(BLOCKS[i]);
     }
     var m = /^(\d+)라운드$/.exec(s);
-    if (m) return lang() === 'ko' ? s : (lang() === 'ja' ? '第' + m[1] + 'ラウンド' : 'Round ' + m[1]);
+    if (m) return lang() === 'ko' ? s : (lang() === 'ja' ? '第' + m[1] + 'ラウンド' : (lang() === 'zh' ? '第' + m[1] + '轮' : 'Round ' + m[1]));
     m = /^Round\s*(\d+)$/i.exec(s);
-    if (m) return lang() === 'ko' ? m[1] + '라운드' : (lang() === 'ja' ? '第' + m[1] + 'ラウンド' : 'Round ' + m[1]);
+    if (m) return lang() === 'ko' ? m[1] + '라운드' : (lang() === 'ja' ? '第' + m[1] + 'ラウンド' : (lang() === 'zh' ? '第' + m[1] + '轮' : 'Round ' + m[1]));
     return s;
   }
 
@@ -917,35 +1103,7 @@
       '<div class="next-teams"><span class="team dk">DK</span><span class="vs">VS</span><span class="team">TBD</span></div>';
   }
 
-  /* 다음 경기가 있을 때 바로 볼 수 있는 공식 생중계 채널 (공식일정 카드 + 홈 스트립) */
-  function watchButtonsHTML(withLabel) {
-    var em = withLabel === false ? '' : '<em>' + T('video.liveNow') + '</em>';
-    return '<a class="watch-btn is-chzzk" href="' + CHANNELS.lckChzzk + '" target="_blank" rel="noopener" aria-label="' + T('video.chzzkAria') + '">' +
-        '<i class="dot"></i>' + T('video.chzzk') + em + '</a>' +
-      '<a class="watch-btn is-soop" href="' + CHANNELS.lckSoop + '" target="_blank" rel="noopener" aria-label="' + T('video.soopAria') + '">' +
-        '<i class="dot"></i>' + T('video.soop') + em + '</a>' +
-      '<a class="watch-btn is-youtube" href="' + CHANNELS.lckYoutube + '" target="_blank" rel="noopener" aria-label="' + T('video.youtubeAria') + '">' +
-        '<i class="dot"></i>YouTube' + em + '</a>';
-  }
-
-  function renderNextWatch() {
-    var host = $('#nextWatch');
-    var note = $('#nextWatchNote');
-    if (host) host.innerHTML = watchButtonsHTML();
-    if (note) note.textContent = T('video.liveNote');
-
-    var home = $('#homeWatch');
-    if (!home) return;
-    var data = LIVE.official;
-    var next = data && data.ok ? data.next : null;
-    var label = next
-      ? '<b>' + T('official.next') + '</b> DK vs ' + esc((next.opponent && (next.opponent.code || next.opponent.name)) || 'TBD') +
-        ' <span>' + esc(eventDate(next)) + ' ' + esc(next.time || '') + '</span>'
-      : '<b>' + T('video.liveTitle') + '</b> <span>' + T('video.liveNow') + '</span>';
-    home.innerHTML =
-      '<div class="hw-head">' + label + '</div>' +
-      '<div class="watch-row">' + watchButtonsHTML(false) + '</div>';
-  }
+  /* 생중계 채널은 영상 탭(#videoChannels)이 맡습니다. 공식일정 카드에서는 영상 탭으로 이동만 합니다. */
 
   /* 종료된 경기: 공식 VOD(있으면) · 유튜브 하이라이트 검색 */
   function ytSearch(q) { return 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q); }
@@ -954,7 +1112,7 @@
     var opp = (row.opponent && (row.opponent.code || row.opponent.name)) || '';
     var league = leagueName(row.league) || '';
     var date = eventDate(row);
-    var tail = lang() === 'ko' ? '하이라이트' : (lang() === 'ja' ? 'ハイライト' : 'highlights');
+    var tail = lang() === 'ko' ? '하이라이트' : (lang() === 'ja' ? 'ハイライト' : (lang() === 'zh' ? '集锦' : 'highlights'));
     return [league, 'DK vs ' + opp, date, tail].filter(Boolean).join(' ');
   }
 
@@ -1035,6 +1193,11 @@
     if (officialChip) {
       officialChip.hidden = !okOfficial;
       officialChip.textContent = T('autoUpdate');
+    }
+    var videoChip = $('#videoLiveChip');
+    if (videoChip) {
+      videoChip.hidden = !okOfficial;
+      videoChip.textContent = T('autoUpdate');
     }
 
     var sync = $('#nextSync');
@@ -1147,9 +1310,10 @@
     return Promise.all([
       LIVE.config ? Promise.resolve(LIVE.config) : apiGet('./api/config'),
       apiGet('./api/official?lang=' + lang()),
-      apiGet('./api/solo')
+      apiGet('./api/solo'),
+      apiGet('./api/live')
     ]).then(function (res) {
-      var cfg = res[0], off = res[1], solo = res[2];
+      var cfg = res[0], off = res[1], solo = res[2], live = res[3];
       if (cfg && cfg.ok) LIVE.config = cfg;
       if (!cfg && !off && !solo) {
         LIVE.offline = true;
@@ -1157,6 +1321,7 @@
         return;
       }
       if (off) LIVE.official = off;
+      if (live && live.ok) LIVE.live = live;
       if (solo) { LIVE.solo = solo; if (solo.source) LIVE.soloSource = solo.source; mergeSolo(solo); }
       LIVE.lastSync = Date.now();
       renderAll();
@@ -1178,7 +1343,8 @@
   function prefsPayload() {
     return {
       solo: PLAYERS.filter(function (p) { return isSoloOn(p.key); }).map(function (p) { return p.key; }),
-      official: officialOn
+      official: officialOn,
+      live: liveAlerts
     };
   }
 
@@ -1244,7 +1410,7 @@
     renderPick();
     renderTiles();
     renderHighlight();
-    renderVideoCards();
+    renderVideoPanel();
     renderCheer();
     renderSolo();
     renderRoster();
@@ -1290,6 +1456,14 @@
       syncPush(true);
       return;
     }
+    var liveT = e.target.closest('[data-live-toggle]');
+    if (liveT) {
+      liveAlerts = !liveAlerts;
+      store.set(LIVE_KEY, liveAlerts ? '1' : '0');
+      renderNotify();
+      syncPush(true);
+      return;
+    }
     var who = e.target.closest('[data-player]');
     if (who) {
       selectPlayer(who.getAttribute('data-player'));
@@ -1301,6 +1475,13 @@
       state.filter = chip.getAttribute('data-filter');
       $$('#filterRow .chip').forEach(function (c) { c.classList.toggle('is-active', c === chip); });
       $('#soloTable2').innerHTML = tableHTML(current(), state.filter);
+      return;
+    }
+    var vidChip = e.target.closest('[data-video-filter]');
+    if (vidChip) {
+      state.videoPlayer = vidChip.getAttribute('data-video-filter');
+      renderVideoFilters();
+      renderVideoList();
       return;
     }
     var tab = e.target.closest('[data-tab]');
@@ -1366,6 +1547,14 @@
         title: T('banner.testTitle', { name: pName(p) }),
         body: T('banner.testSoloBody', { name: pName(p) }),
         done: T('banner.soloDone', { name: pName(p) })
+      };
+    }
+    if (liveAlerts) {
+      return {
+        kind: 'live',
+        title: T('banner.testLiveTitle', { name: pName(p) }),
+        body: T('banner.testLiveBody', { name: pName(p) }),
+        done: T('banner.liveDone')
       };
     }
     if (officialOn) {
@@ -1519,7 +1708,7 @@
   try {
     var params = new URLSearchParams(location.search);
     var initial = params.get('tab');
-    if (initial && ['feed', 'official', 'solo', 'records'].indexOf(initial) > -1) switchTab(initial);
+    if (initial && ['feed', 'official', 'video', 'solo', 'records'].indexOf(initial) > -1) switchTab(initial);
     var startWho = params.get('player');
     if (startWho) {
       for (var pi = 0; pi < PLAYERS.length; pi++) {
@@ -1527,7 +1716,7 @@
       }
     }
     var langParam = params.get('lang');
-    if (langParam && ['ko', 'en', 'ja'].indexOf(langParam) > -1 && langParam !== lang()) {
+    if (langParam && ['ko', 'en', 'ja', 'zh'].indexOf(langParam) > -1 && langParam !== lang()) {
       window.I18N.setLang(langParam);
     }
   } catch (e) {}

@@ -1,4 +1,4 @@
-/* POST /api/subscribe — 기기의 웹 푸시 구독 + 알림 설정(선수별 솔랭 / DK 공식 경기) 저장
+/* POST /api/subscribe — 기기의 웹 푸시 구독 + 알림 설정(선수별 솔랭 / DK 공식 경기 / 라이브 방송) 저장
  * DELETE /api/subscribe — 구독 해지
  * GET /api/subscribe?endpoint=... — 이 기기가 서버에 등록돼 있는지 확인
  */
@@ -21,7 +21,8 @@ function cleanPrefs(raw) {
   const solo = Array.isArray(prefs.solo) ? prefs.solo.filter(function (k) { return ALLOWED_SOLO.indexOf(k) > -1; }) : [];
   return {
     solo: Array.from(new Set(solo)),
-    official: prefs.official !== false
+    official: prefs.official !== false,
+    live: prefs.live !== false
   };
 }
 

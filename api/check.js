@@ -2,10 +2,12 @@
  *
  *  1) DK 공식 경기: 다음 경기가 새로 잡히면 / 시작 40분 전이면 푸시
  *  2) 5인 솔로랭크: 새로 끝난 랭크 게임이 있으면 그 선수를 켜 둔 기기에 푸시
+ *  3) 5인 라이브 방송: 꺼져 있다가 방송을 켜면(SOOP·CHZZK) '방송 시작' 푸시
  *
  * 부르는 곳 : Vercel Cron(하루 1회) + 외부 크론(5분 간격 권장, 예: cron-job.org)
  * 보호      : CHECK_SECRET(또는 CRON_SECRET) 이 있으면 Bearer 토큰 또는 ?token= 이 필요합니다.
  * 검증      : ?dry=1 이면 실제 발송 없이 보낼 내용만 돌려줍니다.
+ *            ?only=official|solo|live 로 일부 점검만 돌릴 수 있습니다.
  */
 const { json, fail, header } = require('./_lib/http');
 const store = require('./_lib/store');
@@ -13,6 +15,7 @@ const push = require('./_lib/push');
 const riot = require('./_lib/riot');
 const { PLAYERS } = require('./_lib/players');
 const { getDkOfficial } = require('./_lib/official');
+const { getLive } = require('./_lib/live');
 
 const STATE_KEY = 'dk:state';
 const SUBS_KEY = 'dk:subs';
@@ -213,6 +216,51 @@ async function checkOfficial(state, subs, dry) {
   return out;
 }
 
+/* 라이브 방송: 이전에 꺼져 있던 선수가 방송을 켜면 알립니다. 첫 실행은 기준값만 저장합니다. */
+async function checkLive(state, subs, dry) {
+  const out = { status: 'checked', players: [], pushes: [] };
+  let data;
+  try {
+    data = await getLive(PLAYERS);
+  } catch (e) {
+    return { status: 'unavailable', error: String(e && e.message ? e.message : e), players: [], pushes: [] };
+  }
+
+  state.live = state.live || {};
+  const first = !state.live.initialized;
+  const now = new Date().toISOString();
+
+  for (const player of PLAYERS) {
+    const cur = (data.players && data.players[player.key]) || { live: false };
+    const prev = state.live[player.key] || {};
+    const rec = { key: player.key, live: !!cur.live, was: !!prev.live, platform: cur.platform || null };
+
+    if (!first && cur.live && !prev.live) {
+      const platform = cur.platform === 'soop' ? 'SOOP' : 'CHZZK';
+      const payload = {
+        title: '🔴 ' + player.nameKo + ' · ' + platform + ' 방송 시작',
+        body: (cur.title ? cur.title + ' · ' : '') + '지금 바로 보러 가기',
+        tag: 'live-' + player.key + '-' + (cur.startedAt || now),
+        url: cur.url || ('./?tab=video&player=' + player.key),
+        kind: 'live',
+        player: player.key
+      };
+      const res = await broadcast(subs, function (prefs) { return prefs.live !== false; }, payload, dry);
+      rec.notified = true;
+      out.pushes.push(Object.assign({ player: player.key, platform: cur.platform }, res));
+    }
+
+    state.live[player.key] = cur.live
+      ? { live: true, platform: cur.platform || null, since: cur.startedAt || now, checkedAt: now }
+      : { live: false, checkedAt: now };
+    out.players.push(rec);
+  }
+
+  state.live.initialized = true;
+  out.liveCount = out.players.filter(function (p) { return p.live; }).length;
+  return out;
+}
+
 module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return json(res, 204, {});
   if (req.method !== 'GET' && req.method !== 'POST') return fail(res, 405, 'GET · POST 만 지원해요');
@@ -228,13 +276,14 @@ module.exports = async function handler(req, res) {
 
   let state = null;
   try { state = await store.getJSON(STATE_KEY); } catch (e) { state = null; }
-  state = state || { version: 3, official: {}, solo: {} };
+  state = state || { version: 3, official: {}, solo: {}, live: {} };
 
   const subs = await loadSubs();
   const targets = {
     total: subs.length,
     official: subs.filter(function (s) { return s.prefs && s.prefs.official !== false; }).length,
-    solo: subs.reduce(function (n, s) { return n + ((s.prefs && Array.isArray(s.prefs.solo)) ? s.prefs.solo.length : 0); }, 0)
+    solo: subs.reduce(function (n, s) { return n + ((s.prefs && Array.isArray(s.prefs.solo)) ? s.prefs.solo.length : 0); }, 0),
+    live: subs.filter(function (s) { return s.prefs && s.prefs.live !== false; }).length
   };
 
   /* 구독 기기로 테스트 푸시 보내기 (?test=1) — 잠금화면 알림이 실제로 도착하는지 확인용 */
@@ -251,17 +300,21 @@ module.exports = async function handler(req, res) {
     testResult = Object.assign({ event: 'test' }, t);
   }
 
-  const official = (only === 'solo') ? { status: 'skipped' } : await checkOfficial(state, subs, dry).catch(function (e) {
+  const official = (only === 'solo' || only === 'live') ? { status: 'skipped' } : await checkOfficial(state, subs, dry).catch(function (e) {
     return { status: 'error', error: String(e && e.message ? e.message : e) };
   });
-  const solo = (only === 'official') ? { status: 'skipped' } : await checkSolo(state, subs, dry).catch(function (e) {
+  const solo = (only === 'official' || only === 'live') ? { status: 'skipped' } : await checkSolo(state, subs, dry).catch(function (e) {
     return { status: 'error', error: String(e && e.message ? e.message : e) };
+  });
+  const live = (only === 'official' || only === 'solo') ? { status: 'skipped', players: [], pushes: [] } : await checkLive(state, subs, dry).catch(function (e) {
+    return { status: 'error', error: String(e && e.message ? e.message : e), players: [], pushes: [] };
   });
 
   /* 사라진 구독 정리 */
   const goneIds = [].concat(
     (official.pushes || []).reduce(function (a, p) { return a.concat(p.gone || []); }, []),
-    (solo.pushes || []).reduce(function (a, p) { return a.concat(p.gone || []); }, [])
+    (solo.pushes || []).reduce(function (a, p) { return a.concat(p.gone || []); }, []),
+    (live.pushes || []).reduce(function (a, p) { return a.concat(p.gone || []); }, [])
   );
   let pruned = 0;
   if (goneIds.length && store.durable()) {
@@ -274,12 +327,13 @@ module.exports = async function handler(req, res) {
     at: new Date().toISOString(),
     tookMs: Date.now() - started,
     dry: dry,
-    pushed: (official.pushes || []).length + (solo.pushes || []).length,
+    pushed: (official.pushes || []).length + (solo.pushes || []).length + (live.pushes || []).length,
     pruned: pruned,
     targets: targets,
     pushReady: push.ready(),
     test: testResult,
     official: { status: official.status, next: official.next || null, pushes: official.pushes || [] },
+    live: { status: live.status, liveCount: live.liveCount || 0, players: live.players || [], pushes: live.pushes || [] },
     solo: { status: solo.status, players: (solo.players || []).map(function (p) {
       return { key: p.key, status: p.status, latestId: p.latestId || null, isNew: !!p.isNew };
     }), pushes: solo.pushes || [] }

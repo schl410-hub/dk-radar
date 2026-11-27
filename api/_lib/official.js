@@ -15,14 +15,26 @@ const LCK_LEAGUE_ID = '98767991310872058'; /* LCK */
 
 const DK_CODES = ['DK', 'DPLUSKIA', 'DPLUS KIA'];
 
-const HL = { ko: 'ko-KR', en: 'en-US', ja: 'ja-JP' };
-const VOD_LOCALE = { ko: 'ko-KR', en: 'en-US', ja: 'ja-JP' };
+const HL = { ko: 'ko-KR', en: 'en-US', ja: 'ja-JP', zh: 'zh-CN' };
+const VOD_LOCALE = { ko: 'ko-KR', en: 'en-US', ja: 'ja-JP', zh: 'zh-CN' };
 /* 한국 팬은 SOOP(아프리카) 중계를, 해외 팬은 유튜브를 먼저 봅니다. */
 const PROVIDER_PREF = {
   ko: ['afreecatv', 'youtube', 'twitch'],
   en: ['youtube', 'twitch', 'afreecatv'],
-  ja: ['youtube', 'twitch', 'afreecatv']
+  ja: ['youtube', 'twitch', 'afreecatv'],
+  zh: ['youtube', 'twitch', 'afreecatv']
 };
+
+/* 서버가 앱으로 그대로 돌려주는 안내 문구 (zh 는 중국어 간체) */
+const MESSAGES = {
+  ko: { unavailable: '공식 일정을 가져오지 못했어요' },
+  en: { unavailable: 'Could not load the official schedule' },
+  ja: { unavailable: '公式日程を取得できませんでした' },
+  zh: { unavailable: '获取官方赛程失败' }
+};
+function messageFor(lang, key) {
+  return (MESSAGES[lang] || MESSAGES.ko)[key];
+}
 
 function apiKey() {
   return process.env.LOLESPORTS_API_KEY || PUBLIC_KEY;
@@ -324,4 +336,4 @@ async function getDkOfficial(options) {
   };
 }
 
-module.exports = { getDkOfficial, isDkTeam, hlFor, vodUrl, PUBLIC_KEY, LCK_LEAGUE_ID };
+module.exports = { getDkOfficial, isDkTeam, hlFor, vodUrl, messageFor, PUBLIC_KEY, LCK_LEAGUE_ID };

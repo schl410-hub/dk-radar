@@ -1,4 +1,4 @@
-"""딮기 시그널 v3 검증 — 다국어(KO/EN/JA) · 영상/생중계 · 방송국 링크 · 기존 기능 회귀.
+"""딮기 시그널 v3 검증 — 다국어(KO/EN/JA/ZH) · 영상 탭 · 방송국 링크 · 기존 기능 회귀.
 
   python3 tools/verify_v3.py
 
@@ -32,7 +32,7 @@ DK_YT = "https://www.youtube.com/@DplusKia_LOL"
 PLAYER_STREAMS = {
     "doran": ["https://ch.sooplive.co.kr/choi15778", "https://chzzk.naver.com/20e11539e1afa21fc959dd3f4ff2332c"],
     "kanavi": ["https://chzzk.naver.com/e351edbd85f1ebf4eb975c21179a4c43"],
-    "showmaker": ["https://chzzk.naver.com/07a040b24eb497dc36c31d82bc06ccc2"],
+    "showmaker": ["https://ch.sooplive.co.kr/showmakerr", "https://chzzk.naver.com/07a040b24eb497dc36c31d82bc06ccc2"],
     "smash": ["https://ch.sooplive.co.kr/tlsrmawo", "https://chzzk.naver.com/44aa27b0df5175323fac934acdff1ed5"],
     "delight": ["https://chzzk.naver.com/59dd654778e3d0b64f3ed06baece805d"],
 }
@@ -63,6 +63,7 @@ def start_server():
     env["PORT"] = str(PORT)
     env.setdefault("DK_FIXTURE", "none")
     env.setdefault("DK_ALLOW_MEMORY_STORE", "1")
+    env.setdefault("DK_LIVE_FAKE", "1")
     env["PATH"] = os.path.dirname(node_bin()) + os.pathsep + env.get("PATH", "")
     proc = subprocess.Popen([node_bin(), str(ROOT / "tools" / "dev_server.js")], env=env,
                             stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -111,10 +112,10 @@ async def main():
             # ---------- KO 기준선 ----------
             check("default lang ko", await page.get_attribute("html", "lang") == "ko")
             check("brand = 딮기 시그널", await page.inner_text(".brand-sub") == "딮기 시그널", await page.inner_text(".brand-sub"))
-            check("four tabs", await page.eval_on_selector_all(".tab", "e=>e.length") == 4)
+            check("five tabs", await page.eval_on_selector_all(".tab", "e=>e.length") == 5)
             check("five tiles", await page.eval_on_selector_all(".tile", "e=>e.length") == 5)
             check("ko tabs", await page.eval_on_selector_all(".tab", "e=>e.map(x=>x.innerText)") ==
-                  ["홈", "공식일정", "경기로그", "기록실"])
+                  ["홈", "공식일정", "영상", "경기로그", "기록실"])
             check("no horizontal overflow (ko)",
                   await page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1"),
                   await page.evaluate("[document.documentElement.scrollWidth, innerWidth]"))
@@ -127,19 +128,76 @@ async def main():
                 got = [h for h in hrefs if "op.gg" not in h and "u.gg" not in h]
                 check(f"{key} stream links", got == expect, got)
 
-            # ---------- 선수별 대표 하이라이트 ----------
+            # ---------- 영상 탭: 생중계 · 방송국 · 하이라이트 10편 ----------
+            await page.click('[data-tab="video"]')
+            await page.wait_for_timeout(600)
+            check("video panel visible", await page.is_visible("#panel-video"))
+            check("video panel title", await page.inner_text("#panel-video .panel-title") == "영상")
+            chan = await page.eval_on_selector_all("#videoChannels .chan", "e=>e.map(x=>x.href)")
+            check("video official channels", chan == [LCK_CHZZK, LCK_SOOP, LCK_YT, DK_YT], chan)
+            check("video dk youtube ghost button",
+                  await page.get_attribute("#videoMore", "href") == DK_YT)
+            st_rows = await page.eval_on_selector_all("#videoStations .st-row", "e=>e.length")
+            check("video stations = 5", st_rows == 5, st_rows)
+            chips = await page.eval_on_selector_all("#videoFilters .chip", "e=>e.map(x=>x.textContent)")
+            check("video filter chips", chips == ["전체", "도란", "카나비", "쇼메이커", "스매쉬", "딜라이트"], chips)
+            total_items = await page.eval_on_selector_all("#videoList .vc-item", "e=>e.length")
+            check("video highlights = 10", total_items == 10, total_items)
+            all_hrefs = await page.eval_on_selector_all("#videoList .vc-item", "e=>e.map(x=>x.href)")
+            want_all = []
+            for key in ["doran", "kanavi", "showmaker", "smash", "delight"]:
+                want_all += [f"https://www.youtube.com/watch?v={i}" for i in PLAYER_VIDEOS[key]]
+            check("video highlights order (all)", all_hrefs == want_all, all_hrefs[:3])
             for key, ids in PLAYER_VIDEOS.items():
-                await page.click(f'.tile[data-player="{key}"]')
-                await page.wait_for_timeout(260)
-                hrefs = await page.eval_on_selector_all("#videoCard .vc-item", "e=>e.map(x=>x.href)")
+                await page.click(f'#videoFilters [data-video-filter="{key}"]')
+                await page.wait_for_timeout(220)
+                hrefs = await page.eval_on_selector_all("#videoList .vc-item", "e=>e.map(x=>x.href)")
                 want = [f"https://www.youtube.com/watch?v={i}" for i in ids]
-                check(f"{key} highlight videos", hrefs == want, hrefs)
+                check(f"{key} highlight filter", hrefs == want, hrefs)
                 thumbs = await page.eval_on_selector_all(
-                    "#videoCard .vc-thumb img", "e=>e.map(x=>[x.complete, x.naturalWidth])")
+                    "#videoList .vc-thumb img", "e=>e.map(x=>[x.complete, x.naturalWidth])")
                 check(f"{key} highlight thumbs render", thumbs and all(w > 0 for _, w in thumbs), thumbs)
-                lens = await page.eval_on_selector_all("#videoCard .vc-len", "e=>e.map(x=>x.textContent)")
+                lens = await page.eval_on_selector_all("#videoList .vc-len", "e=>e.map(x=>x.textContent)")
                 check(f"{key} highlight durations", all(l.count(":") == 1 for l in lens) and len(lens) == 2, lens)
+            await page.click('#videoFilters [data-video-filter="all"]')
+            await page.wait_for_timeout(250)
+            check("video filter back to all",
+                  await page.eval_on_selector_all("#videoList .vc-item", "e=>e.length") == 10)
+            # 선수 방송국 링크 (영상 탭 5인)
+            st_links = await page.eval_on_selector_all("#videoStations .st-links a", "e=>e.map(x=>x.href)")
+            want_streams = []
+            for key in ["doran", "kanavi", "showmaker", "smash", "delight"]:
+                want_streams += PLAYER_STREAMS[key]
+            check("video stations links", st_links == want_streams, st_links)
 
+            # ---------- 라이브 방송 배지 (/api/live) ----------
+            check("live on-air row", await page.is_visible("#videoOnAir"))
+            check("live on-air names", "도란" in await page.inner_text("#videoOnAir"),
+                  await page.inner_text("#videoOnAir"))
+            onair_rows = await page.eval_on_selector_all("#videoStations .st-row.is-onair", "e=>e.length")
+            check("live station rows", onair_rows == 2, onair_rows)
+            check("live station badge", "LIVE" in await page.inner_text("#videoStations"))
+            check("live stream title", "솔랭 가즈아" in await page.inner_text("#videoStations"))
+            await page.click('[data-tab="feed"]')
+            await page.wait_for_timeout(500)
+            tiles = await page.eval_on_selector_all(".tile", "e=>e.filter(x=>x.querySelector('.t-onair')).map(x=>x.dataset.player)")
+            check("live tile badges", tiles == ["doran", "delight"], tiles)
+            check("live pick badge", await page.is_visible("#pickBanner .pick-onair"))
+            check("live alert toggle on", await page.get_attribute("[data-live-toggle]", "aria-checked") == "true")
+            check("live alert summary with live", "3개" in await page.inner_text("#notifySummary"),
+                  await page.inner_text("#notifySummary"))
+            await page.click("[data-live-toggle]")
+            await page.wait_for_timeout(250)
+            check("live alert toggle off", await page.get_attribute("[data-live-toggle]", "aria-checked") == "false")
+            check("live alert saved", await page.evaluate("localStorage.getItem('dk.signal.live')") == "0")
+            check("live alert summary counts", "2개" in await page.inner_text("#notifySummary"),
+                  await page.inner_text("#notifySummary"))
+            await page.click("[data-live-toggle]")
+            await page.wait_for_timeout(250)
+            check("live alert toggle back on", await page.get_attribute("[data-live-toggle]", "aria-checked") == "true")
+            await page.screenshot(path=str(OUT / "13-live-badges-ko.png"))
+            await page.click('[data-tab="feed"]')
+            await page.wait_for_timeout(350)
             await page.click('.tile[data-player="doran"]')
             await page.wait_for_timeout(300)
 
@@ -152,8 +210,8 @@ async def main():
                     "document.querySelectorAll('#officialRecent .path-row.has-vid').length >= 4", timeout=8000)
             except Exception as e:
                 print("live official rows not ready:", e)
-            watch = await page.eval_on_selector_all("#nextWatch a", "e=>e.map(x=>x.href)")
-            check("official live channels", watch == [LCK_CHZZK, LCK_SOOP, LCK_YT], watch)
+            check("official tab links to video tab",
+                  await page.get_attribute("#officialVideoLink", "data-tab") == "video")
             rows = await page.eval_on_selector_all("#officialRecent .path-row", "e=>e.length")
             check("recent official rows", 4 <= rows <= 5, rows)
             hl_links = await page.eval_on_selector_all("#officialRecent .vid-chip.is-hl", "e=>e.map(x=>x.href)")
@@ -166,9 +224,23 @@ async def main():
                       ("youtube.com/watch?v=" in h) or ("vod.sooplive.com/player/" in h) or ("twitch.tv/videos/" in h)
                       for h in vod_links),
                   vod_links[:3])
-            check("dk youtube link on highlights card",
-                  await page.get_attribute("#videoCard .ghost-btn", "href") == DK_YT)
             await page.screenshot(path=str(OUT / "03-official-ko-dark.png"))
+            # 영상 탭 최근 공식 경기 다시보기 (VOD/하이라이트)
+            await page.click('[data-tab="video"]')
+            await page.wait_for_timeout(700)
+            vod_rows = await page.eval_on_selector_all("#videoVodList .path-row", "e=>e.length")
+            check("video vod rows", vod_rows >= 4, vod_rows)
+            vod_hrefs = await page.eval_on_selector_all("#videoVodList .vid-chip.is-vod", "e=>e.map(x=>x.href)")
+            check("video vod chips use real providers",
+                  len(vod_hrefs) >= 1 and all(
+                      ("youtube.com/watch?v=" in h) or ("vod.sooplive.com/player/" in h) or ("twitch.tv/videos/" in h)
+                      for h in vod_hrefs), vod_hrefs[:3])
+            hl_hrefs = await page.eval_on_selector_all("#videoVodList .vid-chip.is-hl", "e=>e.map(x=>x.href)")
+            check("video vod rows -> highlight search",
+                  len(hl_hrefs) >= 4 and all("youtube.com/results?search_query=" in h for h in hl_hrefs),
+                  hl_hrefs[:2])
+            await page.screenshot(path=str(OUT / "08-video-ko-dark.png"))
+            await page.screenshot(path=str(OUT / "08-video-ko-dark-full.png"), full_page=True)
 
             # ---------- EN 전환: UI 전체가 바뀌는지 ----------
             await page.click('[data-tab="feed"]')
@@ -179,11 +251,11 @@ async def main():
             check("title en", (await page.title()) == "DK SIGNAL", await page.title())
             check("lang saved", await page.evaluate("localStorage.getItem('dk.signal.lang')") == "en")
             check("en tabs", await page.eval_on_selector_all(".tab", "e=>e.map(x=>x.innerText)") ==
-                  ["Home", "Schedule", "Match log", "Records"])
+                  ["Home", "Schedule", "Videos", "Match log", "Records"])
             check("en brand", await page.inner_text(".brand-sub") == "Dplus KIA tracker")
             check("en panel aria labels",
                   await page.eval_on_selector_all(".panel", "e=>e.map(x=>x.getAttribute('aria-label'))") ==
-                  ["Home", "Schedule", "Match log", "Records"],
+                  ["Home", "Schedule", "Videos", "Match log", "Records"],
                   await page.eval_on_selector_all(".panel", "e=>e.map(x=>x.getAttribute('aria-label'))"))
             check("en theme label", (await page.inner_text("#themeTxt")) in ("Dark", "Soft"), await page.inner_text("#themeTxt"))
             check("en board title", "Squad status board" in await page.inner_text("#panel-feed"))
@@ -197,8 +269,18 @@ async def main():
             notify = await page.inner_text(".notify-card")
             check("en notify card", "Alerts" in notify and "Send a test alert" in notify and "Solo queue" not in notify, notify[:60])
             check("en notify summary", "on" in await page.inner_text("#notifySummary") or "off" in await page.inner_text("#notifySummary"))
-            video = await page.inner_text("#videoCard")
-            check("en video card", "Signature highlights" in video and "Official LCK" in video and "대표 하이라이트" not in video, video[:80])
+            await page.click('[data-tab="video"]')
+            await page.wait_for_timeout(600)
+            video = await page.inner_text("#panel-video")
+            check("en video tab", "Signature highlights" in video and "Official LCK" in video and "Player streams" in video, video[:120])
+            check("en video filters",
+                  await page.eval_on_selector_all("#videoFilters .chip", "e=>e.map(x=>x.textContent)") ==
+                  ["All", "Doran", "Kanavi", "ShowMaker", "Smash", "Delight"])
+            check("en video vod card", "Recent official replays" in video)
+            check("en live note", "CHZZK and SOOP" in video, [l for l in video.splitlines() if "CHZZK" in l][:2])
+            await page.screenshot(path=str(OUT / "09-video-en-dark.png"))
+            await page.click('[data-tab="feed"]')
+            await page.wait_for_timeout(400)
             check("en cheer", "One-line cheer" in await page.inner_text(".cheer-card"))
             check("en roster", "Dplus KIA’s five for 2027" in await page.inner_text(".roster-card"))
             check("no korean leftovers in home chrome",
@@ -218,18 +300,16 @@ async def main():
             await page.click('[data-tab="official"]')
             await page.wait_for_timeout(1400)
             off = await page.inner_text("#panel-official")
-            check("en schedule", "Schedule" in off and "Where to watch" in off and "2027 season calendar" in off)
+            check("en schedule", "Schedule" in off and "2027 season calendar" in off and "Live & replays are in Videos" in off)
             check("en next date fallback", "2027 LCK 컵" not in off and "2027 LCK Cup" in off,
                   [l for l in off.splitlines() if "2027" in l][:2])
             check("en stage names", "스위스" not in off and "8강" not in off,
                   [l for l in off.splitlines() if "Quarter" in l or "Swiss" in l][:2])
-            check("en live note", "CHZZK and SOOP" in off, [l for l in off.splitlines() if "CHZZK" in l][:2])
             await page.screenshot(path=str(OUT / "04-official-en-dark.png"))
             await page.click('[data-tab="records"]')
             await page.wait_for_timeout(600)
             rec = await page.inner_text("#panel-records")
             check("en records", "2026 season" in rec and "Semifinals" in rec and "Rounds 1" in rec, rec[:80])
-            check("en records highlight card", "Signature highlights" in await page.inner_text("#videoCardRecords"))
             await page.screenshot(path=str(OUT / "06-records-en-dark.png"))
 
             # EN 에서 넓은 글씨가 넘치지 않는지
@@ -244,11 +324,21 @@ async def main():
             await page.wait_for_timeout(800)
             check("html lang ja", await page.get_attribute("html", "lang") == "ja")
             check("ja tabs", await page.eval_on_selector_all(".tab", "e=>e.map(x=>x.innerText)") ==
-                  ["ホーム", "公式日程", "試合ログ", "記録室"])
+                  ["ホーム", "公式日程", "動画", "試合ログ", "記録室"])
             ja = await page.inner_text("#panel-feed")
             check("ja board", "5人のステータスボード" in ja)
-            check("ja video card", "代表ハイライト" in ja and "LCK公式" in ja)
+            check("ja video jump", "ライブ・ハイライト" in ja)
             check("ja champion", "レネクトン" in await page.inner_text("#highlightCard"))
+            await page.click('[data-tab="video"]')
+            await page.wait_for_timeout(600)
+            ja_video = await page.inner_text("#panel-video")
+            check("ja video tab", "ライブ・公式チャンネル" in ja_video and "代表ハイライト" in ja_video and "LCK公式" in ja_video)
+            check("no horizontal overflow (ja video)",
+                  await page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1"),
+                  await page.evaluate("[document.documentElement.scrollWidth, innerWidth]"))
+            await page.screenshot(path=str(OUT / "10-video-ja-dark.png"))
+            await page.click('[data-tab="feed"]')
+            await page.wait_for_timeout(300)
             check("ja cheer", "ひとこと応援" in ja)
             check("no horizontal overflow (ja)",
                   await page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1"),
@@ -300,6 +390,58 @@ async def main():
             await page.screenshot(path=str(OUT / "00-home-ko-dark.png"))
             await page.screenshot(path=str(OUT / "00-home-ko-dark-full.png"), full_page=True)
 
+            # ---------- ZH(중국어 간체) 전환 ----------
+            await page.click('[data-lang="zh"]')
+            await page.wait_for_timeout(900)
+            check("html lang zh-CN", await page.get_attribute("html", "lang") == "zh-CN")
+            check("zh title", (await page.title()) == "DK SIGNAL · 迪普基信号", await page.title())
+            check("zh stored", await page.evaluate("localStorage.getItem('dk.signal.lang')") == "zh")
+            check("zh tabs", await page.eval_on_selector_all(".tab", "e=>e.map(x=>x.innerText)") ==
+                  ["首页", "官方赛程", "视频", "对局记录", "记录室"],
+                  await page.eval_on_selector_all(".tab", "e=>e.map(x=>x.innerText)"))
+            check("zh panel aria labels",
+                  await page.eval_on_selector_all(".panel", "e=>e.map(x=>x.getAttribute('aria-label'))") ==
+                  ["首页", "官方赛程", "视频", "对局记录", "记录室"])
+            zh_home = await page.inner_text("#panel-feed")
+            check("zh board", "五人状态板" in zh_home)
+            check("zh pick banner", "今天的 多兰" in zh_home and "我的最爱" in zh_home, zh_home[:120])
+            zh_grid = await page.inner_text("#statusGrid")
+            check("zh player names", all(n in zh_grid for n in ["多兰", "卡纳维", "秀梅克", "斯马什", "迪莱特"]),
+                  zh_grid[:60])
+            check("zh champion names", "荒漠屠夫" in await page.inner_text("#highlightCard"),
+                  await page.inner_text("#highlightCard"))
+            check("zh notify", "通知设置" in await page.inner_text(".notify-card"))
+            check("zh cheer", "一句应援" in await page.inner_text(".cheer-card"))
+            check("no horizontal overflow (zh)",
+                  await page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1"),
+                  await page.evaluate("[document.documentElement.scrollWidth, innerWidth]"))
+            await page.evaluate("window.scrollTo(0, 0)")
+            await page.wait_for_timeout(300)
+            await page.screenshot(path=str(OUT / "11-home-zh-dark.png"))
+            await page.screenshot(path=str(OUT / "11-home-zh-dark-full.png"), full_page=True)
+            await page.click('[data-tab="video"]')
+            await page.wait_for_timeout(700)
+            zh_video = await page.inner_text("#panel-video")
+            check("zh video tab", "直播 · 官方频道" in zh_video and "选手个人直播间" in zh_video and "最近官方比赛回放" in zh_video)
+            check("zh video filters",
+                  await page.eval_on_selector_all("#videoFilters .chip", "e=>e.map(x=>x.textContent)") ==
+                  ["全部", "多兰", "卡纳维", "秀梅克", "斯马什", "迪莱特"])
+            check("zh video titles", "第4局" in zh_video and "集锦" in zh_video, zh_video[:120])
+            check("no horizontal overflow (zh video)",
+                  await page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1"),
+                  await page.evaluate("[document.documentElement.scrollWidth, innerWidth]"))
+            await page.screenshot(path=str(OUT / "12-video-zh-dark.png"))
+            await page.screenshot(path=str(OUT / "12-video-zh-dark-full.png"), full_page=True)
+            await page.click('[data-tab="official"]')
+            await page.wait_for_timeout(1400)
+            zh_off = await page.inner_text("#panel-official")
+            check("zh schedule", "官方赛程" in zh_off and "2027 赛季日历" in zh_off, zh_off[:80])
+            await page.click('[data-tab="records"]')
+            await page.wait_for_timeout(500)
+            check("zh records", "2026 赛季" in await page.inner_text("#panel-records"))
+            await page.click('[data-tab="feed"]')
+            await page.wait_for_timeout(400)
+
             # ---------- ?lang= 로 들어와 바꾼 언어가 새로고침 후에도 유지 ----------
             await page.goto(BASE + "?lang=ko", wait_until="networkidle")
             await page.wait_for_timeout(700)
@@ -312,7 +454,7 @@ async def main():
             check("lang kept after reload (?lang=)", await page.get_attribute("html", "lang") == "en")
 
             # ---------- 브라우저 언어 자동 감지 (저장값 없는 새 컨텍스트) ----------
-            for loc, want in [("en-US", "en"), ("ja-JP", "ja"), ("fr-FR", "ko")]:
+            for loc, want in [("en-US", "en"), ("ja-JP", "ja"), ("zh-CN", "zh-CN"), ("zh-TW", "zh-CN"), ("fr-FR", "ko")]:
                 ctx2 = await browser.new_context(viewport={"width": 390, "height": 844}, locale=loc)
                 pg = await ctx2.new_page()
                 await pg.goto(BASE, wait_until="networkidle")

@@ -23,7 +23,7 @@
     var t = localStorage.getItem('dk.signal.theme');
     if (t === 'mint' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
     var l = localStorage.getItem('dk.signal.lang');
-    if (l === 'ko' || l === 'en' || l === 'ja') document.documentElement.setAttribute('lang', l);
+    if (l === 'ko' || l === 'en' || l === 'ja' || l === 'zh') document.documentElement.setAttribute('lang', l === 'zh' ? 'zh-CN' : l);
   } catch (e) {}
 })();
 </script>
@@ -72,6 +72,10 @@
         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 10h17M8 3.5v3M16 3.5v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
         <span data-i18n="tab.official">공식일정</span>
       </button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="video">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" aria-hidden="true"><rect x="3.2" y="5.6" width="17.6" height="12.8" rx="3.2" stroke="currentColor" stroke-width="1.7"/><path d="M10.3 9.4v5.2l4.3-2.6-4.3-2.6Z" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/></svg>
+        <span data-i18n="tab.video">영상</span>
+      </button>
       <button class="tab" role="tab" aria-selected="false" data-tab="solo">
         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" aria-hidden="true"><path d="M4 19.5V13M9.3 19.5V8.5M14.7 19.5v-7M20 19.5V5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         <span data-i18n="tab.solo">경기로그</span>
@@ -93,8 +97,6 @@
         <span class="live-chip" id="liveChip" hidden>실시간</span>
       </div>
 
-      <section class="home-watch" id="homeWatch" aria-live="polite"></section>
-
       <section class="pick" id="pickBanner" aria-live="polite"></section>
 
       <div class="sec"><b data-i18n="board.title">5인 상태 보드</b><span class="sec-sub" data-i18n="board.sub">타일을 눌러 둘러보기 · 별로 최애 고정</span></div>
@@ -103,7 +105,11 @@
 
       <section class="hl-card" id="highlightCard" aria-live="polite"></section>
 
-      <section class="card video-card" id="videoCard" aria-live="polite"></section>
+      <button class="video-jump" id="videoJump" type="button" data-tab="video" data-i18n-attr="aria-label:video.jumpAria" aria-label="영상 탭 열기">
+        <span class="vj-play" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M9.5 7.6v8.8l7-4.4-7-4.4Z" fill="currentColor"/></svg></span>
+        <span class="vj-body"><b data-i18n="video.jumpTitle">생중계 · 하이라이트</b><span data-i18n="video.jumpSub">영상 탭에 모아 뒀어요</span></span>
+        <span class="vj-go" aria-hidden="true">›</span>
+      </button>
 
       <section class="card notify-card">
         <div class="card-head">
@@ -121,6 +127,13 @@
           </span>
           <span class="nr-text"><b data-i18n="notify.official">DK 공식 경기 알림</b><span data-i18n="notify.officialSub">경기 일정·시작 소식</span></span>
           <button class="toggle" data-official-toggle type="button" role="switch" aria-checked="true" aria-label="DK 공식 경기 알림 끄기"><span></span></button>
+        </div>
+        <div class="nr nr-live">
+          <span class="nr-av">
+            <svg viewBox="0 0 20 20" width="13" height="13" fill="none" aria-hidden="true"><rect x="2.6" y="5.4" width="10.4" height="9.2" rx="2.4" stroke="currentColor" stroke-width="1.6"/><path d="M13 9.2l4-2.2v6l-4-2.2" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+          </span>
+          <span class="nr-text"><b data-i18n="notify.live">선수 라이브 방송 알림</b><span data-i18n="notify.liveSub">SOOP·CHZZK에서 방송을 켜면 바로</span></span>
+          <button class="toggle" data-live-toggle type="button" role="switch" aria-checked="true" aria-label="선수 라이브 방송 알림 끄기"><span></span></button>
         </div>
         <div class="ping-foot">
           <button class="test-btn" id="testBtn" type="button" data-i18n="notify.test">테스트 알림 보내기</button>
@@ -195,8 +208,7 @@
           <div class="next-teams"><span class="team dk">DK</span><span class="vs">VS</span><span class="team">TBD</span></div>
         </div>
         <p class="next-sync" id="nextSync">LoL Esports 일정 확인 중…</p>
-        <div class="watch-row" id="nextWatch"></div>
-        <p class="watch-note" id="nextWatchNote"></p>
+        <button class="tab-link" id="officialVideoLink" type="button" data-tab="video"><span data-i18n="official.videoTabLink">생중계 · 다시보기는 영상 탭에서</span><span class="tl-go" aria-hidden="true">›</span></button>
         <div class="match-alert">
           <span class="ma-text"><b data-i18n="official.alertTitle">경기 알림</b><span data-i18n="official.alertSub">DK 공식 경기 일정·시작 소식</span></span>
           <button class="toggle" data-official-toggle type="button" role="switch" aria-checked="true" aria-label="DK 공식 경기 알림 끄기"><span></span></button>
@@ -223,6 +235,59 @@
         <ul class="official-list" id="officialList"></ul>
       </section>
       <footer class="foot"><p data-i18n="foot.official">경기 일정·결과는 LoL Esports 공개 일정에서 자동으로 받아옵니다.</p></footer>
+    </section>
+
+    <!-- ================= 영상 ================= -->
+    <section class="panel" id="panel-video" role="tabpanel" data-i18n-attr="aria-label:tab.video" aria-label="영상" hidden>
+      <div class="panel-head">
+        <div class="eyebrow">VIDEO HUB</div>
+        <h2 class="panel-title" data-i18n="tab.video">영상</h2>
+        <p class="panel-sub" data-i18n="video.tabSub">생중계부터 선수 방송·하이라이트·다시보기까지 한곳에 모았어요.</p>
+      </div>
+
+      <section class="card live-card">
+        <div class="card-head">
+          <div>
+            <div class="eyebrow">LIVE · OFFICIAL</div>
+            <h3 class="card-title" data-i18n="video.liveTitle">생중계 · 공식 채널</h3>
+          </div>
+          <span class="live-chip" id="videoLiveChip" hidden>자동 갱신</span>
+        </div>
+        <p class="vc-sub" data-i18n="video.liveNote">LCK 국내 생중계는 CHZZK·SOOP 공식 채널에서, 해외는 LCK 유튜브에서 볼 수 있어요.</p>
+        <p class="next-line" id="videoNextLine"></p>
+        <p class="onair-row" id="videoOnAir" hidden></p>
+        <div class="chan-grid" id="videoChannels"></div>
+      </section>
+
+      <section class="card">
+        <div class="eyebrow">PLAYER STREAMS</div>
+        <h3 class="card-title" data-i18n="video.stationsTitle">선수별 개인 방송국</h3>
+        <p class="vc-sub" data-i18n="video.stationsSub">5인이 방송을 켜면 여기서 바로 볼 수 있어요.</p>
+        <ul class="station-list" id="videoStations"></ul>
+      </section>
+
+      <section class="card video-card">
+        <div class="card-head">
+          <div>
+            <div class="eyebrow">HIGHLIGHTS · YOUTUBE</div>
+            <h3 class="card-title" data-i18n="video.title">대표 하이라이트</h3>
+          </div>
+          <a class="ghost-btn" id="videoMore" href="https://www.youtube.com/@DplusKia_LOL" target="_blank" rel="noopener" data-i18n="video.more">Dplus KIA 유튜브 ↗</a>
+        </div>
+        <p class="vc-sub"><span data-i18n="video.highlightsSub">5인 대표 장면 10편을 선수별로 모았어요.</span> <span class="vc-count" id="videoCount"></span></p>
+        <div class="chip-row vid-filters" id="videoFilters" role="tablist" data-i18n-attr="aria-label:video.filtersAria" aria-label="선수별 하이라이트 필터"></div>
+        <ul class="vc-list" id="videoList"></ul>
+      </section>
+
+      <section class="card">
+        <div class="eyebrow">OFFICIAL VOD</div>
+        <h3 class="card-title" data-i18n="video.vodTitle">최근 공식 경기 다시보기</h3>
+        <p class="vc-sub" data-i18n="video.vodSub">경기별 풀영상과 하이라이트로 바로 이동해요.</p>
+        <ul class="path vod-path" id="videoVodList"></ul>
+        <p class="board-note" id="videoVodNote"></p>
+        <p class="watch-hint" id="videoVodHint" hidden></p>
+      </section>
+      <footer class="foot"><p data-i18n="foot.video">공식 경기 영상은 LoL Esports 공개 일정과 LCK 유튜브에서 받아옵니다.</p></footer>
     </section>
 
     <!-- ================= 경기로그 ================= -->
@@ -270,7 +335,6 @@
         <div class="link-row" id="recordsLinks"></div>
         <ul class="records" id="recordsList"></ul>
       </section>
-      <section class="card video-card" id="videoCardRecords" aria-live="polite"></section>
       <section class="card">
         <div class="eyebrow">ALL PLAYERS</div>
         <h3 class="card-title" data-i18n="records.worlds">2026 월즈 결과</h3>

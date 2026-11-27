@@ -1210,17 +1210,170 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
   .path-row .p-vid { padding-left: 0; }
 }
 
-/* 홈 상단 생중계·영상 스트립 */
-.home-watch {
-  margin: 10px 16px 0; padding: 9px 11px;
-  border: 1px solid var(--line); border-radius: 12px;
-  background: var(--card); -webkit-backdrop-filter: blur(var(--blur)); backdrop-filter: blur(var(--blur));
+/* 탭 5개: 좁은 화면에서는 아이콘을 빼고 글자만으로 한 줄 유지 */
+@media (max-width: 429px) {
+  .tab svg { display: none; }
+  .tab { padding: 9px 1px; font-size: 10px; }
 }
-.home-watch:empty { display: none; }
-.hw-head { display: flex; align-items: baseline; gap: 5px; font-size: 9px; color: var(--muted); flex-wrap: wrap; }
-.hw-head b { font-size: 9.5px; font-weight: 800; color: var(--accent); letter-spacing: .02em; }
-.hw-head span { font-size: 8.5px; color: var(--muted-2); }
-.home-watch .watch-row { margin-top: 7px; }
+@media (max-width: 330px) {
+  .tab { font-size: 9px; letter-spacing: -.03em; }
+}
+
+/* 홈 → 영상 탭 이동 버튼 */
+.video-jump {
+  display: flex; align-items: center; gap: 10px;
+  width: calc(100% - 32px); margin: 12px 16px 0; padding: 10px 12px;
+  border-radius: 16px; text-align: left;
+  background: var(--card); border: 1px solid var(--card-border);
+  box-shadow: var(--card-shadow), var(--card-inset);
+  -webkit-backdrop-filter: blur(var(--blur)); backdrop-filter: blur(var(--blur));
+  transition: transform .15s ease, border-color .2s ease;
+}
+.video-jump:active { transform: scale(.99); }
+.video-jump .vj-play {
+  width: 34px; height: 34px; border-radius: 11px; flex: none;
+  display: grid; place-items: center;
+  color: var(--accent); background: var(--accent-soft); border: 1px solid var(--accent-line);
+}
+.video-jump .vj-body { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.video-jump .vj-body b { font-size: 12px; font-weight: 800; letter-spacing: -.02em; color: var(--ink); }
+.video-jump .vj-body span { font-size: 8.5px; color: var(--muted); }
+.video-jump .vj-go { margin-left: auto; flex: none; font-size: 18px; line-height: 1; color: var(--muted-2); }
+
+/* 공식일정 → 영상 탭 안내 링크 */
+.tab-link {
+  width: 100%; display: flex; align-items: center; gap: 6px;
+  margin-top: 10px; padding: 9px 11px; border-radius: 11px;
+  background: var(--chip-bg); border: 1px dashed var(--line);
+  font-size: 9px; font-weight: 700; color: var(--ink-2); text-align: left;
+}
+.tab-link .tl-go { margin-left: auto; color: var(--muted-2); font-size: 13px; line-height: 1; }
+.tab-link:active { background: var(--row-hover); }
+
+/* ---------- 영상 탭 ---------- */
+.next-line {
+  display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
+  margin-top: 9px; padding: 8px 10px; border-radius: 11px;
+  background: var(--accent-soft); border: 1px solid var(--accent-line);
+  font-size: 9.5px; font-weight: 700; color: var(--ink-2);
+}
+.next-line b { font-size: 8px; font-weight: 900; letter-spacing: .08em; color: var(--accent); }
+.next-line .nl-sub { font-size: 8.5px; font-weight: 600; color: var(--muted); }
+.next-line .nl-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); flex: none; }
+
+.chan-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 10px; }
+.chan {
+  display: flex; flex-direction: column; gap: 3px; min-width: 0;
+  padding: 10px 11px; border-radius: 13px;
+  background: var(--chip-bg); border: 1px solid var(--line);
+  transition: border-color .2s ease, transform .15s ease;
+}
+.chan:active { transform: scale(.985); }
+.chan-top { display: flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 800; letter-spacing: -.01em; color: var(--ink); }
+.chan-top .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--muted-2); flex: none; }
+.chan-go { margin-left: auto; font-size: 8px; color: var(--muted-2); }
+.chan-sub { display: block; font-size: 7.5px; line-height: 1.4; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chan.is-chzzk { border-color: rgba(14, 224, 122, .30); }
+.chan.is-chzzk .dot { background: #0EE07A; }
+.chan.is-chzzk .chan-top { color: #0EE07A; }
+.chan.is-soop { border-color: rgba(79, 168, 255, .30); }
+.chan.is-soop .dot { background: #4FA8FF; }
+.chan.is-soop .chan-top { color: #4FA8FF; }
+.chan.is-youtube { border-color: rgba(255, 93, 93, .28); }
+.chan.is-youtube .dot { background: #FF5D5D; }
+.chan.is-youtube .chan-top { color: #FF5D5D; }
+[data-theme="mint"] .chan.is-chzzk { border-color: rgba(6, 155, 82, .26); }
+[data-theme="mint"] .chan.is-chzzk .dot { background: #069B52; }
+[data-theme="mint"] .chan.is-chzzk .chan-top { color: #069B52; }
+[data-theme="mint"] .chan.is-soop { border-color: rgba(22, 104, 199, .24); }
+[data-theme="mint"] .chan.is-soop .dot { background: #1668C7; }
+[data-theme="mint"] .chan.is-soop .chan-top { color: #1668C7; }
+[data-theme="mint"] .chan.is-youtube { border-color: rgba(204, 43, 43, .22); }
+[data-theme="mint"] .chan.is-youtube .dot { background: #CC2B2B; }
+[data-theme="mint"] .chan.is-youtube .chan-top { color: #CC2B2B; }
+
+.station-list { margin-top: 9px; display: flex; flex-direction: column; gap: 7px; }
+.st-row {
+  display: flex; flex-direction: column; gap: 7px;
+  padding: 10px 11px; border-radius: 13px;
+  background: var(--chip-bg); border: 1px solid var(--line);
+}
+.st-head { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.st-av {
+  position: relative; flex: none; width: 30px; height: 30px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: 12px; font-weight: 800; color: var(--accent-ink);
+  background: linear-gradient(150deg, var(--accent) 0%, var(--accent-2) 75%);
+}
+.st-pos {
+  display: inline-block; vertical-align: 1px; margin-left: 5px;
+  font-style: normal; font-size: 6.5px; font-weight: 800; letter-spacing: .04em;
+  color: var(--accent); background: var(--accent-soft);
+  border: 1px solid var(--accent-line); border-radius: 5px; padding: 1px 4px;
+}
+.st-id { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.st-id b { font-size: 11.5px; font-weight: 800; color: var(--ink); }
+.st-id b em { font-style: normal; font-size: 8.5px; font-weight: 600; color: var(--muted); margin-left: 4px; }
+.st-handle { font-size: 7.5px; color: var(--muted-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.st-links { display: flex; gap: 4px; flex-wrap: wrap; }
+.st-none { font-size: 8px; color: var(--muted-2); }
+
+.vid-filters { flex-wrap: wrap; }
+
+/* ---------- 라이브 배지 ---------- */
+.onair {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 7px; font-weight: 900; letter-spacing: .06em;
+  color: #fff; background: #FF3B4E;
+  border-radius: 999px; padding: 2px 5px;
+  box-shadow: 0 6px 14px -10px rgba(255, 59, 78, .9);
+  white-space: nowrap;
+}
+.onair i {
+  width: 4px; height: 4px; border-radius: 50%; background: #fff;
+  animation: onairPulse 1.6s ease-in-out infinite;
+}
+@keyframes onairPulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+.t-onair {
+  display: inline-flex; align-items: center; gap: 3px; align-self: flex-start;
+  font-size: 7px; font-weight: 900; letter-spacing: .04em; color: #FF6B7A;
+  background: rgba(255, 107, 122, .12); border: 1px solid rgba(255, 107, 122, .28);
+  border-radius: 5px; padding: 1px 4px;
+}
+.t-onair i { width: 4px; height: 4px; border-radius: 50%; background: #FF5D5D; }
+.pick-onair { margin-left: 6px; vertical-align: 2px; }
+.st-row.is-onair { border-color: rgba(255, 93, 93, .34); background: rgba(255, 93, 93, .06); }
+.st-onair { margin-left: auto; flex: none; }
+.st-title { font-size: 8px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.link-chip.is-onair { border-color: rgba(255, 93, 93, .38); }
+.link-chip.is-onair em { color: #FF6B7A; font-weight: 800; }
+.onair-row {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  margin-top: 7px; padding: 8px 10px; border-radius: 11px;
+  background: rgba(255, 93, 93, .08); border: 1px solid rgba(255, 93, 93, .26);
+}
+.onair-row[hidden] { display: none; }
+.onair-row > b { font-size: 8px; font-weight: 900; letter-spacing: .06em; color: #FF6B7A; }
+.onair-row .oa {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 9px; font-weight: 800; color: var(--ink);
+  background: var(--chip-bg); border: 1px solid var(--line);
+  border-radius: 999px; padding: 3px 7px;
+}
+.onair-row .oa em { font-style: normal; font-size: 6.5px; font-weight: 800; color: #FF6B7A; }
+.onair-row .oa i.oa-dot { width: 5px; height: 5px; border-radius: 50%; background: #FF5D5D; }
+[data-theme="mint"] .onair-row { background: rgba(204, 43, 43, .07); }
+[data-theme="mint"] .st-row.is-onair { background: rgba(204, 43, 43, .05); border-color: rgba(204, 43, 43, .30); }
+[data-theme="mint"] .t-onair { color: #CC2B2B; background: rgba(204, 43, 43, .10); border-color: rgba(204, 43, 43, .26); }
+[data-theme="mint"] .t-onair i { background: #CC2B2B; }
+[data-theme="mint"] .link-chip.is-onair { border-color: rgba(204, 43, 43, .34); }
+[data-theme="mint"] .link-chip.is-onair em { color: #CC2B2B; }
+[data-theme="mint"] .onair-row .oa em { color: #CC2B2B; }
+.vc-count { font-size: 8px; color: var(--muted-2); font-weight: 700; }
+.vc-who { font-size: 7.5px; font-weight: 800; letter-spacing: .02em; color: var(--accent); }
+.vc-who i { font-style: normal; font-weight: 600; color: var(--muted-2); margin-left: 3px; font-size: 7px; }
+.vc-empty { padding: 14px 4px; text-align: center; font-size: 9px; color: var(--muted); }
+.vod-path { margin-top: 10px; }
 
 </style>
 <script>
@@ -1230,7 +1383,7 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
     var t = localStorage.getItem('dk.signal.theme');
     if (t === 'mint' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
     var l = localStorage.getItem('dk.signal.lang');
-    if (l === 'ko' || l === 'en' || l === 'ja') document.documentElement.setAttribute('lang', l);
+    if (l === 'ko' || l === 'en' || l === 'ja' || l === 'zh') document.documentElement.setAttribute('lang', l === 'zh' ? 'zh-CN' : l);
   } catch (e) {}
 })();
 </script>
@@ -1279,6 +1432,10 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 10h17M8 3.5v3M16 3.5v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
         <span data-i18n="tab.official">공식일정</span>
       </button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="video">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none" aria-hidden="true"><rect x="3.2" y="5.6" width="17.6" height="12.8" rx="3.2" stroke="currentColor" stroke-width="1.7"/><path d="M10.3 9.4v5.2l4.3-2.6-4.3-2.6Z" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/></svg>
+        <span data-i18n="tab.video">영상</span>
+      </button>
       <button class="tab" role="tab" aria-selected="false" data-tab="solo">
         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" aria-hidden="true"><path d="M4 19.5V13M9.3 19.5V8.5M14.7 19.5v-7M20 19.5V5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
         <span data-i18n="tab.solo">경기로그</span>
@@ -1300,8 +1457,6 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
         <span class="live-chip" id="liveChip" hidden>실시간</span>
       </div>
 
-      <section class="home-watch" id="homeWatch" aria-live="polite"></section>
-
       <section class="pick" id="pickBanner" aria-live="polite"></section>
 
       <div class="sec"><b data-i18n="board.title">5인 상태 보드</b><span class="sec-sub" data-i18n="board.sub">타일을 눌러 둘러보기 · 별로 최애 고정</span></div>
@@ -1310,7 +1465,11 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
 
       <section class="hl-card" id="highlightCard" aria-live="polite"></section>
 
-      <section class="card video-card" id="videoCard" aria-live="polite"></section>
+      <button class="video-jump" id="videoJump" type="button" data-tab="video" data-i18n-attr="aria-label:video.jumpAria" aria-label="영상 탭 열기">
+        <span class="vj-play" aria-hidden="true"><svg viewBox="0 0 24 24" width="15" height="15" fill="none"><path d="M9.5 7.6v8.8l7-4.4-7-4.4Z" fill="currentColor"/></svg></span>
+        <span class="vj-body"><b data-i18n="video.jumpTitle">생중계 · 하이라이트</b><span data-i18n="video.jumpSub">영상 탭에 모아 뒀어요</span></span>
+        <span class="vj-go" aria-hidden="true">›</span>
+      </button>
 
       <section class="card notify-card">
         <div class="card-head">
@@ -1328,6 +1487,13 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
           </span>
           <span class="nr-text"><b data-i18n="notify.official">DK 공식 경기 알림</b><span data-i18n="notify.officialSub">경기 일정·시작 소식</span></span>
           <button class="toggle" data-official-toggle type="button" role="switch" aria-checked="true" aria-label="DK 공식 경기 알림 끄기"><span></span></button>
+        </div>
+        <div class="nr nr-live">
+          <span class="nr-av">
+            <svg viewBox="0 0 20 20" width="13" height="13" fill="none" aria-hidden="true"><rect x="2.6" y="5.4" width="10.4" height="9.2" rx="2.4" stroke="currentColor" stroke-width="1.6"/><path d="M13 9.2l4-2.2v6l-4-2.2" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+          </span>
+          <span class="nr-text"><b data-i18n="notify.live">선수 라이브 방송 알림</b><span data-i18n="notify.liveSub">SOOP·CHZZK에서 방송을 켜면 바로</span></span>
+          <button class="toggle" data-live-toggle type="button" role="switch" aria-checked="true" aria-label="선수 라이브 방송 알림 끄기"><span></span></button>
         </div>
         <div class="ping-foot">
           <button class="test-btn" id="testBtn" type="button" data-i18n="notify.test">테스트 알림 보내기</button>
@@ -1402,8 +1568,7 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
           <div class="next-teams"><span class="team dk">DK</span><span class="vs">VS</span><span class="team">TBD</span></div>
         </div>
         <p class="next-sync" id="nextSync">LoL Esports 일정 확인 중…</p>
-        <div class="watch-row" id="nextWatch"></div>
-        <p class="watch-note" id="nextWatchNote"></p>
+        <button class="tab-link" id="officialVideoLink" type="button" data-tab="video"><span data-i18n="official.videoTabLink">생중계 · 다시보기는 영상 탭에서</span><span class="tl-go" aria-hidden="true">›</span></button>
         <div class="match-alert">
           <span class="ma-text"><b data-i18n="official.alertTitle">경기 알림</b><span data-i18n="official.alertSub">DK 공식 경기 일정·시작 소식</span></span>
           <button class="toggle" data-official-toggle type="button" role="switch" aria-checked="true" aria-label="DK 공식 경기 알림 끄기"><span></span></button>
@@ -1430,6 +1595,59 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
         <ul class="official-list" id="officialList"></ul>
       </section>
       <footer class="foot"><p data-i18n="foot.official">경기 일정·결과는 LoL Esports 공개 일정에서 자동으로 받아옵니다.</p></footer>
+    </section>
+
+    <!-- ================= 영상 ================= -->
+    <section class="panel" id="panel-video" role="tabpanel" data-i18n-attr="aria-label:tab.video" aria-label="영상" hidden>
+      <div class="panel-head">
+        <div class="eyebrow">VIDEO HUB</div>
+        <h2 class="panel-title" data-i18n="tab.video">영상</h2>
+        <p class="panel-sub" data-i18n="video.tabSub">생중계부터 선수 방송·하이라이트·다시보기까지 한곳에 모았어요.</p>
+      </div>
+
+      <section class="card live-card">
+        <div class="card-head">
+          <div>
+            <div class="eyebrow">LIVE · OFFICIAL</div>
+            <h3 class="card-title" data-i18n="video.liveTitle">생중계 · 공식 채널</h3>
+          </div>
+          <span class="live-chip" id="videoLiveChip" hidden>자동 갱신</span>
+        </div>
+        <p class="vc-sub" data-i18n="video.liveNote">LCK 국내 생중계는 CHZZK·SOOP 공식 채널에서, 해외는 LCK 유튜브에서 볼 수 있어요.</p>
+        <p class="next-line" id="videoNextLine"></p>
+        <p class="onair-row" id="videoOnAir" hidden></p>
+        <div class="chan-grid" id="videoChannels"></div>
+      </section>
+
+      <section class="card">
+        <div class="eyebrow">PLAYER STREAMS</div>
+        <h3 class="card-title" data-i18n="video.stationsTitle">선수별 개인 방송국</h3>
+        <p class="vc-sub" data-i18n="video.stationsSub">5인이 방송을 켜면 여기서 바로 볼 수 있어요.</p>
+        <ul class="station-list" id="videoStations"></ul>
+      </section>
+
+      <section class="card video-card">
+        <div class="card-head">
+          <div>
+            <div class="eyebrow">HIGHLIGHTS · YOUTUBE</div>
+            <h3 class="card-title" data-i18n="video.title">대표 하이라이트</h3>
+          </div>
+          <a class="ghost-btn" id="videoMore" href="https://www.youtube.com/@DplusKia_LOL" target="_blank" rel="noopener" data-i18n="video.more">Dplus KIA 유튜브 ↗</a>
+        </div>
+        <p class="vc-sub"><span data-i18n="video.highlightsSub">5인 대표 장면 10편을 선수별로 모았어요.</span> <span class="vc-count" id="videoCount"></span></p>
+        <div class="chip-row vid-filters" id="videoFilters" role="tablist" data-i18n-attr="aria-label:video.filtersAria" aria-label="선수별 하이라이트 필터"></div>
+        <ul class="vc-list" id="videoList"></ul>
+      </section>
+
+      <section class="card">
+        <div class="eyebrow">OFFICIAL VOD</div>
+        <h3 class="card-title" data-i18n="video.vodTitle">최근 공식 경기 다시보기</h3>
+        <p class="vc-sub" data-i18n="video.vodSub">경기별 풀영상과 하이라이트로 바로 이동해요.</p>
+        <ul class="path vod-path" id="videoVodList"></ul>
+        <p class="board-note" id="videoVodNote"></p>
+        <p class="watch-hint" id="videoVodHint" hidden></p>
+      </section>
+      <footer class="foot"><p data-i18n="foot.video">공식 경기 영상은 LoL Esports 공개 일정과 LCK 유튜브에서 받아옵니다.</p></footer>
     </section>
 
     <!-- ================= 경기로그 ================= -->
@@ -1477,7 +1695,6 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
         <div class="link-row" id="recordsLinks"></div>
         <ul class="records" id="recordsList"></ul>
       </section>
-      <section class="card video-card" id="videoCardRecords" aria-live="polite"></section>
       <section class="card">
         <div class="eyebrow">ALL PLAYERS</div>
         <h3 class="card-title" data-i18n="records.worlds">2026 월즈 결과</h3>
@@ -1501,7 +1718,8 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
   var LANGS = [
     { code: 'ko', label: 'KO', name: '한국어', htmlLang: 'ko' },
     { code: 'en', label: 'EN', name: 'English', htmlLang: 'en' },
-    { code: 'ja', label: 'JA', name: '日本語', htmlLang: 'ja' }
+    { code: 'ja', label: 'JA', name: '日本語', htmlLang: 'ja' },
+    { code: 'zh', label: 'ZH', name: '中文', htmlLang: 'zh-CN' }
   ];
 
   var DICT = {
@@ -1522,6 +1740,7 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
       'nav.aria': '화면 선택',
       'tab.feed': '홈',
       'tab.official': '공식일정',
+      'tab.video': '영상',
       'tab.solo': '경기로그',
       'tab.records': '기록실',
 
@@ -1601,6 +1820,30 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
       'video.more': 'Dplus KIA 유튜브 ↗',
       'video.empty': '하이라이트를 준비 중이에요.',
       'video.len': '영상 길이 {len}',
+      'video.tabSub': '생중계부터 선수 방송·하이라이트·다시보기까지 한곳에 모았어요.',
+      'video.jumpTitle': '생중계 · 하이라이트',
+      'video.jumpSub': '영상 탭에 모아 뒀어요',
+      'video.jumpAria': '영상 탭 열기',
+      'video.chanLckChzzk': 'LCK 공식 · CHZZK',
+      'video.chanLckSoop': 'LCK 공식 · SOOP',
+      'video.chanLckYt': 'LCK 공식 유튜브',
+      'video.chanDkYt': '디플러스 기아 유튜브',
+      'video.dkYtAria': '디플러스 기아 유튜브 채널 열기',
+      'video.noNext': '다음 경기 일정을 확인 중이에요. 경기가 잡히면 여기에 표시돼요.',
+      'video.stationsTitle': '선수별 개인 방송국',
+      'video.stationsSub': '5인이 방송을 켜면 여기서 바로 볼 수 있어요.',
+      'video.stationAria': '{name} 선수의 {platform} 방송국 열기',
+      'video.highlightsSub': '5인 대표 장면 10편을 선수별로 모았어요.',
+      'video.filterAll': '전체',
+      'video.filtersAria': '선수별 하이라이트 필터',
+      'video.count': '{n}편',
+      'video.vodTitle': '최근 공식 경기 다시보기',
+      'video.vodSub': '경기별 풀영상과 하이라이트로 바로 이동해요.',
+      'video.vodNote': 'LoL Esports 공개 일정에서 {time}에 받아온 최근 경기예요.',
+      'video.vodFallbackNote': '서버에서 최근 경기를 받아오기 전이라 2026 월즈 여정을 보여줘요.',
+      'video.worldsQuery': '월즈 2026',
+      'foot.video': '공식 경기 영상은 LoL Esports 공개 일정과 LCK 유튜브에서 받아옵니다.',
+      'official.videoTabLink': '생중계 · 다시보기는 영상 탭에서',
 
       'notify.title': '알림 설정',
       'notify.summaryOn': '{n}개 켜짐',
@@ -1710,7 +1953,7 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
       'official.seasonNote': '2027 국제 대회 개최지는 2026-11-13 LoL e스포츠 발표 기준 · LCK 2027 세부 일정은 추후 공지',
       'official.lastTitle': '선수별 최근 공식 경기',
 
-      'video.liveTitle': '생중계 · 영상',
+      'video.liveTitle': '생중계 · 공식 채널',
       'video.liveNow': '지금 볼 수 있는 곳',
       'video.chzzk': 'CHZZK',
       'video.soop': 'SOOP',
@@ -1757,7 +2000,22 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
       'banner.installBody': '브라우저 메뉴의 "홈 화면에 추가"를 눌러도 설치할 수 있어요.',
       'banner.online': '다시 연결됐어요.',
       'banner.close': '알림 닫기',
-      'banner.now': '지금'
+      'banner.now': '지금',
+      'notify.live': '선수 라이브 방송 알림',
+      'notify.liveSub': 'SOOP·CHZZK에서 방송을 켜면 바로',
+      'notify.liveToggleOn': '선수 라이브 방송 알림 끄기',
+      'notify.liveToggleOff': '선수 라이브 방송 알림 켜기',
+      'notify.statusLive': '라이브 방송 알림 켜짐',
+      'live.badge': 'LIVE',
+      'live.onAir': '지금 방송 중',
+      'live.watch': '지금 보기',
+      'live.viewers': '{n}명 시청',
+      'live.startedAt': '{time} 시작',
+      'live.stream': '라이브',
+      'pick.liveNow': 'LIVE 방송 중',
+      'banner.testLiveTitle': '{name} · 라이브 방송 알림 테스트',
+      'banner.testLiveBody': '테스트 알림이에요. {name}가 방송을 켜면 이렇게 도착해요.',
+      'banner.liveDone': '라이브 방송 알림으로 테스트를 보냈어요.'
     },
 
     /* ================= English ================= */
@@ -1777,6 +2035,7 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
       'nav.aria': 'Choose a screen',
       'tab.feed': 'Home',
       'tab.official': 'Schedule',
+      'tab.video': 'Videos',
       'tab.solo': 'Match log',
       'tab.records': 'Records',
 
@@ -1856,6 +2115,30 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
       'video.more': 'Dplus KIA on YouTube ↗',
       'video.empty': 'Highlights coming soon.',
       'video.len': '{len} long',
+      'video.tabSub': 'Live streams, player channels, highlights and replays — all in one place.',
+      'video.jumpTitle': 'Live & highlights',
+      'video.jumpSub': 'Collected in the Videos tab',
+      'video.jumpAria': 'Open the Videos tab',
+      'video.chanLckChzzk': 'Official LCK · CHZZK',
+      'video.chanLckSoop': 'Official LCK · SOOP',
+      'video.chanLckYt': 'Official LCK YouTube',
+      'video.chanDkYt': 'Dplus KIA YouTube',
+      'video.dkYtAria': 'Open the Dplus KIA YouTube channel',
+      'video.noNext': 'Checking the next match — it will appear here once scheduled.',
+      'video.stationsTitle': 'Player streams',
+      'video.stationsSub': 'When one of the five goes live, open it right here.',
+      'video.stationAria': 'Open {name}’s {platform} stream',
+      'video.highlightsSub': 'Ten signature clips from all five players.',
+      'video.filterAll': 'All',
+      'video.filtersAria': 'Filter highlights by player',
+      'video.count': '{n} clips',
+      'video.vodTitle': 'Recent official replays',
+      'video.vodSub': 'Jump straight to the full VOD or highlights of each match.',
+      'video.vodNote': 'Recent matches from the LoL Esports public schedule, fetched at {time}.',
+      'video.vodFallbackNote': 'Showing the 2026 Worlds run until recent matches arrive from the server.',
+      'video.worldsQuery': 'Worlds 2026',
+      'foot.video': 'Official match video comes from the LoL Esports schedule and LCK on YouTube.',
+      'official.videoTabLink': 'Live & replays are in Videos',
 
       'notify.title': 'Alerts',
       'notify.summaryOn': '{n} on',
@@ -1965,7 +2248,7 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
       'official.seasonNote': 'International venues per the LoL Esports announcement of 2026-11-13 · LCK 2027 details to be announced',
       'official.lastTitle': 'Latest official match by player',
 
-      'video.liveTitle': 'Live & video',
+      'video.liveTitle': 'Live & official channels',
       'video.liveNow': 'Where to watch',
       'video.chzzk': 'CHZZK',
       'video.soop': 'SOOP',
@@ -2012,7 +2295,22 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
       'banner.installBody': 'You can also install from your browser menu’s "Add to home screen".',
       'banner.online': 'Back online.',
       'banner.close': 'Close alert',
-      'banner.now': 'now'
+      'banner.now': 'now',
+      'notify.live': 'Player live alerts',
+      'notify.liveSub': 'A ping the moment they go live on SOOP or CHZZK',
+      'notify.liveToggleOn': 'Turn off player live alerts',
+      'notify.liveToggleOff': 'Turn on player live alerts',
+      'notify.statusLive': 'Live alerts on',
+      'live.badge': 'LIVE',
+      'live.onAir': 'On air now',
+      'live.watch': 'Watch now',
+      'live.viewers': '{n} watching',
+      'live.startedAt': 'since {time}',
+      'live.stream': 'Live',
+      'pick.liveNow': 'Live now',
+      'banner.testLiveTitle': '{name} · Live alert test',
+      'banner.testLiveBody': 'Test alert. When {name} goes live, it arrives like this.',
+      'banner.liveDone': 'Sent a test with the live alert.'
     },
 
     /* ================= 日本語 ================= */
@@ -2032,6 +2330,7 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
       'nav.aria': '画面を選択',
       'tab.feed': 'ホーム',
       'tab.official': '公式日程',
+      'tab.video': '動画',
       'tab.solo': '試合ログ',
       'tab.records': '記録室',
 
@@ -2111,6 +2410,30 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
       'video.more': 'Dplus KIA YouTube ↗',
       'video.empty': 'ハイライトを準備中です。',
       'video.len': '長さ {len}',
+      'video.tabSub': 'ライブ配信から選手の配信・ハイライト・見逃し配信まで一か所にまとめました。',
+      'video.jumpTitle': 'ライブ・ハイライト',
+      'video.jumpSub': '「動画」タブにまとめました',
+      'video.jumpAria': '動画タブを開く',
+      'video.chanLckChzzk': 'LCK公式 · CHZZK',
+      'video.chanLckSoop': 'LCK公式 · SOOP',
+      'video.chanLckYt': 'LCK公式YouTube',
+      'video.chanDkYt': 'Dplus KIA YouTube',
+      'video.dkYtAria': 'Dplus KIAのYouTubeチャンネルを開く',
+      'video.noNext': '次の試合日程を確認中です。決まり次第ここに表示します。',
+      'video.stationsTitle': '選手の個人配信',
+      'video.stationsSub': '5人が配信を始めたらここからすぐ見られます。',
+      'video.stationAria': '{name}選手の{platform}配信を開く',
+      'video.highlightsSub': '5人の代表シーン10本を選手別にまとめました。',
+      'video.filterAll': 'すべて',
+      'video.filtersAria': '選手別ハイライトの絞り込み',
+      'video.count': '{n}本',
+      'video.vodTitle': '直近の公式戦見逃し配信',
+      'video.vodSub': '試合ごとのフルVODとハイライトへ直接移動できます。',
+      'video.vodNote': 'LoL Esports公開日程から{time}に取得した直近の試合です。',
+      'video.vodFallbackNote': 'サーバーから直近の試合を取得するまで、2026 Worldsの歩みを表示します。',
+      'video.worldsQuery': 'Worlds 2026',
+      'foot.video': '公式戦の映像はLoL Esports公開日程とLCKのYouTubeから取得します。',
+      'official.videoTabLink': 'ライブ・見逃しは「動画」タブで',
 
       'notify.title': '通知設定',
       'notify.summaryOn': '{n}件オン',
@@ -2220,7 +2543,7 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
       'official.seasonNote': '2027国際大会の開催地は2026-11-13のLoL eスポーツ発表基準 · LCK 2027の詳細日程は追って発表',
       'official.lastTitle': '選手別の直近公式戦',
 
-      'video.liveTitle': 'ライブ・動画',
+      'video.liveTitle': 'ライブ・公式チャンネル',
       'video.liveNow': '視聴できる場所',
       'video.chzzk': 'CHZZK',
       'video.soop': 'SOOP',
@@ -2267,7 +2590,298 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
       'banner.installBody': 'ブラウザメニューの「ホーム画面に追加」からもインストールできます。',
       'banner.online': '再接続しました。',
       'banner.close': '通知を閉じる',
-      'banner.now': '今'
+      'banner.now': '今',
+      'notify.live': '選手のライブ通知',
+      'notify.liveSub': 'SOOP・CHZZKで配信を始めたらすぐ',
+      'notify.liveToggleOn': '選手のライブ通知をオフ',
+      'notify.liveToggleOff': '選手のライブ通知をオン',
+      'notify.statusLive': 'ライブ通知オン',
+      'live.badge': 'LIVE',
+      'live.onAir': '配信中',
+      'live.watch': '今すぐ見る',
+      'live.viewers': '{n}人視聴',
+      'live.startedAt': '{time} 開始',
+      'live.stream': 'ライブ',
+      'pick.liveNow': 'ライブ配信中',
+      'banner.testLiveTitle': '{name} · ライブ通知テスト',
+      'banner.testLiveBody': 'テスト通知です。{name}選手が配信を始めるとこのように届きます。',
+      'banner.liveDone': 'ライブ通知でテストを送りました。'
+    },
+    zh: {
+      'app.title': 'DK SIGNAL · 迪普基信号',
+      'app.short': '迪普基信号',
+      'app.desc': '一眼掌握多兰与 Dplus KIA 五名选手官方比赛与单双排的迪普基信号。支持深色霓虹薄荷 / 柔和薄荷玻璃双主题。',
+      'brand.sub': '迪普基信号',
+      'brand.home': '迪普基信号首页',
+      'lang.label': '语言',
+      'theme.dark': '深色',
+      'theme.mint': '柔和',
+      'theme.toDark': '切换到深色霓虹薄荷主题',
+      'theme.toMint': '切换到柔和薄荷玻璃主题',
+      'theme.title': '深色 / 柔和主题切换',
+      'install': '安装',
+      'nav.aria': '选择页面',
+      'tab.feed': '首页',
+      'tab.official': '官方赛程',
+      'tab.video': '视频',
+      'tab.solo': '对局记录',
+      'tab.records': '记录室',
+      'live': '实时',
+      'autoUpdate': '自动更新',
+      'now': '现在',
+      'updatedAt': '{time} 更新',
+      'checkedAt': '{time} 确认',
+      'pos.TOP': '上单',
+      'pos.JGL': '打野',
+      'pos.MID': '中单',
+      'pos.BOT': '下路',
+      'pos.SUP': '辅助',
+      'tier.IRON': '黑铁',
+      'tier.BRONZE': '青铜',
+      'tier.SILVER': '白银',
+      'tier.GOLD': '黄金',
+      'tier.PLATINUM': '铂金',
+      'tier.EMERALD': '翡翠',
+      'tier.DIAMOND': '钻石',
+      'tier.MASTER': '大师',
+      'tier.GRANDMASTER': '宗师',
+      'tier.CHALLENGER': '王者',
+      'tier.UNRANKED': '未定级',
+      'tier.short.DIAMOND': '钻石',
+      'day.today': '今天',
+      'day.yesterday': '昨天',
+      'winrate': '胜率 {r}%',
+      'board.title': '五人状态板',
+      'board.sub': '点击卡片查看 · 点星标设为最爱',
+      'board.note.riot': '单双排 · Riot API 实时（{stamp} 更新）',
+      'board.note.offline': '以最近单双排记录为准 · 2026-11-26 确认（离线）',
+      'board.note.pending': '以最近单双排记录为准 · 2026-11-26 确认（自动更新准备中）',
+      'pick.mypick': 'MY PICK · 今天的 {name}',
+      'pick.preview': '预览 · {name}',
+      'pick.pin': '设为最爱',
+      'pick.pinned': '我的最爱',
+      'pick.pinAriaOn': '已设为我的最爱',
+      'pick.pinAriaOff': '将这名选手设为我的最爱',
+      'pick.recent5': '最近5局',
+      'pick.wl': '{w}胜 {l}负',
+      'pick.inGame': '对局中',
+      'pick.hint': '我的最爱是 <b>{fav}</b> · 点星标即可把 <b>{name}</b> 设为最爱',
+      'pick.viewAria': '查看 {name}',
+      'pick.favSuffix': '（我的最爱）',
+      'pick.switchAria': 'MY PICK 选手快速切换',
+      'pick.toastNew': '★ 已将 {name} 设为我的最爱（MY PICK）。',
+      'pick.toastSame': '★ {name} 已经是我的最爱了。',
+      'pick.lastGame': '{d} {t} <b>{champ}</b> {kda} · {result}',
+      'pick.viewProfile': '选手资料 ↗',
+      'result.win': '胜',
+      'result.lose': '负',
+      'result.w': 'W',
+      'result.l': 'L',
+      'hl.last5Rate': '最近5局胜率',
+      'hl.kda': 'KDA',
+      'hl.total': '{n}局合计',
+      'hl.allStats': '全部战绩 ↗',
+      'links.title': '直播间 · 战绩',
+      'links.stream': '直播',
+      'links.stats': '战绩',
+      'links.watch': '观战 · 战绩',
+      'links.note': '直接前往选手个人直播间和战绩网站。',
+      'links.noStream': '直播间确认中',
+      'video.title': '代表集锦',
+      'video.sub': '在 YouTube 上直接观看 {name} 选手的标志性场面。',
+      'video.badge': 'LCK 官方',
+      'video.watch': '在 YouTube 观看 ↗',
+      'video.channel': 'LCK 官方 YouTube',
+      'video.more': 'Dplus KIA YouTube ↗',
+      'video.empty': '集锦正在准备中。',
+      'video.len': '时长 {len}',
+      'video.tabSub': '从直播到选手个人直播、集锦、回放，全部汇总在这里。',
+      'video.jumpTitle': '直播 · 集锦',
+      'video.jumpSub': '已整理到「视频」标签',
+      'video.jumpAria': '打开视频标签',
+      'video.chanLckChzzk': 'LCK 官方 · CHZZK',
+      'video.chanLckSoop': 'LCK 官方 · SOOP',
+      'video.chanLckYt': 'LCK 官方 YouTube',
+      'video.chanDkYt': 'Dplus KIA YouTube',
+      'video.dkYtAria': '打开 Dplus KIA YouTube 频道',
+      'video.noNext': '暂时还没有确定的赛程，确定后会显示在这里。',
+      'video.stationsTitle': '选手个人直播间',
+      'video.stationsSub': '五人开播时，可以直接从这里进入。',
+      'video.stationAria': '打开 {name} 选手的 {platform} 直播间',
+      'video.highlightsSub': '五人代表场面共10支，按选手整理。',
+      'video.filterAll': '全部',
+      'video.filtersAria': '按选手筛选集锦',
+      'video.count': '{n}支',
+      'video.vodTitle': '最近官方比赛回放',
+      'video.vodSub': '直接前往每场比赛的完整视频和集锦。',
+      'video.vodNote': '来自 LoL Esports 公开赛程，{time} 获取的最近比赛。',
+      'video.vodFallbackNote': '在服务器返回最近比赛之前，先显示 2026 全球总决赛的历程。',
+      'video.worldsQuery': '2026 全球总决赛',
+      'foot.video': '官方比赛视频来自 LoL Esports 公开赛程和 LCK YouTube。',
+      'official.videoTabLink': '直播 · 回放在「视频」标签',
+      'notify.title': '通知设置',
+      'notify.summaryOn': '已开启 {n} 项',
+      'notify.summaryOff': '全部关闭',
+      'notify.soloHead': '选手排位通知',
+      'notify.soloSub': '每位选手可以单独开关',
+      'notify.soloRow': '最近5局 {w}胜 {l}负',
+      'notify.official': 'DK 官方比赛通知',
+      'notify.officialSub': '赛程 · 开赛提醒',
+      'notify.toggleOn': '关闭 {name} 单双排通知',
+      'notify.toggleOff': '开启 {name} 单双排通知',
+      'notify.officialToggleOn': '关闭 DK 官方比赛通知',
+      'notify.officialToggleOff': '开启 DK 官方比赛通知',
+      'notify.test': '发送测试通知',
+      'notify.statusBoth': '{name} 排位 · 比赛通知已开启',
+      'notify.statusSolo': '仅开启 {name} 排位通知',
+      'notify.statusOfficial': '仅开启比赛通知',
+      'notify.statusNone': '没有开启的通知',
+      'notify.pushPreview': '这是预览文件，服务器通知已关闭。',
+      'notify.pushOffline': '未连接到自动更新服务器，通知只在打开应用时检查。',
+      'notify.pushChecking': '正在检查服务器状态…',
+      'notify.pushNoVapid': '网页推送尚未就绪（未注册 VAPID 密钥） · 目前仅在打开应用时自动检查。',
+      'notify.pushNoStore': '尚未连接订阅存储（Upstash Redis） · 连接后即可收到锁屏通知。',
+      'notify.pushDenied': '浏览器通知权限已关闭。请在网站设置中允许通知。',
+      'notify.pushSubscribed': '网页推送已开启 · 即使关闭应用，新战绩和比赛消息也会送到锁屏。',
+      'notify.pushUnsubscribed': '已取消推送订阅。重新开启通知即可收到锁屏提醒。',
+      'notify.pushIdle': '开启通知后，也会通过锁屏提醒你。',
+      'notify.noteOn': '即使关闭应用，服务器也会每5分钟检查一次并发送新消息。',
+      'notify.noteOff': '目前只在打开应用期间自动检查新战绩。开启服务器推送后，关闭应用也能收到通知。',
+      'cheer.title': '一句应援',
+      'cheer.count': '{n}条',
+      'cheer.placeholder': '给 {name} 留一句应援吧',
+      'cheer.aria': '输入一句应援',
+      'cheer.send': '留下应援',
+      'cheer.empty': '还没有留下应援，写下第一条吧。',
+      'cheer.note': '仅保存在此设备。',
+      'cheer.delete': '删除应援',
+      'time.just': '刚刚',
+      'time.min': '{n}分钟前',
+      'time.hour': '{n}小时前',
+      'time.day': '{n}天前',
+      'time.old': '更早',
+      'solo.title': '最近单双排战绩',
+      'solo.meta': '{riotId} · 最近 {n} 局 {w}胜 {l}负 · {stamp} 确认{src}',
+      'solo.srcRiot': ' · Riot API 实时',
+      'solo.srcSnapshot': ' · 快照',
+      'solo.moreOpgg': '在 OP.GG 查看全部战绩 ↗',
+      'solo.moreUgg': '在 u.gg 查看全部战绩 ↗',
+      'solo.more': '查看全部战绩 ↗',
+      'solo.panelMeta': '这是 {name} 选手的最近 {n} 局，可以只看胜或负。',
+      'solo.pickerAria': '选择选手',
+      'solo.filter.all': '全部',
+      'solo.filter.win': '胜利',
+      'solo.filter.lose': '失败',
+      'solo.empty': '没有符合条件的对局。',
+      'solo.thWhen': '时间（KST）',
+      'solo.thChamp': '英雄',
+      'solo.thRole': '位置',
+      'solo.thResult': '结果',
+      'solo.thKda': 'K / D / A',
+      'solo.thDur': '时长',
+      'solo.perfect': '完美对局',
+      'solo.live': 'Riot API 实时 · 自动更新最近 {n} 局',
+      'solo.footerLive': '单双排记录已于 {time} 从 Riot API 获取，最近5局会自动更新。',
+      'solo.footerSnapshot': '单双排记录是 2026-11-26 确认的各选手账号公开战绩。在服务器中设置 Riot API 密钥后即可自动更新。',
+      'solo.msgRateLimited': '暂时超出了 Riot API 调用上限，稍后再确认。',
+      'solo.msgError': '没能收到 Riot API 响应，稍后重试。',
+      'solo.msgPartial': '部分选手的战绩没能获取。',
+      'solo.msgNoKey': '因为没有 RIOT_API_KEY，显示 2026-11-26 的快照。在 Vercel 环境变量中加入密钥即可实时更新。',
+      'roster.eyebrow': 'DPLUS KIA · 2027 阵容',
+      'roster.title': '多卡秀斯迪',
+      'roster.meta': '2027 赛季 Dplus KIA 五人。点击名字即可切换选手。',
+      'foot.about': '<b>迪普基信号</b> · 官方比赛自动从 LoL Esports 获取，单双排以公开战绩（KO.LOL·OP.GG·u.gg）为基准。请查看下方「自动更新」说明。',
+      'foot.disclaimer': '本应用是粉丝制作的非官方面板，与 Dplus KIA、Riot Games 无关。',
+      'foot.official': '比赛日程 · 结果自动从 LoL Esports 公开赛程获取。',
+      'foot.solo': '单双排记录以各选手账号的公开战绩为基准显示。',
+      'foot.records': '2026 赛季赛事记录来自 KO.LOL 公开数据，冠亚军标注只记录已确认的赛事。',
+      'official.title': '官方赛程',
+      'official.sub': '汇总了下一场比赛和最近的官方比赛。',
+      'official.next': '下一场',
+      'official.nextDateFallback': '2027 LCK 杯',
+      'official.nextTitleFallback': 'DK 2027 首场比赛',
+      'official.nextSubFallback': '2027 赛季同样从<b>LCK 杯</b>开始。LCK 确定 2027 赛制与赛程后，会在这里显示 DK 的首场比赛。',
+      'official.nextNoUpcoming': '目前 LoL Esports 上还没有登记下一场比赛。',
+      'official.nextError': '暂时没能获取赛程，画面显示最后确认的信息。',
+      'official.syncPreview': '这是单文件预览，自动更新已关闭。实际应用（dk-signal.vercel.app）会自动更新。',
+      'official.syncOffline': '未能连接自动更新服务器，显示已保存的记录。',
+      'official.syncOk': '已于 {time} 在 LoL Esports 确认 · {next}',
+      'official.syncOkNext': '确定下一场比赛后会立即更新',
+      'official.syncOkNoNext': '下一场比赛公开前',
+      'official.syncFail': '没能加载赛程，稍后再确认。',
+      'official.syncLoading': '正在确认 LoL Esports 赛程…',
+      'official.alertTitle': '比赛通知',
+      'official.alertSub': 'DK 官方比赛赛程 · 开赛提醒',
+      'official.scheduleLink': '查看 LoL Esports 赛程 ↗',
+      'official.recent': '最近 DK 官方比赛',
+      'official.recentFallbackNote': '在从服务器获取赛程之前，显示最后确认的 2026 全球总决赛记录。',
+      'official.recentNote': '来自 LoL Esports 公开赛程，{time} 获取的结果 · 自动收集',
+      'official.seasonEyebrow': '2027 赛季路线图',
+      'official.seasonTitle': '2027 赛季日历',
+      'official.seasonMeta': 'LCK 从 2025 年起取消春季赛、夏季赛，改为<b>LCK 杯 → 单一常规赛</b>。2027 年还加入了<b>First Stand: All In</b>，作为赛季首个国际赛事。',
+      'official.seasonNote': '2027 国际赛事举办地依据 2026-11-13 LoL 电竞发布 · LCK 2027 详细赛程后续公布',
+      'official.lastTitle': '各选手最近官方比赛',
+      'video.liveTitle': '直播 · 官方频道',
+      'video.liveNow': '现在可以观看的地方',
+      'video.chzzk': 'CHZZK',
+      'video.soop': 'SOOP',
+      'video.youtube': 'YouTube',
+      'video.chzzkAria': '打开 CHZZK 的 LCK 官方直播',
+      'video.soopAria': '打开 SOOP 的 LCK 官方直播',
+      'video.youtubeAria': '打开 LCK YouTube 频道（海外观看）',
+      'video.liveNote': '韩国国内 LCK 直播在 CHZZK、SOOP 官方频道，海外可在 LCK YouTube 观看。',
+      'video.vod': '完整视频 VOD',
+      'video.highlight': '集锦',
+      'video.highlightSearch': '在 YouTube 搜索这场比赛集锦',
+      'video.vodSearch': '在 YouTube 搜索这场比赛完整视频',
+      'video.dkChannel': 'DK YouTube',
+      'video.searchNote': '未确认官方 VOD 的比赛会跳转到 YouTube 搜索。',
+      'video.match': '{league} · {date}',
+      'video.gameNo': '第 {n} 局',
+      'records.title': '记录室',
+      'records.sub': '以 2026 赛季为准的公开记录。右侧数字是小局胜 · 负。',
+      'records.season': '2026 赛季',
+      'records.who': '{name} · 2026 赛季',
+      'records.worlds': '2026 全球总决赛结果',
+      'records.result.CHAMP': '冠军',
+      'records.result.RUNNER': '亚军',
+      'records.result.SEMI': '四强',
+      'records.result.QF': '八强',
+      'records.result.R5': '第5轮',
+      'records.result.R3': '第3轮',
+      'records.set': '{w}胜 {l}负',
+      'banner.testTitle': '{name} · 测试通知',
+      'banner.testOfficial': 'DK 官方比赛 · 迪普基信号',
+      'banner.testSoloBody': '这是测试通知。当 {name} 开始新的单双排时，会这样送达。',
+      'banner.testOfficialBody': '这是测试通知。DK 下一场官方比赛日程确定时，会这样送达。',
+      'banner.soloDone': '已通过 {name} 排位通知发送了测试。',
+      'banner.officialDone': '已通过比赛通知发送了测试。',
+      'banner.doneSuffix': ' 请在锁屏查看。',
+      'banner.noneTitle': '迪普基信号',
+      'banner.noneBody': '没有开启的通知。请在通知设置中开启后再试。',
+      'banner.noneNote': '没有开启的通知，请先开启通知。',
+      'banner.fallbackNote': '已改用应用内通知显示。',
+      'banner.bgText': '新的单双排消息会这样送达。',
+      'banner.installTitle': '添加到主屏幕',
+      'banner.installBody': '也可以通过浏览器菜单中的「添加到主屏幕」安装。',
+      'banner.online': '已重新连接。',
+      'banner.close': '关闭通知',
+      'banner.now': '现在',
+      'notify.live': '选手直播通知',
+      'notify.liveSub': '在 SOOP、CHZZK 一开播就提醒',
+      'notify.liveToggleOn': '关闭选手直播通知',
+      'notify.liveToggleOff': '开启选手直播通知',
+      'notify.statusLive': '直播通知已开启',
+      'live.badge': 'LIVE',
+      'live.onAir': '正在直播',
+      'live.watch': '立即观看',
+      'live.viewers': '{n} 人观看',
+      'live.startedAt': '{time} 开始',
+      'live.stream': '直播',
+      'pick.liveNow': '正在直播',
+      'banner.testLiveTitle': '{name} · 直播通知测试',
+      'banner.testLiveBody': '这是测试通知。{name} 开播时会这样送达。',
+      'banner.liveDone': '已通过直播通知发送了测试。'
     }
   };
 
@@ -2276,7 +2890,8 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
   var WD = {
     ko: ['일', '월', '화', '수', '목', '금', '토'],
     en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-    ja: ['日', '月', '火', '水', '木', '金', '土']
+    ja: ['日', '月', '火', '水', '木', '金', '土'],
+    zh: ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
   };
 
   var listeners = [];
@@ -2291,6 +2906,7 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
     var nav = '';
     try { nav = String((navigator.languages && navigator.languages[0]) || navigator.language || '').toLowerCase(); } catch (e) {}
     if (nav.indexOf('ja') === 0) return 'ja';
+    if (nav.indexOf('zh') === 0) return 'zh';
     if (nav.indexOf('en') === 0) return 'en';
     if (nav.indexOf('ko') === 0) return 'ko';
     return 'ko';
@@ -2317,6 +2933,7 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
     var d = Number(m[2]);
     if (lang === 'en') return MONTH_EN[mo - 1] + ' ' + d;
     if (lang === 'ja') return mo + '月' + d + '日';
+    if (lang === 'zh') return mo + '月' + d + '日';
     return mo + '. ' + d + '.';
   }
 
@@ -2333,6 +2950,7 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
     var d = date.getDate();
     if (lang === 'en') return weekday(date) + ', ' + MONTH_EN[mo - 1] + ' ' + d + ', ' + y;
     if (lang === 'ja') return y + '年' + mo + '月' + d + '日(' + weekday(date) + ')';
+    if (lang === 'zh') return y + '年' + mo + '月' + d + '日 (' + weekday(date) + ')';
     return y + '.' + pad(mo) + '.' + pad(d) + ' (' + weekday(date) + ')';
   }
 
@@ -2345,6 +2963,7 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
     var hm = pad(date.getHours()) + ':' + pad(date.getMinutes());
     if (lang === 'en') return MONTH_EN[mo - 1] + ' ' + d + ', ' + y + ' ' + hm;
     if (lang === 'ja') return y + '.' + pad(mo) + '.' + pad(d) + ' ' + hm;
+    if (lang === 'zh') return y + '年' + mo + '月' + d + '日 ' + hm;
     return y + '.' + pad(mo) + '.' + pad(d) + ' ' + hm;
   }
 
@@ -2361,6 +2980,7 @@ table.matches { width: 100%; border-collapse: collapse; table-layout: fixed; }
     var d = date.getDate();
     if (lang === 'en') return MONTH_EN[mo - 1] + ' ' + d;
     if (lang === 'ja') return mo + '月' + d + '日';
+    if (lang === 'zh') return mo + '月' + d + '日';
     return mo + '. ' + d + '.';
   }
 
@@ -2432,9 +3052,11 @@ const PLAYERS = [
     nameEn: 'DORAN',
     nameIntl: 'Doran',
     nameJa: 'ドラン',
+    nameZh: '多兰',
     real: '최현준',
     realEn: 'Choi Hyeon-jun',
     realJa: 'チェ・ヒョンジュン',
+    realZh: '崔现准',
     pos: 'TOP',
     posKo: '탑',
     riotId: '어리고싶다#KR1',
@@ -2456,13 +3078,13 @@ const PLAYERS = [
       { platform: 'chzzk', url: 'https://chzzk.naver.com/20e11539e1afa21fc959dd3f4ff2332c', handle: '도란도란란' }
     ],
     highlights: [
-      { id: 'uzkulCX1cvw', len: '12:13', channel: 'LCK', match: { ko: 'T1 vs BFX · 4세트', en: 'T1 vs BFX · Game 4', ja: 'T1 vs BFX 第4試合' }, event: { ko: '2026 우리은행 LCK 플레이오프', en: '2026 LCK Playoffs', ja: '2026 LCK プレーオフ' } },
-      { id: 'zmt-dT7garg', len: '13:10', channel: 'LCK', match: { ko: 'T1 vs DK · 2세트', en: 'T1 vs DK · Game 2', ja: 'T1 vs DK 第2試合' }, event: { ko: '2026 LCK', en: '2026 LCK', ja: '2026 LCK' } }
+      { id: 'uzkulCX1cvw', len: '12:13', channel: 'LCK', match: { ko: 'T1 vs BFX · 4세트', en: 'T1 vs BFX · Game 4', ja: 'T1 vs BFX 第4試合', zh: 'T1 vs BFX · 第4局' }, event: { ko: '2026 우리은행 LCK 플레이오프', en: '2026 LCK Playoffs', ja: '2026 LCK プレーオフ', zh: '2026 友利银行 LCK 季后赛' } },
+      { id: 'zmt-dT7garg', len: '13:10', channel: 'LCK', match: { ko: 'T1 vs DK · 2세트', en: 'T1 vs DK · Game 2', ja: 'T1 vs DK 第2試合', zh: 'T1 vs DK · 第2局' }, event: { ko: '2026 LCK', en: '2026 LCK', ja: '2026 LCK', zh: '2026 LCK' } }
     ],
-    note: { ko: '', en: '', ja: '' },
+    note: { ko: '', en: '', ja: '', zh: '' },
     official: {
-      stage: { ko: 'Worlds 2026 · 4강', en: 'Worlds 2026 · Semifinals', ja: 'Worlds 2026 · ベスト4' },
-      team: 'T1', opp: 'BLG', score: '1 : 3', win: false, date: { ko: '11. 09.', en: 'Nov 9', ja: '11月9日' }
+      stage: { ko: 'Worlds 2026 · 4강', en: 'Worlds 2026 · Semifinals', ja: 'Worlds 2026 · ベスト4', zh: 'Worlds 2026 · 四强' },
+      team: 'T1', opp: 'BLG', score: '1 : 3', win: false, date: { ko: '11. 09.', en: 'Nov 9', ja: '11月9日', zh: '11月9日' }
     },
     matches: [
       { d: '11. 25.', t: '21:04', champ: '레넥톤', role: '탑', win: false, kda: '5/9/0', dur: '21:12' },
@@ -2478,14 +3100,14 @@ const PLAYERS = [
       { d: '10. 16.', t: '23:29', champ: '바루스', role: '탑', win: false, kda: '5/9/2', dur: '21:07' }
     ],
     records: [
-      { event: { ko: 'Worlds 2026', en: 'Worlds 2026', ja: 'Worlds 2026' }, result: 'SEMI', set: { w: 8, l: 5 }, key: true },
-      { event: { ko: 'MSI 2026', en: 'MSI 2026', ja: 'MSI 2026' }, result: '', set: { w: 15, l: 6 } },
-      { event: { ko: 'LCK 2026 Playoffs', en: 'LCK 2026 Playoffs', ja: 'LCK 2026 プレーオフ' }, result: '', set: { w: 9, l: 9 } },
-      { event: { ko: 'LCK 2026 정규 1-2라운드', en: 'LCK 2026 Rounds 1–2', ja: 'LCK 2026 レギュラー 1-2' }, result: '', set: { w: 30, l: 10 } },
-      { event: { ko: 'LCK Cup 2026', en: 'LCK Cup 2026', ja: 'LCKカップ 2026' }, result: '', set: { w: 14, l: 9 } },
-      { event: { ko: 'EWC 2026', en: 'EWC 2026', ja: 'EWC 2026' }, result: '', set: { w: 7, l: 5 } }
+      { event: { ko: 'Worlds 2026', en: 'Worlds 2026', ja: 'Worlds 2026', zh: 'Worlds 2026' }, result: 'SEMI', set: { w: 8, l: 5 }, key: true },
+      { event: { ko: 'MSI 2026', en: 'MSI 2026', ja: 'MSI 2026', zh: 'MSI 2026' }, result: '', set: { w: 15, l: 6 } },
+      { event: { ko: 'LCK 2026 Playoffs', en: 'LCK 2026 Playoffs', ja: 'LCK 2026 プレーオフ', zh: 'LCK 2026 季后赛' }, result: '', set: { w: 9, l: 9 } },
+      { event: { ko: 'LCK 2026 정규 1-2라운드', en: 'LCK 2026 Rounds 1–2', ja: 'LCK 2026 レギュラー 1-2', zh: 'LCK 2026 常规赛 第1-2轮' }, result: '', set: { w: 30, l: 10 } },
+      { event: { ko: 'LCK Cup 2026', en: 'LCK Cup 2026', ja: 'LCKカップ 2026', zh: '2026 LCK 杯' }, result: '', set: { w: 14, l: 9 } },
+      { event: { ko: 'EWC 2026', en: 'EWC 2026', ja: 'EWC 2026', zh: 'EWC 2026' }, result: '', set: { w: 7, l: 5 } }
     ],
-    worlds: { stageKey: 'SEMI', line: { ko: 'BLG에 1:3 패배', en: 'Lost 1–3 to BLG', ja: 'BLGに1-3で敗退' }, date: { ko: '2026. 11. 09', en: 'Nov 9, 2026', ja: '2026年11月9日' } }
+    worlds: { stageKey: 'SEMI', line: { ko: 'BLG에 1:3 패배', en: 'Lost 1–3 to BLG', ja: 'BLGに1-3で敗退', zh: '1:3 负于 BLG' }, date: { ko: '2026. 11. 09', en: 'Nov 9, 2026', ja: '2026年11月9日', zh: '2026年11月9日' } }
   },
   {
     key: 'kanavi',
@@ -2493,9 +3115,11 @@ const PLAYERS = [
     nameEn: 'KANAVI',
     nameIntl: 'Kanavi',
     nameJa: 'カナビ',
+    nameZh: '卡纳维',
     real: '서진혁',
     realEn: 'Seo Jin-hyeok',
     realJa: 'ソ・ジニョク',
+    realZh: '徐真赫',
     pos: 'JGL',
     posKo: '정글',
     riotId: 'vinaka#KR1',
@@ -2516,13 +3140,13 @@ const PLAYERS = [
       { platform: 'chzzk', url: 'https://chzzk.naver.com/e351edbd85f1ebf4eb975c21179a4c43', handle: 'HLE Kanavi' }
     ],
     highlights: [
-      { id: 'Ws93_VsEx-s', len: '12:39', channel: 'LCK', match: { ko: 'HLE vs T1 · 3세트', en: 'HLE vs T1 · Game 3', ja: 'HLE vs T1 第3試合' }, event: { ko: '2026 LCK 로드 투 MSI', en: '2026 LCK Road to MSI', ja: '2026 LCK ロード・トゥMSI' } },
-      { id: 'fOUtkqYy1VE', len: '10:02', channel: 'LCK', match: { ko: 'DK vs HLE · 1세트', en: 'DK vs HLE · Game 1', ja: 'DK vs HLE 第1試合' }, event: { ko: '2026 LCK', en: '2026 LCK', ja: '2026 LCK' } }
+      { id: 'Ws93_VsEx-s', len: '12:39', channel: 'LCK', match: { ko: 'HLE vs T1 · 3세트', en: 'HLE vs T1 · Game 3', ja: 'HLE vs T1 第3試合', zh: 'HLE vs T1 · 第3局' }, event: { ko: '2026 LCK 로드 투 MSI', en: '2026 LCK Road to MSI', ja: '2026 LCK ロード・トゥMSI', zh: '2026 LCK 通往 MSI' } },
+      { id: 'fOUtkqYy1VE', len: '10:02', channel: 'LCK', match: { ko: 'DK vs HLE · 1세트', en: 'DK vs HLE · Game 1', ja: 'DK vs HLE 第1試合', zh: 'DK vs HLE · 第1局' }, event: { ko: '2026 LCK', en: '2026 LCK', ja: '2026 LCK', zh: '2026 LCK' } }
     ],
-    note: { ko: '', en: '', ja: '' },
+    note: { ko: '', en: '', ja: '', zh: '' },
     official: {
-      stage: { ko: 'Worlds 2026 · 5라운드', en: 'Worlds 2026 · Round 5', ja: 'Worlds 2026 · 第5ラウンド' },
-      team: 'HLE', opp: 'BLG', score: '0 : 2', win: false, date: { ko: '11. 01.', en: 'Nov 1', ja: '11月1日' }
+      stage: { ko: 'Worlds 2026 · 5라운드', en: 'Worlds 2026 · Round 5', ja: 'Worlds 2026 · 第5ラウンド', zh: 'Worlds 2026 · 第5轮' },
+      team: 'HLE', opp: 'BLG', score: '0 : 2', win: false, date: { ko: '11. 01.', en: 'Nov 1', ja: '11月1日', zh: '11月1日' }
     },
     matches: [
       { d: '09. 11.', t: '22:15', champ: '쉬바나', role: '정글', win: true, kda: '7/1/1', dur: '15:08' },
@@ -2539,14 +3163,14 @@ const PLAYERS = [
       { d: '09. 09.', t: '21:30', champ: '리 신', role: '정글', win: false, kda: '5/9/13', dur: '34:22' }
     ],
     records: [
-      { event: { ko: 'Worlds 2026', en: 'Worlds 2026', ja: 'Worlds 2026' }, result: 'R5', set: { w: 3, l: 4 }, key: true },
-      { event: { ko: 'MSI 2026', en: 'MSI 2026', ja: 'MSI 2026' }, result: 'CHAMP', set: { w: 13, l: 7 } },
-      { event: { ko: 'LCK 2026 Playoffs', en: 'LCK 2026 Playoffs', ja: 'LCK 2026 プレーオフ' }, result: 'RUNNER', set: { w: 8, l: 9 } },
-      { event: { ko: 'LCK 2026 정규 1-2라운드', en: 'LCK 2026 Rounds 1–2', ja: 'LCK 2026 レギュラー 1-2' }, result: '', set: { w: 32, l: 11 } },
-      { event: { ko: 'KeSPA Cup 2026', en: 'KeSPA Cup 2026', ja: 'KeSPAカップ 2026' }, result: '', set: { w: 5, l: 3 } },
-      { event: { ko: 'LCK Cup 2026', en: 'LCK Cup 2026', ja: 'LCKカップ 2026' }, result: '', set: { w: 5, l: 9 } }
+      { event: { ko: 'Worlds 2026', en: 'Worlds 2026', ja: 'Worlds 2026', zh: 'Worlds 2026' }, result: 'R5', set: { w: 3, l: 4 }, key: true },
+      { event: { ko: 'MSI 2026', en: 'MSI 2026', ja: 'MSI 2026', zh: 'MSI 2026' }, result: 'CHAMP', set: { w: 13, l: 7 } },
+      { event: { ko: 'LCK 2026 Playoffs', en: 'LCK 2026 Playoffs', ja: 'LCK 2026 プレーオフ', zh: 'LCK 2026 季后赛' }, result: 'RUNNER', set: { w: 8, l: 9 } },
+      { event: { ko: 'LCK 2026 정규 1-2라운드', en: 'LCK 2026 Rounds 1–2', ja: 'LCK 2026 レギュラー 1-2', zh: 'LCK 2026 常规赛 第1-2轮' }, result: '', set: { w: 32, l: 11 } },
+      { event: { ko: 'KeSPA Cup 2026', en: 'KeSPA Cup 2026', ja: 'KeSPAカップ 2026', zh: '2026 KeSPA 杯' }, result: '', set: { w: 5, l: 3 } },
+      { event: { ko: 'LCK Cup 2026', en: 'LCK Cup 2026', ja: 'LCKカップ 2026', zh: '2026 LCK 杯' }, result: '', set: { w: 5, l: 9 } }
     ],
-    worlds: { stageKey: 'R5', line: { ko: 'BLG에 0:2 패배', en: 'Lost 0–2 to BLG', ja: 'BLGに0-2で敗退' }, date: { ko: '2026. 11. 01', en: 'Nov 1, 2026', ja: '2026年11月1日' } }
+    worlds: { stageKey: 'R5', line: { ko: 'BLG에 0:2 패배', en: 'Lost 0–2 to BLG', ja: 'BLGに0-2で敗退', zh: '0:2 负于 BLG' }, date: { ko: '2026. 11. 01', en: 'Nov 1, 2026', ja: '2026年11月1日', zh: '2026年11月1日' } }
   },
   {
     key: 'showmaker',
@@ -2554,9 +3178,11 @@ const PLAYERS = [
     nameEn: 'SHOWMAKER',
     nameIntl: 'ShowMaker',
     nameJa: 'ショウメイカー',
+    nameZh: '秀梅克',
     real: '허수',
     realEn: 'Heo Su',
     realJa: 'ホ・ス',
+    realZh: '许秀',
     pos: 'MID',
     posKo: '미드',
     riotId: 'DK ShowMaker#KR1',
@@ -2574,11 +3200,12 @@ const PLAYERS = [
     statsLabel: 'OP.GG ↗',
     heroLink: { label: '선수 프로필', url: 'https://ko.lol/ko/pros/showmaker/' },
     streams: [
+      { platform: 'soop', url: 'https://ch.sooplive.co.kr/showmakerr', handle: 'DK쇼메쇼메' },
       { platform: 'chzzk', url: 'https://chzzk.naver.com/07a040b24eb497dc36c31d82bc06ccc2', handle: 'DK 쇼메쇼메' }
     ],
     highlights: [
-      { id: 'FG8VNBFemDg', len: '10:29', channel: 'LCK', match: { ko: 'DK vs GEN · 3세트', en: 'DK vs GEN · Game 3', ja: 'DK vs GEN 第3試合' }, event: { ko: '2026 LCK', en: '2026 LCK', ja: '2026 LCK' } },
-      { id: 'SqKdQydiZKs', len: '7:31', channel: 'LCK', match: { ko: 'DK vs GEN · 1세트', en: 'DK vs GEN · Game 1', ja: 'DK vs GEN 第1試合' }, event: { ko: '2026 LCK', en: '2026 LCK', ja: '2026 LCK' } }
+      { id: 'FG8VNBFemDg', len: '10:29', channel: 'LCK', match: { ko: 'DK vs GEN · 3세트', en: 'DK vs GEN · Game 3', ja: 'DK vs GEN 第3試合', zh: 'DK vs GEN · 第3局' }, event: { ko: '2026 LCK', en: '2026 LCK', ja: '2026 LCK', zh: '2026 LCK' } },
+      { id: 'SqKdQydiZKs', len: '7:31', channel: 'LCK', match: { ko: 'DK vs GEN · 1세트', en: 'DK vs GEN · Game 1', ja: 'DK vs GEN 第1試合', zh: 'DK vs GEN · 第1局' }, event: { ko: '2026 LCK', en: '2026 LCK', ja: '2026 LCK', zh: '2026 LCK' } }
     ],
     note: {
       ko: '최근 경기 중 NA 표시는 북미 계정(Sonny Hayes#722)에서 치른 게임이에요.',
@@ -2586,8 +3213,8 @@ const PLAYERS = [
       ja: '最近の試合のNA表示は北米アカウント（Sonny Hayes#722）で行ったゲームです。'
     },
     official: {
-      stage: { ko: 'Worlds 2026 · 8강', en: 'Worlds 2026 · Quarterfinals', ja: 'Worlds 2026 · ベスト8' },
-      team: 'DK', opp: 'BLG', score: '0 : 3', win: false, date: { ko: '11. 06.', en: 'Nov 6', ja: '11月6日' }
+      stage: { ko: 'Worlds 2026 · 8강', en: 'Worlds 2026 · Quarterfinals', ja: 'Worlds 2026 · ベスト8', zh: 'Worlds 2026 · 八强' },
+      team: 'DK', opp: 'BLG', score: '0 : 3', win: false, date: { ko: '11. 06.', en: 'Nov 6', ja: '11月6日', zh: '11月6日' }
     },
     matches: [
       { d: '11. 04.', t: '22:31', champ: '사일러스', role: '미드', win: false, kda: '5/9/8', dur: '24:12', srv: 'NA' },
@@ -2604,14 +3231,14 @@ const PLAYERS = [
       { d: '10. 13.', t: '21:12', champ: '르블랑', role: '미드', win: true, kda: '11/6/12', dur: '33:10' }
     ],
     records: [
-      { event: { ko: 'Worlds 2026', en: 'Worlds 2026', ja: 'Worlds 2026' }, result: 'QF', set: { w: 4, l: 3 }, key: true },
-      { event: { ko: 'EWC 2026', en: 'EWC 2026', ja: 'EWC 2026' }, result: '', set: { w: 11, l: 3 } },
-      { event: { ko: 'LCK 2026 Playoffs', en: 'LCK 2026 Playoffs', ja: 'LCK 2026 プレーオフ' }, result: '', set: { w: 7, l: 9 } },
-      { event: { ko: 'LCK 2026 정규 1-2라운드', en: 'LCK 2026 Rounds 1–2', ja: 'LCK 2026 レギュラー 1-2' }, result: '', set: { w: 24, l: 18 } },
-      { event: { ko: 'LCK Cup 2026', en: 'LCK Cup 2026', ja: 'LCKカップ 2026' }, result: '', set: { w: 18, l: 17 } },
-      { event: { ko: 'LCK 2026 정규 3-4라운드', en: 'LCK 2026 Rounds 3–4', ja: 'LCK 2026 レギュラー 3-4' }, result: '', set: { w: 11, l: 8 } }
+      { event: { ko: 'Worlds 2026', en: 'Worlds 2026', ja: 'Worlds 2026', zh: 'Worlds 2026' }, result: 'QF', set: { w: 4, l: 3 }, key: true },
+      { event: { ko: 'EWC 2026', en: 'EWC 2026', ja: 'EWC 2026', zh: 'EWC 2026' }, result: '', set: { w: 11, l: 3 } },
+      { event: { ko: 'LCK 2026 Playoffs', en: 'LCK 2026 Playoffs', ja: 'LCK 2026 プレーオフ', zh: 'LCK 2026 季后赛' }, result: '', set: { w: 7, l: 9 } },
+      { event: { ko: 'LCK 2026 정규 1-2라운드', en: 'LCK 2026 Rounds 1–2', ja: 'LCK 2026 レギュラー 1-2', zh: 'LCK 2026 常规赛 第1-2轮' }, result: '', set: { w: 24, l: 18 } },
+      { event: { ko: 'LCK Cup 2026', en: 'LCK Cup 2026', ja: 'LCKカップ 2026', zh: '2026 LCK 杯' }, result: '', set: { w: 18, l: 17 } },
+      { event: { ko: 'LCK 2026 정규 3-4라운드', en: 'LCK 2026 Rounds 3–4', ja: 'LCK 2026 レギュラー 3-4', zh: 'LCK 2026 常规赛 第3-4轮' }, result: '', set: { w: 11, l: 8 } }
     ],
-    worlds: { stageKey: 'QF', line: { ko: 'BLG에 0:3 패배', en: 'Lost 0–3 to BLG', ja: 'BLGに0-3で敗退' }, date: { ko: '2026. 11. 06', en: 'Nov 6, 2026', ja: '2026年11月6日' } }
+    worlds: { stageKey: 'QF', line: { ko: 'BLG에 0:3 패배', en: 'Lost 0–3 to BLG', ja: 'BLGに0-3で敗退', zh: '0:3 负于 BLG' }, date: { ko: '2026. 11. 06', en: 'Nov 6, 2026', ja: '2026年11月6日', zh: '2026年11月6日' } }
   },
   {
     key: 'smash',
@@ -2619,9 +3246,11 @@ const PLAYERS = [
     nameEn: 'SMASH',
     nameIntl: 'Smash',
     nameJa: 'スマッシュ',
+    nameZh: '斯马什',
     real: '신금재',
     realEn: 'Shin Geum-jae',
     realJa: 'シン・クムジェ',
+    realZh: '申锦宰',
     pos: 'BOT',
     posKo: '원딜',
     riotId: 'DK Smash#KR7',
@@ -2643,13 +3272,13 @@ const PLAYERS = [
       { platform: 'chzzk', url: 'https://chzzk.naver.com/44aa27b0df5175323fac934acdff1ed5', handle: 'DK 스매쉬1' }
     ],
     highlights: [
-      { id: 'uxnXy7SFMsY', len: '7:21', channel: 'LCK', match: { ko: 'T1 vs KT · 3세트', en: 'T1 vs KT · Game 3', ja: 'T1 vs KT 第3試合' }, event: { ko: '2025 LCK 컵', en: '2025 LCK Cup', ja: '2025 LCKカップ' } },
-      { id: 'BxU5zVPnMiU', len: '9:33', channel: 'LCK', match: { ko: 'T1 vs GEN · 1세트', en: 'T1 vs GEN · Game 1', ja: 'T1 vs GEN 第1試合' }, event: { ko: '2025 LCK 컵 · 신인왕 등장', en: '2025 LCK Cup · rookie debut', ja: '2025 LCKカップ · 新人登場' } }
+      { id: 'uxnXy7SFMsY', len: '7:21', channel: 'LCK', match: { ko: 'T1 vs KT · 3세트', en: 'T1 vs KT · Game 3', ja: 'T1 vs KT 第3試合', zh: 'T1 vs KT · 第3局' }, event: { ko: '2025 LCK 컵', en: '2025 LCK Cup', ja: '2025 LCKカップ', zh: '2025 LCK 杯' } },
+      { id: 'BxU5zVPnMiU', len: '9:33', channel: 'LCK', match: { ko: 'T1 vs GEN · 1세트', en: 'T1 vs GEN · Game 1', ja: 'T1 vs GEN 第1試合', zh: 'T1 vs GEN · 第1局' }, event: { ko: '2025 LCK 컵 · 신인왕 등장', en: '2025 LCK Cup · rookie debut', ja: '2025 LCKカップ · 新人登場', zh: '2025 LCK 杯 · 新人王登场' } }
     ],
-    note: { ko: '', en: '', ja: '' },
+    note: { ko: '', en: '', ja: '', zh: '' },
     official: {
-      stage: { ko: 'Worlds 2026 · 8강', en: 'Worlds 2026 · Quarterfinals', ja: 'Worlds 2026 · ベスト8' },
-      team: 'DK', opp: 'BLG', score: '0 : 3', win: false, date: { ko: '11. 06.', en: 'Nov 6', ja: '11月6日' }
+      stage: { ko: 'Worlds 2026 · 8강', en: 'Worlds 2026 · Quarterfinals', ja: 'Worlds 2026 · ベスト8', zh: 'Worlds 2026 · 八强' },
+      team: 'DK', opp: 'BLG', score: '0 : 3', win: false, date: { ko: '11. 06.', en: 'Nov 6', ja: '11月6日', zh: '11月6日' }
     },
     matches: [
       { d: '11. 24.', t: '22:41', champ: '자르반 4세', role: '정글', win: true, kda: '14/2/16', dur: '29:18' },
@@ -2661,14 +3290,14 @@ const PLAYERS = [
       { d: '11. 21.', t: '23:12', champ: '징크스', role: '원딜', win: true, kda: '8/4/14', dur: '28:40' }
     ],
     records: [
-      { event: { ko: 'Worlds 2026', en: 'Worlds 2026', ja: 'Worlds 2026' }, result: 'QF', set: { w: 4, l: 3 }, key: true },
-      { event: { ko: 'EWC 2026', en: 'EWC 2026', ja: 'EWC 2026' }, result: '', set: { w: 11, l: 3 } },
-      { event: { ko: 'LCK 2026 Playoffs', en: 'LCK 2026 Playoffs', ja: 'LCK 2026 プレーオフ' }, result: '', set: { w: 7, l: 9 } },
-      { event: { ko: 'LCK 2026 정규 1-2라운드', en: 'LCK 2026 Rounds 1–2', ja: 'LCK 2026 レギュラー 1-2' }, result: '', set: { w: 24, l: 18 } },
-      { event: { ko: 'LCK Cup 2026', en: 'LCK Cup 2026', ja: 'LCKカップ 2026' }, result: '', set: { w: 18, l: 17 } },
-      { event: { ko: 'LCK 2026 정규 3-4라운드', en: 'LCK 2026 Rounds 3–4', ja: 'LCK 2026 レギュラー 3-4' }, result: '', set: { w: 11, l: 8 } }
+      { event: { ko: 'Worlds 2026', en: 'Worlds 2026', ja: 'Worlds 2026', zh: 'Worlds 2026' }, result: 'QF', set: { w: 4, l: 3 }, key: true },
+      { event: { ko: 'EWC 2026', en: 'EWC 2026', ja: 'EWC 2026', zh: 'EWC 2026' }, result: '', set: { w: 11, l: 3 } },
+      { event: { ko: 'LCK 2026 Playoffs', en: 'LCK 2026 Playoffs', ja: 'LCK 2026 プレーオフ', zh: 'LCK 2026 季后赛' }, result: '', set: { w: 7, l: 9 } },
+      { event: { ko: 'LCK 2026 정규 1-2라운드', en: 'LCK 2026 Rounds 1–2', ja: 'LCK 2026 レギュラー 1-2', zh: 'LCK 2026 常规赛 第1-2轮' }, result: '', set: { w: 24, l: 18 } },
+      { event: { ko: 'LCK Cup 2026', en: 'LCK Cup 2026', ja: 'LCKカップ 2026', zh: '2026 LCK 杯' }, result: '', set: { w: 18, l: 17 } },
+      { event: { ko: 'LCK 2026 정규 3-4라운드', en: 'LCK 2026 Rounds 3–4', ja: 'LCK 2026 レギュラー 3-4', zh: 'LCK 2026 常规赛 第3-4轮' }, result: '', set: { w: 11, l: 8 } }
     ],
-    worlds: { stageKey: 'QF', line: { ko: 'BLG에 0:3 패배', en: 'Lost 0–3 to BLG', ja: 'BLGに0-3で敗退' }, date: { ko: '2026. 11. 06', en: 'Nov 6, 2026', ja: '2026年11月6日' } }
+    worlds: { stageKey: 'QF', line: { ko: 'BLG에 0:3 패배', en: 'Lost 0–3 to BLG', ja: 'BLGに0-3で敗退', zh: '0:3 负于 BLG' }, date: { ko: '2026. 11. 06', en: 'Nov 6, 2026', ja: '2026年11月6日', zh: '2026年11月6日' } }
   },
   {
     key: 'delight',
@@ -2676,9 +3305,11 @@ const PLAYERS = [
     nameEn: 'DELIGHT',
     nameIntl: 'Delight',
     nameJa: 'ディライト',
+    nameZh: '迪莱特',
     real: '유환중',
     realEn: 'Yoo Hwan-joong',
     realJa: 'ユ・ファンジュン',
+    realZh: '柳焕中',
     pos: 'SUP',
     posKo: '서폿',
     riotId: '죽각딜#KR02',
@@ -2699,8 +3330,8 @@ const PLAYERS = [
       { platform: 'chzzk', url: 'https://chzzk.naver.com/59dd654778e3d0b64f3ed06baece805d', handle: 'HLE Delight' }
     ],
     highlights: [
-      { id: 'COviyhL_fxc', len: '8:52', channel: 'LCK', match: { ko: 'HLE vs DK · 2세트', en: 'HLE vs DK · Game 2', ja: 'HLE vs DK 第2試合' }, event: { ko: '2026 LCK · LCK 300승 기념', en: '2026 LCK · 300th LCK win', ja: '2026 LCK · LCK通算300勝' } },
-      { id: 'OT-19WY8HFI', len: '12:03', channel: 'LCK', match: { ko: 'HLE vs T1 · 1세트', en: 'HLE vs T1 · Game 1', ja: 'HLE vs T1 第1試合' }, event: { ko: '2026 우리은행 LCK 플레이오프', en: '2026 LCK Playoffs', ja: '2026 LCK プレーオフ' } }
+      { id: 'COviyhL_fxc', len: '8:52', channel: 'LCK', match: { ko: 'HLE vs DK · 2세트', en: 'HLE vs DK · Game 2', ja: 'HLE vs DK 第2試合', zh: 'HLE vs DK · 第2局' }, event: { ko: '2026 LCK · LCK 300승 기념', en: '2026 LCK · 300th LCK win', ja: '2026 LCK · LCK通算300勝', zh: '2026 LCK · LCK 300胜纪念' } },
+      { id: 'OT-19WY8HFI', len: '12:03', channel: 'LCK', match: { ko: 'HLE vs T1 · 1세트', en: 'HLE vs T1 · Game 1', ja: 'HLE vs T1 第1試合', zh: 'HLE vs T1 · 第1局' }, event: { ko: '2026 우리은행 LCK 플레이오프', en: '2026 LCK Playoffs', ja: '2026 LCK プレーオフ', zh: '2026 友利银行 LCK 季后赛' } }
     ],
     note: {
       ko: '닉네임이 플레이리스트겨울#KR1 에서 죽각딜#KR02 로 바뀌어 u.gg 새 주소로 연결했어요.',
@@ -2708,8 +3339,8 @@ const PLAYERS = [
       ja: 'アカウント名が 플레이리스트겨울#KR1 から 죽각딜#KR02 に変わったため、u.ggの新しいプロフィールにリンクしています。'
     },
     official: {
-      stage: { ko: 'Worlds 2026 · 5라운드', en: 'Worlds 2026 · Round 5', ja: 'Worlds 2026 · 第5ラウンド' },
-      team: 'HLE', opp: 'BLG', score: '0 : 2', win: false, date: { ko: '11. 01.', en: 'Nov 1', ja: '11月1日' }
+      stage: { ko: 'Worlds 2026 · 5라운드', en: 'Worlds 2026 · Round 5', ja: 'Worlds 2026 · 第5ラウンド', zh: 'Worlds 2026 · 第5轮' },
+      team: 'HLE', opp: 'BLG', score: '0 : 2', win: false, date: { ko: '11. 01.', en: 'Nov 1', ja: '11月1日', zh: '11月1日' }
     },
     matches: [
       { d: '10. 17.', t: '22:36', champ: '룰루', role: '서폿', win: true, kda: '2/0/12', dur: '15:41' },
@@ -2729,22 +3360,22 @@ const PLAYERS = [
       { d: '10. 14.', t: '23:26', champ: '뽀삐', role: '서폿', win: false, kda: '2/9/9', dur: '27:14' }
     ],
     records: [
-      { event: { ko: 'Worlds 2026', en: 'Worlds 2026', ja: 'Worlds 2026' }, result: 'R5', set: { w: 3, l: 4 }, key: true },
-      { event: { ko: 'MSI 2026', en: 'MSI 2026', ja: 'MSI 2026' }, result: 'CHAMP', set: { w: 13, l: 7 } },
-      { event: { ko: 'LCK 2026 Playoffs', en: 'LCK 2026 Playoffs', ja: 'LCK 2026 プレーオフ' }, result: 'RUNNER', set: { w: 8, l: 9 } },
-      { event: { ko: 'LCK 2026 정규 1-2라운드', en: 'LCK 2026 Rounds 1–2', ja: 'LCK 2026 レギュラー 1-2' }, result: '', set: { w: 30, l: 10 } },
-      { event: { ko: 'KeSPA Cup 2026', en: 'KeSPA Cup 2026', ja: 'KeSPAカップ 2026' }, result: '', set: { w: 5, l: 3 } },
-      { event: { ko: 'LCK Cup 2026', en: 'LCK Cup 2026', ja: 'LCKカップ 2026' }, result: '', set: { w: 5, l: 9 } }
+      { event: { ko: 'Worlds 2026', en: 'Worlds 2026', ja: 'Worlds 2026', zh: 'Worlds 2026' }, result: 'R5', set: { w: 3, l: 4 }, key: true },
+      { event: { ko: 'MSI 2026', en: 'MSI 2026', ja: 'MSI 2026', zh: 'MSI 2026' }, result: 'CHAMP', set: { w: 13, l: 7 } },
+      { event: { ko: 'LCK 2026 Playoffs', en: 'LCK 2026 Playoffs', ja: 'LCK 2026 プレーオフ', zh: 'LCK 2026 季后赛' }, result: 'RUNNER', set: { w: 8, l: 9 } },
+      { event: { ko: 'LCK 2026 정규 1-2라운드', en: 'LCK 2026 Rounds 1–2', ja: 'LCK 2026 レギュラー 1-2', zh: 'LCK 2026 常规赛 第1-2轮' }, result: '', set: { w: 30, l: 10 } },
+      { event: { ko: 'KeSPA Cup 2026', en: 'KeSPA Cup 2026', ja: 'KeSPAカップ 2026', zh: '2026 KeSPA 杯' }, result: '', set: { w: 5, l: 3 } },
+      { event: { ko: 'LCK Cup 2026', en: 'LCK Cup 2026', ja: 'LCKカップ 2026', zh: '2026 LCK 杯' }, result: '', set: { w: 5, l: 9 } }
     ],
-    worlds: { stageKey: 'R5', line: { ko: 'BLG에 0:2 패배', en: 'Lost 0–2 to BLG', ja: 'BLGに0-2で敗退' }, date: { ko: '2026. 11. 01', en: 'Nov 1, 2026', ja: '2026年11月1日' } }
+    worlds: { stageKey: 'R5', line: { ko: 'BLG에 0:2 패배', en: 'Lost 0–2 to BLG', ja: 'BLGに0-2で敗退', zh: '0:2 负于 BLG' }, date: { ko: '2026. 11. 01', en: 'Nov 1, 2026', ja: '2026年11月1日', zh: '2026年11月1日' } }
   }
 ];
 
 const DK_PATH = [
-  { round: { ko: '1라운드', en: 'Round 1', ja: '第1ラウンド' }, opp: 'G2', score: '1 : 0', win: true, date: { ko: '10. 24.', en: 'Oct 24', ja: '10月24日' } },
-  { round: { ko: '2라운드', en: 'Round 2', ja: '第2ラウンド' }, opp: 'T1', score: '1 : 0', win: true, date: { ko: '10. 25.', en: 'Oct 25', ja: '10月25日' } },
-  { round: { ko: '3라운드', en: 'Round 3', ja: '第3ラウンド' }, opp: 'MKOI', score: '2 : 0', win: true, date: { ko: '10. 26.', en: 'Oct 26', ja: '10月26日' } },
-  { round: { ko: '8강', en: 'Quarterfinals', ja: 'ベスト8' }, opp: 'BLG', score: '0 : 3', win: false, date: { ko: '11. 06.', en: 'Nov 6', ja: '11月6日' } }
+  { round: { ko: '1라운드', en: 'Round 1', ja: '第1ラウンド', zh: '第1轮' }, opp: 'G2', score: '1 : 0', win: true, date: { ko: '10. 24.', en: 'Oct 24', ja: '10月24日', zh: '10月24日' } },
+  { round: { ko: '2라운드', en: 'Round 2', ja: '第2ラウンド', zh: '第2轮' }, opp: 'T1', score: '1 : 0', win: true, date: { ko: '10. 25.', en: 'Oct 25', ja: '10月25日', zh: '10月25日' } },
+  { round: { ko: '3라운드', en: 'Round 3', ja: '第3ラウンド', zh: '第3轮' }, opp: 'MKOI', score: '2 : 0', win: true, date: { ko: '10. 26.', en: 'Oct 26', ja: '10月26日', zh: '10月26日' } },
+  { round: { ko: '8강', en: 'Quarterfinals', ja: 'ベスト8', zh: '八强' }, opp: 'BLG', score: '0 : 3', win: false, date: { ko: '11. 06.', en: 'Nov 6', ja: '11月6日', zh: '11月6日' } }
 ];
 
 const ROSTER_NOTES = {
@@ -2763,213 +3394,213 @@ const ROSTER_NOTES = {
 const SEASON_2027 = [
   {
     no: '01',
-    name: { ko: 'LCK 컵', en: 'LCK Cup', ja: 'LCKカップ' },
-    host: { ko: '국내', en: 'Korea', ja: '韓国' },
-    note: { ko: '2027 시즌 개막 · 세부 일정 추후 공지', en: '2027 season opener · schedule to be announced', ja: '2027シーズン開幕 · 詳細日程は追って発表' }
+    name: { ko: 'LCK 컵', en: 'LCK Cup', ja: 'LCKカップ', zh: 'LCK 杯' },
+    host: { ko: '국내', en: 'Korea', ja: '韓国', zh: '国内' },
+    note: { ko: '2027 시즌 개막 · 세부 일정 추후 공지', en: '2027 season opener · schedule to be announced', ja: '2027シーズン開幕 · 詳細日程は追って発表', zh: '2027 赛季开幕 · 详细赛程后续公布' }
   },
   {
     no: '02',
-    name: { ko: 'First Stand: All In', en: 'First Stand: All In', ja: 'First Stand: All In' },
-    host: { ko: '중국', en: 'China', ja: '中国' },
-    note: { ko: '2027 한정 확대판 · 형식과 일정은 2027년 1월 발표', en: '2027-only expanded edition · format and dates announced January 2027', ja: '2027年限定の拡大版 · 形式と日程は2027年1月発表' }
+    name: { ko: 'First Stand: All In', en: 'First Stand: All In', ja: 'First Stand: All In', zh: 'First Stand: All In' },
+    host: { ko: '중국', en: 'China', ja: '中国', zh: '中国' },
+    note: { ko: '2027 한정 확대판 · 형식과 일정은 2027년 1월 발표', en: '2027-only expanded edition · format and dates announced January 2027', ja: '2027年限定の拡大版 · 形式と日程は2027年1月発表', zh: '2027 限定扩大版 · 赛制与赛程于 2027年1月公布' }
   },
   {
     no: '03',
-    name: { ko: 'LCK 정규 시즌', en: 'LCK regular season', ja: 'LCKレギュラーシーズン' },
-    host: { ko: '국내', en: 'Korea', ja: '韓国' },
-    note: { ko: '단일 정규 시즌 · 스프링·서머 스플릿 없음', en: 'One regular season · no spring/summer splits', ja: '単一レギュラーシーズン · スプリング／サマーなし' }
+    name: { ko: 'LCK 정규 시즌', en: 'LCK regular season', ja: 'LCKレギュラーシーズン', zh: 'LCK 常规赛' },
+    host: { ko: '국내', en: 'Korea', ja: '韓国', zh: '国内' },
+    note: { ko: '단일 정규 시즌 · 스프링·서머 스플릿 없음', en: 'One regular season · no spring/summer splits', ja: '単一レギュラーシーズン · スプリング／サマーなし', zh: '单一常规赛 · 无春季/夏季赛' }
   },
   {
     no: '04',
-    name: { ko: 'MSI 2027', en: 'MSI 2027', ja: 'MSI 2027' },
-    host: { ko: '발렌시아', en: 'Valencia', ja: 'バレンシア' },
-    note: { ko: '미드 시즌 인비테이셔널 · 스페인 발렌시아', en: 'Mid-Season Invitational · Valencia, Spain', ja: 'ミッドシーズン・インビテーショナル · スペイン・バレンシア' }
+    name: { ko: 'MSI 2027', en: 'MSI 2027', ja: 'MSI 2027', zh: 'MSI 2027' },
+    host: { ko: '발렌시아', en: 'Valencia', ja: 'バレンシア', zh: '巴伦西亚' },
+    note: { ko: '미드 시즌 인비테이셔널 · 스페인 발렌시아', en: 'Mid-Season Invitational · Valencia, Spain', ja: 'ミッドシーズン・インビテーショナル · スペイン・バレンシア', zh: '季中冠军赛 · 西班牙 巴伦西亚' }
   },
   {
     no: '05',
-    name: { ko: '월즈 2027', en: 'Worlds 2027', ja: 'Worlds 2027' },
-    host: { ko: '일본 · 한국', en: 'Japan · Korea', ja: '日本・韓国' },
-    note: { ko: '스위스 나고야 · 8강/4강 수원 · 결승 서울', en: 'Swiss in Nagoya · quarters/semis in Suwon · final in Seoul', ja: 'スイスは名古屋 · 準々決勝／準決勝は水原 · 決勝はソウル' }
+    name: { ko: '월즈 2027', en: 'Worlds 2027', ja: 'Worlds 2027', zh: '2027 全球总决赛' },
+    host: { ko: '일본 · 한국', en: 'Japan · Korea', ja: '日本・韓国', zh: '日本 · 韩国' },
+    note: { ko: '스위스 나고야 · 8강/4강 수원 · 결승 서울', en: 'Swiss in Nagoya · quarters/semis in Suwon · final in Seoul', ja: 'スイスは名古屋 · 準々決勝／準決勝は水原 · 決勝はソウル', zh: '瑞士轮 名古屋 · 八强/四强 水原 · 决赛 首尔' }
   }
 ];
 
-/* 챔피언 이름 (Riot Data Dragon 16.23.1 ko_KR · en_US · ja_JP)
- * data.js 는 한국어 이름을 쓰고, Riot API 는 영어 이름을 주기 때문에 세 언어를 한 표에 둡니다.
+/* 챔피언 이름 (Riot Data Dragon 16.23.1 ko_KR · en_US · ja_JP · zh_CN)
+ * data.js 는 한국어 이름을 쓰고, Riot API 는 영어 이름을 주기 때문에 네 언어를 한 표에 둡니다.
  * tools/make_champions.py 로 다시 만들 수 있습니다. */
 const CHAMPIONS = {
-  'Aatrox': ['아트록스', 'Aatrox', 'エイトロックス'],
-  'Ahri': ['아리', 'Ahri', 'アーリ'],
-  'Akali': ['아칼리', 'Akali', 'アカリ'],
-  'Akshan': ['아크샨', 'Akshan', 'アクシャン'],
-  'Alistar': ['알리스타', 'Alistar', 'アリスター'],
-  'Ambessa': ['암베사', 'Ambessa', 'アンベッサ'],
-  'Amumu': ['아무무', 'Amumu', 'アムム'],
-  'Anivia': ['애니비아', 'Anivia', 'アニビア'],
-  'Annie': ['애니', 'Annie', 'アニー'],
-  'Aphelios': ['아펠리오스', 'Aphelios', 'アフェリオス'],
-  'Ashe': ['애쉬', 'Ashe', 'アッシュ'],
-  'AurelionSol': ['아우렐리온 솔', 'Aurelion Sol', 'オレリオン・ソル'],
-  'Aurora': ['오로라', 'Aurora', 'オーロラ'],
-  'Azir': ['아지르', 'Azir', 'アジール'],
-  'Bard': ['바드', 'Bard', 'バード'],
-  'Belveth': ['벨베스', 'Bel\'Veth', 'ベル＝ヴェス'],
-  'Blitzcrank': ['블리츠크랭크', 'Blitzcrank', 'ブリッツクランク'],
-  'Brand': ['브랜드', 'Brand', 'ブランド'],
-  'Braum': ['브라움', 'Braum', 'ブラウム'],
-  'Briar': ['브라이어', 'Briar', 'ブライアー'],
-  'Caitlyn': ['케이틀린', 'Caitlyn', 'ケイトリン'],
-  'Camille': ['카밀', 'Camille', 'カミール'],
-  'Cassiopeia': ['카시오페아', 'Cassiopeia', 'カシオペア'],
-  'Chogath': ['초가스', 'Cho\'Gath', 'チョ＝ガス'],
-  'Corki': ['코르키', 'Corki', 'コーキ'],
-  'Darius': ['다리우스', 'Darius', 'ダリウス'],
-  'Diana': ['다이애나', 'Diana', 'ダイアナ'],
-  'DrMundo': ['문도 박사', 'Dr. Mundo', 'ドクター・ムンド'],
-  'Draven': ['드레이븐', 'Draven', 'ドレイヴン'],
-  'Ekko': ['에코', 'Ekko', 'エコー'],
-  'Elise': ['엘리스', 'Elise', 'エリス'],
-  'Evelynn': ['이블린', 'Evelynn', 'イブリン'],
-  'Ezreal': ['이즈리얼', 'Ezreal', 'エズリアル'],
-  'Fiddlesticks': ['피들스틱', 'Fiddlesticks', 'フィドルスティックス'],
-  'Fiora': ['피오라', 'Fiora', 'フィオラ'],
-  'Fizz': ['피즈', 'Fizz', 'フィズ'],
-  'Galio': ['갈리오', 'Galio', 'ガリオ'],
-  'Gangplank': ['갱플랭크', 'Gangplank', 'ガングプランク'],
-  'Garen': ['가렌', 'Garen', 'ガレン'],
-  'Gnar': ['나르', 'Gnar', 'ナー'],
-  'Gragas': ['그라가스', 'Gragas', 'グラガス'],
-  'Graves': ['그레이브즈', 'Graves', 'グレイブス'],
-  'Gwen': ['그웬', 'Gwen', 'グウェン'],
-  'Hecarim': ['헤카림', 'Hecarim', 'ヘカリム'],
-  'Heimerdinger': ['하이머딩거', 'Heimerdinger', 'ハイマーディンガー'],
-  'Hwei': ['흐웨이', 'Hwei', 'フェイ'],
-  'Illaoi': ['일라오이', 'Illaoi', 'イラオイ'],
-  'Irelia': ['이렐리아', 'Irelia', 'イレリア'],
-  'Ivern': ['아이번', 'Ivern', 'アイバーン'],
-  'Janna': ['잔나', 'Janna', 'ジャンナ'],
-  'JarvanIV': ['자르반 4세', 'Jarvan IV', 'ジャーヴァンⅣ'],
-  'Jax': ['잭스', 'Jax', 'ジャックス'],
-  'Jayce': ['제이스', 'Jayce', 'ジェイス'],
-  'Jhin': ['진', 'Jhin', 'ジン'],
-  'Jinx': ['징크스', 'Jinx', 'ジンクス'],
-  'KSante': ['크산테', 'K\'Sante', 'カ・サンテ'],
-  'Kaisa': ['카이사', 'Kai\'Sa', 'カイ＝サ'],
-  'Kalista': ['칼리스타', 'Kalista', 'カリスタ'],
-  'Karma': ['카르마', 'Karma', 'カルマ'],
-  'Karthus': ['카서스', 'Karthus', 'カーサス'],
-  'Kassadin': ['카사딘', 'Kassadin', 'カサディン'],
-  'Katarina': ['카타리나', 'Katarina', 'カタリナ'],
-  'Kayle': ['케일', 'Kayle', 'ケイル'],
-  'Kayn': ['케인', 'Kayn', 'ケイン'],
-  'Kennen': ['케넨', 'Kennen', 'ケネン'],
-  'Khazix': ['카직스', 'Kha\'Zix', 'カ＝ジックス'],
-  'Kindred': ['킨드레드', 'Kindred', 'キンドレッド'],
-  'Kled': ['클레드', 'Kled', 'クレッド'],
-  'KogMaw': ['코그모', 'Kog\'Maw', 'コグ＝マウ'],
-  'Leblanc': ['르블랑', 'LeBlanc', 'ルブラン'],
-  'LeeSin': ['리 신', 'Lee Sin', 'リー・シン'],
-  'Leona': ['레오나', 'Leona', 'レオナ'],
-  'Lillia': ['릴리아', 'Lillia', 'リリア'],
-  'Lissandra': ['리산드라', 'Lissandra', 'リサンドラ'],
-  'Locke': ['로크', 'Locke', 'ロック'],
-  'Lucian': ['루시안', 'Lucian', 'ルシアン'],
-  'Lulu': ['룰루', 'Lulu', 'ルル'],
-  'Lux': ['럭스', 'Lux', 'ラックス'],
-  'Malphite': ['말파이트', 'Malphite', 'マルファイト'],
-  'Malzahar': ['말자하', 'Malzahar', 'マルザハール'],
-  'Maokai': ['마오카이', 'Maokai', 'マオカイ'],
-  'MasterYi': ['마스터 이', 'Master Yi', 'マスター・イー'],
-  'Mel': ['멜', 'Mel', 'メル'],
-  'Milio': ['밀리오', 'Milio', 'ミリオ'],
-  'MissFortune': ['미스 포츈', 'Miss Fortune', 'ミス・フォーチュン'],
-  'MonkeyKing': ['오공', 'Wukong', 'ウーコン'],
-  'Mordekaiser': ['모데카이저', 'Mordekaiser', 'モルデカイザー'],
-  'Morgana': ['모르가나', 'Morgana', 'モルガナ'],
-  'Naafiri': ['나피리', 'Naafiri', 'ナフィーリ'],
-  'Nami': ['나미', 'Nami', 'ナミ'],
-  'Nasus': ['나서스', 'Nasus', 'ナサス'],
-  'Nautilus': ['노틸러스', 'Nautilus', 'ノーチラス'],
-  'Neeko': ['니코', 'Neeko', 'ニーコ'],
-  'Nidalee': ['니달리', 'Nidalee', 'ニダリー'],
-  'Nilah': ['닐라', 'Nilah', 'ニーラ'],
-  'Nocturne': ['녹턴', 'Nocturne', 'ノクターン'],
-  'Nunu': ['누누와 윌럼프', 'Nunu & Willump', 'ヌヌ＆ウィルンプ'],
-  'Olaf': ['올라프', 'Olaf', 'オラフ'],
-  'Orianna': ['오리아나', 'Orianna', 'オリアナ'],
-  'Ornn': ['오른', 'Ornn', 'オーン'],
-  'Pantheon': ['판테온', 'Pantheon', 'パンテオン'],
-  'Poppy': ['뽀삐', 'Poppy', 'ポッピー'],
-  'Pyke': ['파이크', 'Pyke', 'パイク'],
-  'Qiyana': ['키아나', 'Qiyana', 'キヤナ'],
-  'Quinn': ['퀸', 'Quinn', 'クイン'],
-  'Rakan': ['라칸', 'Rakan', 'ラカン'],
-  'Rammus': ['람머스', 'Rammus', 'ラムス'],
-  'RekSai': ['렉사이', 'Rek\'Sai', 'レク＝サイ'],
-  'Rell': ['렐', 'Rell', 'レル'],
-  'Renata': ['레나타 글라스크', 'Renata Glasc', 'レナータ・グラスク'],
-  'Renekton': ['레넥톤', 'Renekton', 'レネクトン'],
-  'Rengar': ['렝가', 'Rengar', 'レンガー'],
-  'Riven': ['리븐', 'Riven', 'リヴェン'],
-  'Rumble': ['럼블', 'Rumble', 'ランブル'],
-  'Ryze': ['라이즈', 'Ryze', 'ライズ'],
-  'Samira': ['사미라', 'Samira', 'サミーラ'],
-  'Sejuani': ['세주아니', 'Sejuani', 'セジュアニ'],
-  'Senna': ['세나', 'Senna', 'セナ'],
-  'Seraphine': ['세라핀', 'Seraphine', 'セラフィーン'],
-  'Sett': ['세트', 'Sett', 'セト'],
-  'Shaco': ['샤코', 'Shaco', 'シャコ'],
-  'Shen': ['쉔', 'Shen', 'シェン'],
-  'Shyvana': ['쉬바나', 'Shyvana', 'シヴァーナ'],
-  'Singed': ['신지드', 'Singed', 'シンジド'],
-  'Sion': ['사이온', 'Sion', 'サイオン'],
-  'Sivir': ['시비르', 'Sivir', 'シヴィア'],
-  'Skarner': ['스카너', 'Skarner', 'スカーナー'],
-  'Smolder': ['스몰더', 'Smolder', 'スモルダー'],
-  'Sona': ['소나', 'Sona', 'ソナ'],
-  'Soraka': ['소라카', 'Soraka', 'ソラカ'],
-  'Swain': ['스웨인', 'Swain', 'スウェイン'],
-  'Sylas': ['사일러스', 'Sylas', 'サイラス'],
-  'Syndra': ['신드라', 'Syndra', 'シンドラ'],
-  'TahmKench': ['탐 켄치', 'Tahm Kench', 'タム・ケンチ'],
-  'Taliyah': ['탈리야', 'Taliyah', 'タリヤ'],
-  'Talon': ['탈론', 'Talon', 'タロン'],
-  'Taric': ['타릭', 'Taric', 'タリック'],
-  'Teemo': ['티모', 'Teemo', 'ティーモ'],
-  'Thresh': ['쓰레쉬', 'Thresh', 'スレッシュ'],
-  'Tristana': ['트리스타나', 'Tristana', 'トリスターナ'],
-  'Trundle': ['트런들', 'Trundle', 'トランドル'],
-  'Tryndamere': ['트린다미어', 'Tryndamere', 'トリンダメア'],
-  'TwistedFate': ['트위스티드 페이트', 'Twisted Fate', 'ツイステッド・フェイト'],
-  'Twitch': ['트위치', 'Twitch', 'トゥイッチ'],
-  'Udyr': ['우디르', 'Udyr', 'ウディア'],
-  'Urgot': ['우르곳', 'Urgot', 'アーゴット'],
-  'Varus': ['바루스', 'Varus', 'ヴァルス'],
-  'Vayne': ['베인', 'Vayne', 'ヴェイン'],
-  'Veigar': ['베이가', 'Veigar', 'ベイガー'],
-  'Velkoz': ['벨코즈', 'Vel\'Koz', 'ヴェル＝コズ'],
-  'Vex': ['벡스', 'Vex', 'ヴェックス'],
-  'Vi': ['바이', 'Vi', 'ヴァイ'],
-  'Viego': ['비에고', 'Viego', 'ヴィエゴ'],
-  'Viktor': ['빅토르', 'Viktor', 'ビクター'],
-  'Vladimir': ['블라디미르', 'Vladimir', 'ブラッドミア'],
-  'Volibear': ['볼리베어', 'Volibear', 'ボリベア'],
-  'Warwick': ['워윅', 'Warwick', 'ワーウィック'],
-  'Xayah': ['자야', 'Xayah', 'ザヤ'],
-  'Xerath': ['제라스', 'Xerath', 'ゼラス'],
-  'XinZhao': ['신 짜오', 'Xin Zhao', 'シン・ジャオ'],
-  'Yasuo': ['야스오', 'Yasuo', 'ヤスオ'],
-  'Yone': ['요네', 'Yone', 'ヨネ'],
-  'Yorick': ['요릭', 'Yorick', 'ヨリック'],
-  'Yunara': ['유나라', 'Yunara', 'ユナラ'],
-  'Yuumi': ['유미', 'Yuumi', 'ユーミ'],
-  'Zaahen': ['자헨', 'Zaahen', 'ザーヘン'],
-  'Zac': ['자크', 'Zac', 'ザック'],
-  'Zed': ['제드', 'Zed', 'ゼド'],
-  'Zeri': ['제리', 'Zeri', 'ゼリ'],
-  'Ziggs': ['직스', 'Ziggs', 'ジグス'],
-  'Zilean': ['질리언', 'Zilean', 'ジリアン'],
-  'Zoe': ['조이', 'Zoe', 'ゾーイ'],
-  'Zyra': ['자이라', 'Zyra', 'ザイラ'],
+  'Aatrox': ['아트록스', 'Aatrox', 'エイトロックス', '暗裔剑魔'],
+  'Ahri': ['아리', 'Ahri', 'アーリ', '九尾妖狐'],
+  'Akali': ['아칼리', 'Akali', 'アカリ', '离群之刺'],
+  'Akshan': ['아크샨', 'Akshan', 'アクシャン', '影哨'],
+  'Alistar': ['알리스타', 'Alistar', 'アリスター', '牛头酋长'],
+  'Ambessa': ['암베사', 'Ambessa', 'アンベッサ', '铁血狼母'],
+  'Amumu': ['아무무', 'Amumu', 'アムム', '殇之木乃伊'],
+  'Anivia': ['애니비아', 'Anivia', 'アニビア', '冰晶凤凰'],
+  'Annie': ['애니', 'Annie', 'アニー', '黑暗之女'],
+  'Aphelios': ['아펠리오스', 'Aphelios', 'アフェリオス', '残月之肃'],
+  'Ashe': ['애쉬', 'Ashe', 'アッシュ', '寒冰射手'],
+  'AurelionSol': ['아우렐리온 솔', 'Aurelion Sol', 'オレリオン・ソル', '铸星龙王'],
+  'Aurora': ['오로라', 'Aurora', 'オーロラ', '双界灵兔'],
+  'Azir': ['아지르', 'Azir', 'アジール', '沙漠皇帝'],
+  'Bard': ['바드', 'Bard', 'バード', '星界游神'],
+  'Belveth': ['벨베스', 'Bel\'Veth', 'ベル＝ヴェス', '虚空女皇'],
+  'Blitzcrank': ['블리츠크랭크', 'Blitzcrank', 'ブリッツクランク', '蒸汽机器人'],
+  'Brand': ['브랜드', 'Brand', 'ブランド', '复仇焰魂'],
+  'Braum': ['브라움', 'Braum', 'ブラウム', '弗雷尔卓德之心'],
+  'Briar': ['브라이어', 'Briar', 'ブライアー', '狂厄蔷薇'],
+  'Caitlyn': ['케이틀린', 'Caitlyn', 'ケイトリン', '皮城女警'],
+  'Camille': ['카밀', 'Camille', 'カミール', '青钢影'],
+  'Cassiopeia': ['카시오페아', 'Cassiopeia', 'カシオペア', '魔蛇之拥'],
+  'Chogath': ['초가스', 'Cho\'Gath', 'チョ＝ガス', '虚空恐惧'],
+  'Corki': ['코르키', 'Corki', 'コーキ', '英勇投弹手'],
+  'Darius': ['다리우스', 'Darius', 'ダリウス', '诺克萨斯之手'],
+  'Diana': ['다이애나', 'Diana', 'ダイアナ', '皎月女神'],
+  'DrMundo': ['문도 박사', 'Dr. Mundo', 'ドクター・ムンド', '祖安狂人'],
+  'Draven': ['드레이븐', 'Draven', 'ドレイヴン', '荣耀行刑官'],
+  'Ekko': ['에코', 'Ekko', 'エコー', '时间刺客'],
+  'Elise': ['엘리스', 'Elise', 'エリス', '蜘蛛女皇'],
+  'Evelynn': ['이블린', 'Evelynn', 'イブリン', '痛苦之拥'],
+  'Ezreal': ['이즈리얼', 'Ezreal', 'エズリアル', '探险家'],
+  'Fiddlesticks': ['피들스틱', 'Fiddlesticks', 'フィドルスティックス', '远古恐惧'],
+  'Fiora': ['피오라', 'Fiora', 'フィオラ', '无双剑姬'],
+  'Fizz': ['피즈', 'Fizz', 'フィズ', '潮汐海灵'],
+  'Galio': ['갈리오', 'Galio', 'ガリオ', '正义巨像'],
+  'Gangplank': ['갱플랭크', 'Gangplank', 'ガングプランク', '海洋之灾'],
+  'Garen': ['가렌', 'Garen', 'ガレン', '德玛西亚之力'],
+  'Gnar': ['나르', 'Gnar', 'ナー', '迷失之牙'],
+  'Gragas': ['그라가스', 'Gragas', 'グラガス', '酒桶'],
+  'Graves': ['그레이브즈', 'Graves', 'グレイブス', '法外狂徒'],
+  'Gwen': ['그웬', 'Gwen', 'グウェン', '灵罗娃娃'],
+  'Hecarim': ['헤카림', 'Hecarim', 'ヘカリム', '战争之影'],
+  'Heimerdinger': ['하이머딩거', 'Heimerdinger', 'ハイマーディンガー', '大发明家'],
+  'Hwei': ['흐웨이', 'Hwei', 'フェイ', '异画师'],
+  'Illaoi': ['일라오이', 'Illaoi', 'イラオイ', '海兽祭司'],
+  'Irelia': ['이렐리아', 'Irelia', 'イレリア', '刀锋舞者'],
+  'Ivern': ['아이번', 'Ivern', 'アイバーン', '翠神'],
+  'Janna': ['잔나', 'Janna', 'ジャンナ', '风暴之怒'],
+  'JarvanIV': ['자르반 4세', 'Jarvan IV', 'ジャーヴァンⅣ', '德玛西亚皇子'],
+  'Jax': ['잭스', 'Jax', 'ジャックス', '武器大师'],
+  'Jayce': ['제이스', 'Jayce', 'ジェイス', '未来守护者'],
+  'Jhin': ['진', 'Jhin', 'ジン', '戏命师'],
+  'Jinx': ['징크스', 'Jinx', 'ジンクス', '暴走萝莉'],
+  'KSante': ['크산테', 'K\'Sante', 'カ・サンテ', '纳祖芒荣耀'],
+  'Kaisa': ['카이사', 'Kai\'Sa', 'カイ＝サ', '虚空之女'],
+  'Kalista': ['칼리스타', 'Kalista', 'カリスタ', '复仇之矛'],
+  'Karma': ['카르마', 'Karma', 'カルマ', '天启者'],
+  'Karthus': ['카서스', 'Karthus', 'カーサス', '死亡颂唱者'],
+  'Kassadin': ['카사딘', 'Kassadin', 'カサディン', '虚空行者'],
+  'Katarina': ['카타리나', 'Katarina', 'カタリナ', '不祥之刃'],
+  'Kayle': ['케일', 'Kayle', 'ケイル', '正义天使'],
+  'Kayn': ['케인', 'Kayn', 'ケイン', '影流之镰'],
+  'Kennen': ['케넨', 'Kennen', 'ケネン', '狂暴之心'],
+  'Khazix': ['카직스', 'Kha\'Zix', 'カ＝ジックス', '虚空掠夺者'],
+  'Kindred': ['킨드레드', 'Kindred', 'キンドレッド', '永猎双子'],
+  'Kled': ['클레드', 'Kled', 'クレッド', '暴怒骑士'],
+  'KogMaw': ['코그모', 'Kog\'Maw', 'コグ＝マウ', '深渊巨口'],
+  'Leblanc': ['르블랑', 'LeBlanc', 'ルブラン', '诡术妖姬'],
+  'LeeSin': ['리 신', 'Lee Sin', 'リー・シン', '盲僧'],
+  'Leona': ['레오나', 'Leona', 'レオナ', '曙光女神'],
+  'Lillia': ['릴리아', 'Lillia', 'リリア', '含羞蓓蕾'],
+  'Lissandra': ['리산드라', 'Lissandra', 'リサンドラ', '冰霜女巫'],
+  'Locke': ['로크', 'Locke', 'ロック', '灰烬驱魔人'],
+  'Lucian': ['루시안', 'Lucian', 'ルシアン', '圣枪游侠'],
+  'Lulu': ['룰루', 'Lulu', 'ルル', '仙灵女巫'],
+  'Lux': ['럭스', 'Lux', 'ラックス', '光辉女郎'],
+  'Malphite': ['말파이트', 'Malphite', 'マルファイト', '熔岩巨兽'],
+  'Malzahar': ['말자하', 'Malzahar', 'マルザハール', '虚空先知'],
+  'Maokai': ['마오카이', 'Maokai', 'マオカイ', '扭曲树精'],
+  'MasterYi': ['마스터 이', 'Master Yi', 'マスター・イー', '无极剑圣'],
+  'Mel': ['멜', 'Mel', 'メル', '流光镜影'],
+  'Milio': ['밀리오', 'Milio', 'ミリオ', '明烛'],
+  'MissFortune': ['미스 포츈', 'Miss Fortune', 'ミス・フォーチュン', '赏金猎人'],
+  'MonkeyKing': ['오공', 'Wukong', 'ウーコン', '齐天大圣'],
+  'Mordekaiser': ['모데카이저', 'Mordekaiser', 'モルデカイザー', '铁铠冥魂'],
+  'Morgana': ['모르가나', 'Morgana', 'モルガナ', '堕落天使'],
+  'Naafiri': ['나피리', 'Naafiri', 'ナフィーリ', '百裂冥犬'],
+  'Nami': ['나미', 'Nami', 'ナミ', '唤潮鲛姬'],
+  'Nasus': ['나서스', 'Nasus', 'ナサス', '沙漠死神'],
+  'Nautilus': ['노틸러스', 'Nautilus', 'ノーチラス', '深海泰坦'],
+  'Neeko': ['니코', 'Neeko', 'ニーコ', '万花通灵'],
+  'Nidalee': ['니달리', 'Nidalee', 'ニダリー', '狂野女猎手'],
+  'Nilah': ['닐라', 'Nilah', 'ニーラ', '不羁之悦'],
+  'Nocturne': ['녹턴', 'Nocturne', 'ノクターン', '永恒梦魇'],
+  'Nunu': ['누누와 윌럼프', 'Nunu & Willump', 'ヌヌ＆ウィルンプ', '雪原双子'],
+  'Olaf': ['올라프', 'Olaf', 'オラフ', '狂战士'],
+  'Orianna': ['오리아나', 'Orianna', 'オリアナ', '发条魔灵'],
+  'Ornn': ['오른', 'Ornn', 'オーン', '山隐之焰'],
+  'Pantheon': ['판테온', 'Pantheon', 'パンテオン', '不屈之枪'],
+  'Poppy': ['뽀삐', 'Poppy', 'ポッピー', '圣锤之毅'],
+  'Pyke': ['파이크', 'Pyke', 'パイク', '血港鬼影'],
+  'Qiyana': ['키아나', 'Qiyana', 'キヤナ', '元素女皇'],
+  'Quinn': ['퀸', 'Quinn', 'クイン', '德玛西亚之翼'],
+  'Rakan': ['라칸', 'Rakan', 'ラカン', '幻翎'],
+  'Rammus': ['람머스', 'Rammus', 'ラムス', '披甲龙龟'],
+  'RekSai': ['렉사이', 'Rek\'Sai', 'レク＝サイ', '虚空遁地兽'],
+  'Rell': ['렐', 'Rell', 'レル', '镕铁少女'],
+  'Renata': ['레나타 글라스크', 'Renata Glasc', 'レナータ・グラスク', '炼金男爵'],
+  'Renekton': ['레넥톤', 'Renekton', 'レネクトン', '荒漠屠夫'],
+  'Rengar': ['렝가', 'Rengar', 'レンガー', '傲之追猎者'],
+  'Riven': ['리븐', 'Riven', 'リヴェン', '放逐之刃'],
+  'Rumble': ['럼블', 'Rumble', 'ランブル', '机械公敌'],
+  'Ryze': ['라이즈', 'Ryze', 'ライズ', '符文法师'],
+  'Samira': ['사미라', 'Samira', 'サミーラ', '沙漠玫瑰'],
+  'Sejuani': ['세주아니', 'Sejuani', 'セジュアニ', '北地之怒'],
+  'Senna': ['세나', 'Senna', 'セナ', '涤魂圣枪'],
+  'Seraphine': ['세라핀', 'Seraphine', 'セラフィーン', '星籁歌姬'],
+  'Sett': ['세트', 'Sett', 'セト', '腕豪'],
+  'Shaco': ['샤코', 'Shaco', 'シャコ', '恶魔小丑'],
+  'Shen': ['쉔', 'Shen', 'シェン', '暮光之眼'],
+  'Shyvana': ['쉬바나', 'Shyvana', 'シヴァーナ', '龙血武姬'],
+  'Singed': ['신지드', 'Singed', 'シンジド', '炼金术士'],
+  'Sion': ['사이온', 'Sion', 'サイオン', '亡灵战神'],
+  'Sivir': ['시비르', 'Sivir', 'シヴィア', '战争女神'],
+  'Skarner': ['스카너', 'Skarner', 'スカーナー', '上古领主'],
+  'Smolder': ['스몰더', 'Smolder', 'スモルダー', '炽炎雏龙'],
+  'Sona': ['소나', 'Sona', 'ソナ', '琴瑟仙女'],
+  'Soraka': ['소라카', 'Soraka', 'ソラカ', '众星之子'],
+  'Swain': ['스웨인', 'Swain', 'スウェイン', '诺克萨斯统领'],
+  'Sylas': ['사일러스', 'Sylas', 'サイラス', '解脱者'],
+  'Syndra': ['신드라', 'Syndra', 'シンドラ', '暗黑元首'],
+  'TahmKench': ['탐 켄치', 'Tahm Kench', 'タム・ケンチ', '河流之王'],
+  'Taliyah': ['탈리야', 'Taliyah', 'タリヤ', '岩雀'],
+  'Talon': ['탈론', 'Talon', 'タロン', '刀锋之影'],
+  'Taric': ['타릭', 'Taric', 'タリック', '瓦洛兰之盾'],
+  'Teemo': ['티모', 'Teemo', 'ティーモ', '迅捷斥候'],
+  'Thresh': ['쓰레쉬', 'Thresh', 'スレッシュ', '魂锁典狱长'],
+  'Tristana': ['트리스타나', 'Tristana', 'トリスターナ', '麦林炮手'],
+  'Trundle': ['트런들', 'Trundle', 'トランドル', '巨魔之王'],
+  'Tryndamere': ['트린다미어', 'Tryndamere', 'トリンダメア', '蛮族之王'],
+  'TwistedFate': ['트위스티드 페이트', 'Twisted Fate', 'ツイステッド・フェイト', '卡牌大师'],
+  'Twitch': ['트위치', 'Twitch', 'トゥイッチ', '瘟疫之源'],
+  'Udyr': ['우디르', 'Udyr', 'ウディア', '兽灵行者'],
+  'Urgot': ['우르곳', 'Urgot', 'アーゴット', '无畏战车'],
+  'Varus': ['바루스', 'Varus', 'ヴァルス', '惩戒之箭'],
+  'Vayne': ['베인', 'Vayne', 'ヴェイン', '暗夜猎手'],
+  'Veigar': ['베이가', 'Veigar', 'ベイガー', '邪恶小法师'],
+  'Velkoz': ['벨코즈', 'Vel\'Koz', 'ヴェル＝コズ', '虚空之眼'],
+  'Vex': ['벡스', 'Vex', 'ヴェックス', '愁云使者'],
+  'Vi': ['바이', 'Vi', 'ヴァイ', '皮城执法官'],
+  'Viego': ['비에고', 'Viego', 'ヴィエゴ', '破败之王'],
+  'Viktor': ['빅토르', 'Viktor', 'ビクター', '奥术先驱'],
+  'Vladimir': ['블라디미르', 'Vladimir', 'ブラッドミア', '猩红收割者'],
+  'Volibear': ['볼리베어', 'Volibear', 'ボリベア', '不灭狂雷'],
+  'Warwick': ['워윅', 'Warwick', 'ワーウィック', '祖安怒兽'],
+  'Xayah': ['자야', 'Xayah', 'ザヤ', '逆羽'],
+  'Xerath': ['제라스', 'Xerath', 'ゼラス', '远古巫灵'],
+  'XinZhao': ['신 짜오', 'Xin Zhao', 'シン・ジャオ', '德邦总管'],
+  'Yasuo': ['야스오', 'Yasuo', 'ヤスオ', '疾风剑豪'],
+  'Yone': ['요네', 'Yone', 'ヨネ', '封魔剑魂'],
+  'Yorick': ['요릭', 'Yorick', 'ヨリック', '牧魂人'],
+  'Yunara': ['유나라', 'Yunara', 'ユナラ', '不破之誓'],
+  'Yuumi': ['유미', 'Yuumi', 'ユーミ', '魔法猫咪'],
+  'Zaahen': ['자헨', 'Zaahen', 'ザーヘン', '不落魔锋'],
+  'Zac': ['자크', 'Zac', 'ザック', '生化魔人'],
+  'Zed': ['제드', 'Zed', 'ゼド', '影流之主'],
+  'Zeri': ['제리', 'Zeri', 'ゼリ', '祖安花火'],
+  'Ziggs': ['직스', 'Ziggs', 'ジグス', '爆破鬼才'],
+  'Zilean': ['질리언', 'Zilean', 'ジリアン', '时光守护者'],
+  'Zoe': ['조이', 'Zoe', 'ゾーイ', '暮光星灵'],
+  'Zyra': ['자이라', 'Zyra', 'ザイラ', '荆棘之兴'],
 };
 
 </script>
@@ -3002,6 +3633,7 @@ const CHAMPIONS = {
     player: 'doran',
     tab: 'feed',
     filter: 'all',
+    videoPlayer: 'all',
     checked: new Date(LAST_CHECKED)
   };
 
@@ -3031,6 +3663,9 @@ const CHAMPIONS = {
     return store.get(soloKey(k), def) === '1';
   }
   var officialOn = store.get(OFFICIAL_KEY, '1') === '1';
+  /* 라이브 방송 알림: 선수가 SOOP·CHZZK에서 방송을 켰을 때 (기본 켜짐) */
+  var LIVE_KEY = 'dk.signal.live';
+  var liveAlerts = store.get(LIVE_KEY, '1') === '1';
 
   /* ---------- 데이터 헬퍼 ---------- */
   function player(key) {
@@ -3039,14 +3674,29 @@ const CHAMPIONS = {
   }
   function current() { return player(state.player); }
 
+  /* 라이브 방송 상태 (/api/live): 방송 중이면 그 선수의 정보를 돌려줍니다. */
+  function liveOf(key) {
+    var d = LIVE.live;
+    if (!d || !d.ok || !d.players) return null;
+    var row = d.players[key];
+    return row && row.live ? row : null;
+  }
+  function liveBadge(key, cls) {
+    var row = liveOf(key);
+    if (!row) return '';
+    return '<span class="onair' + (cls ? ' ' + cls : '') + '"><i></i>' + T('live.badge') + '</span>';
+  }
+
   function pName(p) {
     if (lang() === 'ko') return p.nameKo;
     if (lang() === 'ja') return p.nameJa || p.nameIntl || p.nameKo;
+    if (lang() === 'zh') return p.nameZh || p.nameIntl || p.nameKo;
     return p.nameIntl || p.nameEn || p.nameKo;
   }
   function pReal(p) {
     if (lang() === 'ko') return p.real;
     if (lang() === 'ja') return p.realJa || p.realEn || p.real;
+    if (lang() === 'zh') return p.realZh || p.realEn || p.real;
     return p.realEn || p.real;
   }
   function pAvatar(p) {
@@ -3144,23 +3794,25 @@ const CHAMPIONS = {
   function normChamp(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
   function champIndex() {
     if (CHAMP_INDEX) return CHAMP_INDEX;
-    CHAMP_INDEX = { ko: {}, en: {}, ja: {} };
+    CHAMP_INDEX = { ko: {}, en: {}, ja: {}, zh: {} };
     Object.keys(CHAMPIONS || {}).forEach(function (id) {
       var row = CHAMPIONS[id];
       if (!row || !row.length) return;
       CHAMP_INDEX.ko[row[0]] = row;
       CHAMP_INDEX.en[normChamp(row[1])] = row;
       CHAMP_INDEX.ja[row[2]] = row;
+      if (row[3]) CHAMP_INDEX.zh[row[3]] = row;
     });
     return CHAMP_INDEX;
   }
   function champText(name) {
     if (name == null) return '';
     var idx = champIndex();
-    var row = idx.ko[name] || idx.en[normChamp(name)] || idx.ja[name];
+    var row = idx.ko[name] || idx.en[normChamp(name)] || idx.ja[name] || idx.zh[name];
     if (!row) return name;
     if (lang() === 'ko') return row[0];
     if (lang() === 'ja') return row[2];
+    if (lang() === 'zh') return row[3] || row[0];
     return row[1];
   }
 
@@ -3423,7 +4075,7 @@ const CHAMPIONS = {
       '<div class="pick-main">' +
         avatar(p) +
         '<div class="pick-id">' +
-          '<div class="pick-name">' + pName(p) + '<em>' + pReal(p) + '</em></div>' +
+          '<div class="pick-name">' + pName(p) + '<em>' + pReal(p) + '</em>' + liveBadge(p.key, 'pick-onair') + '</div>' +
           '<div class="pick-tier">' + tierText(p) + '<span class="sep">·</span><span class="lp">' + lpText(p) + '</span><span class="sep">·</span>' + winRateText(p) + '</div>' +
         '</div>' +
         '<div class="pick-form">' +
@@ -3464,6 +4116,7 @@ const CHAMPIONS = {
           '<span class="t-st"><i class="' + (last.win ? 'w' : 'l') + '"></i>' + relDay(last.d) + '</span>' +
         '</span>' +
         '<span class="t-name">' + pName(p) + '<em>' + pReal(p) + '</em></span>' +
+        (liveOf(p.key) ? '<span class="t-onair"><i></i>' + T('live.badge') + '</span>' : '') +
         '<span class="t-tier">' + tierShort(p) + '<span class="t-dot">·</span><b>' + lpText(p) + '</b></span>' +
         (p.inGame ? '<span class="t-live"><i></i>' + T('pick.inGame') + '</span>' : '') +
         '<span class="bars">' + bars + '</span>' +
@@ -3508,41 +4161,199 @@ const CHAMPIONS = {
         '<a href="' + p.opgg + '" target="_blank" rel="noopener">' + T('hl.allStats') + '</a></div>';
   }
 
-  /* ---------- 선수 대표 하이라이트 (유튜브) ---------- */
+  /* ---------- 영상 탭 (생중계 · 방송국 · 하이라이트 · 다시보기) ---------- */
   function ytWatch(id) { return 'https://www.youtube.com/watch?v=' + id; }
   function ytThumb(id) { return 'https://i.ytimg.com/vi/' + id + '/hqdefault.jpg'; }
 
-  function videoCardHTML(p) {
-    var list = (p.highlights || []).map(function (v) {
-      return '<li>' +
-        '<a class="vc-item" href="' + ytWatch(v.id) + '" target="_blank" rel="noopener" data-video="' + v.id + '">' +
-          '<span class="vc-thumb"><img loading="lazy" src="' + ytThumb(v.id) + '" alt="" width="168" height="94"><i class="vc-len">' + v.len + '</i></span>' +
-          '<span class="vc-body">' +
-            '<b class="vc-title">' + L(v.match) + '</b>' +
-            '<span class="vc-meta">' + L(v.event) + '</span>' +
-            '<span class="vc-tags"><span class="vc-badge">' + T('video.badge') + '</span>' +
-              '<span class="vc-len-txt">' + T('video.len', { len: v.len }) + '</span></span>' +
-          '</span>' +
-        '</a>' +
-      '</li>';
-    }).join('');
-    return '<div class="card-head">' +
-        '<div>' +
-          '<div class="eyebrow">HIGHLIGHTS · YOUTUBE</div>' +
-          '<h3 class="card-title">' + T('video.title') + '</h3>' +
-        '</div>' +
-        '<a class="ghost-btn" href="' + CHANNELS.dkYoutube + '" target="_blank" rel="noopener">' + T('video.more') + '</a>' +
-      '</div>' +
-      '<p class="vc-sub">' + T('video.sub', { name: pName(p) }) + '</p>' +
-      (list ? '<ul class="vc-list">' + list + '</ul>' : '<p class="vc-sub">' + T('video.empty') + '</p>');
+  /* 공식 채널 4곳 (2026-11-27 확인) */
+  var VIDEO_CHANNELS = [
+    { url: CHANNELS.lckChzzk, name: 'CHZZK', cls: 'is-chzzk', sub: 'video.chanLckChzzk', aria: 'video.chzzkAria' },
+    { url: CHANNELS.lckSoop, name: 'SOOP', cls: 'is-soop', sub: 'video.chanLckSoop', aria: 'video.soopAria' },
+    { url: CHANNELS.lckYoutube, name: 'YouTube', cls: 'is-youtube', sub: 'video.chanLckYt', aria: 'video.youtubeAria' },
+    { url: CHANNELS.dkYoutube, name: 'YouTube', cls: 'is-youtube', sub: 'video.chanDkYt', aria: 'video.dkYtAria' }
+  ];
+
+  function renderVideoChannels() {
+    var host = $('#videoChannels');
+    if (host) {
+      host.innerHTML = VIDEO_CHANNELS.map(function (c) {
+        return '<a class="chan ' + c.cls + '" href="' + c.url + '" target="_blank" rel="noopener" aria-label="' + esc(T(c.aria)) + '">' +
+          '<span class="chan-top"><i class="dot"></i>' + c.name + '<span class="chan-go" aria-hidden="true">↗</span></span>' +
+          '<span class="chan-sub">' + esc(T(c.sub)) + '</span>' +
+        '</a>';
+      }).join('');
+    }
+
+    var data = LIVE.official;
+    var line = $('#videoNextLine');
+    if (line) {
+      var next = data && data.ok ? data.next : null;
+      if (next) {
+        var opp = (next.opponent && (next.opponent.code || next.opponent.name)) || 'TBD';
+        line.className = 'next-line';
+        line.innerHTML = '<i class="nl-dot" aria-hidden="true"></i><b>' + T('official.next') + '</b> DK vs ' + esc(opp) +
+          '<span class="nl-sub">' + esc(eventDate(next)) + ' ' + esc(next.time || '') + '</span>';
+      } else {
+        line.className = 'next-line is-empty';
+        line.innerHTML = '<b>' + T('official.next') + '</b><span class="nl-sub">' + T('video.noNext') + '</span>';
+      }
+    }
+
+    /* 지금 방송 중인 선수 (SOOP·CHZZK) */
+    var onair = $('#videoOnAir');
+    if (onair) {
+      var rows = PLAYERS.map(function (p) { return { p: p, lv: liveOf(p.key) }; }).filter(function (r) { return r.lv; });
+      if (rows.length) {
+        onair.hidden = false;
+        onair.innerHTML = '<b>' + T('live.onAir') + '</b>' + rows.map(function (r) {
+          return '<a class="oa" href="' + esc(r.lv.url || '#') + '" target="_blank" rel="noopener">' +
+            '<i class="oa-dot"></i>' + pName(r.p) +
+            '<em>' + (r.lv.platform === 'soop' ? T('video.soop') : T('video.chzzk')) + '</em></a>';
+        }).join('');
+      } else {
+        onair.hidden = true;
+        onair.innerHTML = '';
+      }
+    }
   }
 
-  function renderVideoCards() {
-    var p = current();
-    ['#videoCard', '#videoCardRecords'].forEach(function (sel) {
-      var host = $(sel);
-      if (host) host.innerHTML = videoCardHTML(p);
+  function renderVideoStations() {
+    var host = $('#videoStations');
+    if (!host) return;
+    host.innerHTML = PLAYERS.map(function (p) {
+      var lv = liveOf(p.key);
+      var handles = (p.streams || []).map(function (s) { return s.handle; }).filter(Boolean).join(' · ');
+      var chips = (p.streams || []).map(function (s) {
+        var meta = PLATFORM[s.platform] || { label: String(s.platform || '').toUpperCase(), cls: '' };
+        var label = s.platform === 'chzzk' ? T('video.chzzk') : (s.platform === 'soop' ? T('video.soop') : meta.label);
+        var on = lv && lv.platform === s.platform ? ' is-onair' : '';
+        return '<a class="link-chip ' + meta.cls + on + '" href="' + s.url + '" target="_blank" rel="noopener"' +
+          ' title="' + esc(s.handle || label) + '"' +
+          ' aria-label="' + esc(T('video.stationAria', { name: pName(p), platform: label })) + '">' +
+          '<i class="dot"></i>' + label + '<em>' + (on ? T('live.stream') : T('links.stream')) + '</em></a>';
+      }).join('');
+      return '<li class="st-row' + (lv ? ' is-onair' : '') + '">' +
+        '<span class="st-head">' +
+          '<span class="st-av" aria-hidden="true">' + pAvatar(p) + '</span>' +
+          '<span class="st-id"><b>' + pName(p) + '<em>' + pReal(p) + '</em><span class="st-pos">' + p.pos + '</span></b>' +
+            (lv && lv.title ? '<span class="st-title">' + esc(lv.title) + '</span>' : '') +
+            '<span class="st-handle">' + esc(handles || p.riotId) + '</span>' +
+          '</span>' +
+          (lv ? '<span class="onair st-onair"><i></i>' + T('live.badge') + '</span>' : '') +
+        '</span>' +
+        '<span class="st-links">' + (chips || '<span class="st-none">' + T('links.noStream') + '</span>') + '</span>' +
+      '</li>';
+    }).join('');
+  }
+
+  /* 대표 하이라이트: 5인 × 2편 = 10편, 선수별 필터 */
+  function allHighlights() {
+    var out = [];
+    PLAYERS.forEach(function (p) {
+      (p.highlights || []).forEach(function (v) { out.push({ p: p, v: v }); });
     });
+    return out;
+  }
+
+  function renderVideoFilters() {
+    var host = $('#videoFilters');
+    if (!host) return;
+    var cur = state.videoPlayer;
+    var chips = [{ key: 'all', label: T('video.filterAll') }].concat(PLAYERS.map(function (p) {
+      return { key: p.key, label: pName(p) };
+    }));
+    host.innerHTML = chips.map(function (c) {
+      var on = c.key === cur;
+      return '<button class="chip' + (on ? ' is-active' : '') + '" type="button" role="tab" aria-selected="' + on + '"' +
+        ' data-video-filter="' + c.key + '">' + esc(c.label) + '</button>';
+    }).join('');
+  }
+
+  function videoItemHTML(entry, withWho) {
+    var v = entry.v, p = entry.p;
+    return '<li>' +
+      '<a class="vc-item" href="' + ytWatch(v.id) + '" target="_blank" rel="noopener" data-video="' + v.id + '">' +
+        '<span class="vc-thumb"><img loading="lazy" src="' + ytThumb(v.id) + '" alt="" width="168" height="94"><i class="vc-len">' + esc(v.len) + '</i></span>' +
+        '<span class="vc-body">' +
+          (withWho ? '<span class="vc-who">' + pName(p) + '<i>' + p.pos + '</i></span>' : '') +
+          '<b class="vc-title">' + L(v.match) + '</b>' +
+          '<span class="vc-meta">' + L(v.event) + '</span>' +
+          '<span class="vc-tags"><span class="vc-badge">' + T('video.badge') + '</span>' +
+            '<span class="vc-len-txt">' + T('video.len', { len: v.len }) + '</span></span>' +
+        '</span>' +
+      '</a>' +
+    '</li>';
+  }
+
+  function renderVideoList() {
+    var host = $('#videoList');
+    if (!host) return;
+    var all = allHighlights();
+    var list = state.videoPlayer === 'all' ? all : all.filter(function (e) { return e.p.key === state.videoPlayer; });
+    host.innerHTML = list.length
+      ? list.map(function (e) { return videoItemHTML(e, state.videoPlayer === 'all'); }).join('')
+      : '<li class="vc-empty">' + T('video.empty') + '</li>';
+    var count = $('#videoCount');
+    if (count) count.textContent = T('video.count', { n: list.length });
+  }
+
+  /* 최근 공식 경기 다시보기: /api/official recent + 풀영상 VOD·하이라이트 */
+  function renderVideoVod() {
+    var host = $('#videoVodList');
+    if (!host) return;
+    var data = LIVE.official;
+    var rows = data && data.ok && Array.isArray(data.recent) ? data.recent : [];
+    var note = $('#videoVodNote');
+    var hint = $('#videoVodHint');
+
+    if (!rows.length) {
+      /* 서버 연결 전: 저장해 둔 2026 월즈 여정에 유튜브 검색 링크만 붙입니다. */
+      host.innerHTML = DK_PATH.map(function (g) {
+        var q = [T('video.worldsQuery'), 'DK vs ' + g.opp, L(g.date), T('video.highlight')].join(' ');
+        return '<li class="path-row has-vid">' +
+          '<div class="p-line">' +
+            '<span class="p-round">' + L(g.round) + '</span>' +
+            '<span class="p-teams">DK <b class="' + (g.win ? 'w' : 'l') + '">' + esc(g.score) + '</b> ' + esc(g.opp) + '</span>' +
+            '<span class="p-res ' + (g.win ? 'w' : 'l') + '">' + (g.win ? T('result.win') : T('result.lose')) + ' · ' + L(g.date) + '</span>' +
+          '</div>' +
+          '<div class="p-vid"><a class="vid-chip is-hl" href="' + ytSearch(q) + '" target="_blank" rel="noopener">' + T('video.highlight') + ' ↗</a></div>' +
+        '</li>';
+      }).join('');
+      if (note) note.textContent = T('video.vodFallbackNote');
+      if (hint) hint.hidden = true;
+      return;
+    }
+
+    host.innerHTML = rows.slice(0, 6).map(function (g) {
+      var opp = g.opponent || {};
+      var win = g.win === true ? 'w' : (g.win === false ? 'l' : '');
+      var res = g.win === true ? T('result.win') : (g.win === false ? T('result.lose') : '');
+      return '<li class="path-row has-vid">' +
+        '<div class="p-line">' +
+          '<span class="p-round">' + esc(blockText(g.block) || leagueName(g.league) || '') + '</span>' +
+          '<span class="p-teams">DK <b class="' + win + '">' + esc(g.score || '-') + '</b> ' + esc(opp.code || opp.name || '') + '</span>' +
+          '<span class="p-res ' + win + '">' + (res ? res + ' · ' : '') + esc(eventDate(g)) + '</span>' +
+        '</div>' +
+        '<div class="p-vid">' + matchVideosHTML(g) + '</div>' +
+      '</li>';
+    }).join('');
+    if (note) {
+      note.textContent = T('video.vodNote', { time: data.fetchedAt ? clockOf(new Date(data.fetchedAt)) : '?' });
+    }
+    if (hint) {
+      hint.hidden = false;
+      hint.textContent = T('video.searchNote');
+    }
+  }
+
+  function renderVideoPanel() {
+    var more = $('#videoMore');
+    if (more) more.href = CHANNELS.dkYoutube;
+    renderVideoChannels();
+    renderVideoStations();
+    renderVideoFilters();
+    renderVideoList();
+    renderVideoVod();
   }
 
   /* ---------- 한 줄 응원 ---------- */
@@ -3623,9 +4434,13 @@ const CHAMPIONS = {
       btn.setAttribute('aria-checked', String(officialOn));
       btn.setAttribute('aria-label', T(officialOn ? 'notify.officialToggleOn' : 'notify.officialToggleOff'));
     });
+    $$('[data-live-toggle]').forEach(function (btn) {
+      btn.setAttribute('aria-checked', String(liveAlerts));
+      btn.setAttribute('aria-label', T(liveAlerts ? 'notify.liveToggleOn' : 'notify.liveToggleOff'));
+    });
     var sum = $('#notifySummary');
     if (sum) {
-      var n = PLAYERS.filter(function (p) { return isSoloOn(p.key); }).length + (officialOn ? 1 : 0);
+      var n = PLAYERS.filter(function (p) { return isSoloOn(p.key); }).length + (officialOn ? 1 : 0) + (liveAlerts ? 1 : 0);
       sum.textContent = n ? T('notify.summaryOn', { n: n }) : T('notify.summaryOff');
     }
     setNote('');
@@ -3633,9 +4448,11 @@ const CHAMPIONS = {
 
   function notifyStatusText() {
     var p = current();
-    if (isSoloOn(p.key) && officialOn) return T('notify.statusBoth', { name: pName(p) });
+    if (isSoloOn(p.key) && officialOn && liveAlerts) return T('notify.statusBoth', { name: pName(p) }) + ' · ' + T('notify.statusLive');
+    if (isSoloOn(p.key) && (officialOn || liveAlerts)) return T('notify.statusBoth', { name: pName(p) });
     if (isSoloOn(p.key)) return T('notify.statusSolo', { name: pName(p) });
     if (officialOn) return T('notify.statusOfficial');
+    if (liveAlerts) return T('notify.statusLive');
     return T('notify.statusNone');
   }
 
@@ -3733,7 +4550,6 @@ const CHAMPIONS = {
   function renderOfficial() {
     renderSeason();
     renderNextCard();
-    renderNextWatch();
     renderOfficialRecent();
     var list = $('#officialList');
     if (list) {
@@ -3781,6 +4597,7 @@ const CHAMPIONS = {
     config: null,
     official: null,
     solo: null,
+    live: null,
     soloSource: 'snapshot',
     offline: false,
     lastSync: 0,
@@ -3842,9 +4659,9 @@ const CHAMPIONS = {
       if (BLOCKS[i].ko === s || BLOCKS[i].ja === s || normBlock(BLOCKS[i].en) === n || normBlock(BLOCKS[i].ko) === n) return L(BLOCKS[i]);
     }
     var m = /^(\d+)라운드$/.exec(s);
-    if (m) return lang() === 'ko' ? s : (lang() === 'ja' ? '第' + m[1] + 'ラウンド' : 'Round ' + m[1]);
+    if (m) return lang() === 'ko' ? s : (lang() === 'ja' ? '第' + m[1] + 'ラウンド' : (lang() === 'zh' ? '第' + m[1] + '轮' : 'Round ' + m[1]));
     m = /^Round\s*(\d+)$/i.exec(s);
-    if (m) return lang() === 'ko' ? m[1] + '라운드' : (lang() === 'ja' ? '第' + m[1] + 'ラウンド' : 'Round ' + m[1]);
+    if (m) return lang() === 'ko' ? m[1] + '라운드' : (lang() === 'ja' ? '第' + m[1] + 'ラウンド' : (lang() === 'zh' ? '第' + m[1] + '轮' : 'Round ' + m[1]));
     return s;
   }
 
@@ -3893,35 +4710,7 @@ const CHAMPIONS = {
       '<div class="next-teams"><span class="team dk">DK</span><span class="vs">VS</span><span class="team">TBD</span></div>';
   }
 
-  /* 다음 경기가 있을 때 바로 볼 수 있는 공식 생중계 채널 (공식일정 카드 + 홈 스트립) */
-  function watchButtonsHTML(withLabel) {
-    var em = withLabel === false ? '' : '<em>' + T('video.liveNow') + '</em>';
-    return '<a class="watch-btn is-chzzk" href="' + CHANNELS.lckChzzk + '" target="_blank" rel="noopener" aria-label="' + T('video.chzzkAria') + '">' +
-        '<i class="dot"></i>' + T('video.chzzk') + em + '</a>' +
-      '<a class="watch-btn is-soop" href="' + CHANNELS.lckSoop + '" target="_blank" rel="noopener" aria-label="' + T('video.soopAria') + '">' +
-        '<i class="dot"></i>' + T('video.soop') + em + '</a>' +
-      '<a class="watch-btn is-youtube" href="' + CHANNELS.lckYoutube + '" target="_blank" rel="noopener" aria-label="' + T('video.youtubeAria') + '">' +
-        '<i class="dot"></i>YouTube' + em + '</a>';
-  }
-
-  function renderNextWatch() {
-    var host = $('#nextWatch');
-    var note = $('#nextWatchNote');
-    if (host) host.innerHTML = watchButtonsHTML();
-    if (note) note.textContent = T('video.liveNote');
-
-    var home = $('#homeWatch');
-    if (!home) return;
-    var data = LIVE.official;
-    var next = data && data.ok ? data.next : null;
-    var label = next
-      ? '<b>' + T('official.next') + '</b> DK vs ' + esc((next.opponent && (next.opponent.code || next.opponent.name)) || 'TBD') +
-        ' <span>' + esc(eventDate(next)) + ' ' + esc(next.time || '') + '</span>'
-      : '<b>' + T('video.liveTitle') + '</b> <span>' + T('video.liveNow') + '</span>';
-    home.innerHTML =
-      '<div class="hw-head">' + label + '</div>' +
-      '<div class="watch-row">' + watchButtonsHTML(false) + '</div>';
-  }
+  /* 생중계 채널은 영상 탭(#videoChannels)이 맡습니다. 공식일정 카드에서는 영상 탭으로 이동만 합니다. */
 
   /* 종료된 경기: 공식 VOD(있으면) · 유튜브 하이라이트 검색 */
   function ytSearch(q) { return 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q); }
@@ -3930,7 +4719,7 @@ const CHAMPIONS = {
     var opp = (row.opponent && (row.opponent.code || row.opponent.name)) || '';
     var league = leagueName(row.league) || '';
     var date = eventDate(row);
-    var tail = lang() === 'ko' ? '하이라이트' : (lang() === 'ja' ? 'ハイライト' : 'highlights');
+    var tail = lang() === 'ko' ? '하이라이트' : (lang() === 'ja' ? 'ハイライト' : (lang() === 'zh' ? '集锦' : 'highlights'));
     return [league, 'DK vs ' + opp, date, tail].filter(Boolean).join(' ');
   }
 
@@ -4011,6 +4800,11 @@ const CHAMPIONS = {
     if (officialChip) {
       officialChip.hidden = !okOfficial;
       officialChip.textContent = T('autoUpdate');
+    }
+    var videoChip = $('#videoLiveChip');
+    if (videoChip) {
+      videoChip.hidden = !okOfficial;
+      videoChip.textContent = T('autoUpdate');
     }
 
     var sync = $('#nextSync');
@@ -4123,9 +4917,10 @@ const CHAMPIONS = {
     return Promise.all([
       LIVE.config ? Promise.resolve(LIVE.config) : apiGet('./api/config'),
       apiGet('./api/official?lang=' + lang()),
-      apiGet('./api/solo')
+      apiGet('./api/solo'),
+      apiGet('./api/live')
     ]).then(function (res) {
-      var cfg = res[0], off = res[1], solo = res[2];
+      var cfg = res[0], off = res[1], solo = res[2], live = res[3];
       if (cfg && cfg.ok) LIVE.config = cfg;
       if (!cfg && !off && !solo) {
         LIVE.offline = true;
@@ -4133,6 +4928,7 @@ const CHAMPIONS = {
         return;
       }
       if (off) LIVE.official = off;
+      if (live && live.ok) LIVE.live = live;
       if (solo) { LIVE.solo = solo; if (solo.source) LIVE.soloSource = solo.source; mergeSolo(solo); }
       LIVE.lastSync = Date.now();
       renderAll();
@@ -4154,7 +4950,8 @@ const CHAMPIONS = {
   function prefsPayload() {
     return {
       solo: PLAYERS.filter(function (p) { return isSoloOn(p.key); }).map(function (p) { return p.key; }),
-      official: officialOn
+      official: officialOn,
+      live: liveAlerts
     };
   }
 
@@ -4220,7 +5017,7 @@ const CHAMPIONS = {
     renderPick();
     renderTiles();
     renderHighlight();
-    renderVideoCards();
+    renderVideoPanel();
     renderCheer();
     renderSolo();
     renderRoster();
@@ -4266,6 +5063,14 @@ const CHAMPIONS = {
       syncPush(true);
       return;
     }
+    var liveT = e.target.closest('[data-live-toggle]');
+    if (liveT) {
+      liveAlerts = !liveAlerts;
+      store.set(LIVE_KEY, liveAlerts ? '1' : '0');
+      renderNotify();
+      syncPush(true);
+      return;
+    }
     var who = e.target.closest('[data-player]');
     if (who) {
       selectPlayer(who.getAttribute('data-player'));
@@ -4277,6 +5082,13 @@ const CHAMPIONS = {
       state.filter = chip.getAttribute('data-filter');
       $$('#filterRow .chip').forEach(function (c) { c.classList.toggle('is-active', c === chip); });
       $('#soloTable2').innerHTML = tableHTML(current(), state.filter);
+      return;
+    }
+    var vidChip = e.target.closest('[data-video-filter]');
+    if (vidChip) {
+      state.videoPlayer = vidChip.getAttribute('data-video-filter');
+      renderVideoFilters();
+      renderVideoList();
       return;
     }
     var tab = e.target.closest('[data-tab]');
@@ -4342,6 +5154,14 @@ const CHAMPIONS = {
         title: T('banner.testTitle', { name: pName(p) }),
         body: T('banner.testSoloBody', { name: pName(p) }),
         done: T('banner.soloDone', { name: pName(p) })
+      };
+    }
+    if (liveAlerts) {
+      return {
+        kind: 'live',
+        title: T('banner.testLiveTitle', { name: pName(p) }),
+        body: T('banner.testLiveBody', { name: pName(p) }),
+        done: T('banner.liveDone')
       };
     }
     if (officialOn) {
@@ -4495,7 +5315,7 @@ const CHAMPIONS = {
   try {
     var params = new URLSearchParams(location.search);
     var initial = params.get('tab');
-    if (initial && ['feed', 'official', 'solo', 'records'].indexOf(initial) > -1) switchTab(initial);
+    if (initial && ['feed', 'official', 'video', 'solo', 'records'].indexOf(initial) > -1) switchTab(initial);
     var startWho = params.get('player');
     if (startWho) {
       for (var pi = 0; pi < PLAYERS.length; pi++) {
@@ -4503,7 +5323,7 @@ const CHAMPIONS = {
       }
     }
     var langParam = params.get('lang');
-    if (langParam && ['ko', 'en', 'ja'].indexOf(langParam) > -1 && langParam !== lang()) {
+    if (langParam && ['ko', 'en', 'ja', 'zh'].indexOf(langParam) > -1 && langParam !== lang()) {
       window.I18N.setLang(langParam);
     }
   } catch (e) {}

@@ -150,6 +150,51 @@ function startMockRiot() {
   });
 }
 
+/* ---------------- 가짜 SOOP / CHZZK (라이브 방송 상태) ---------------- */
+const streamState = {
+  soop: {},   /* id -> { title, viewers, startedAt } */
+  chzzk: {}   /* id -> { title, viewers, openAt } */
+};
+
+function startMockStreams() {
+  return new Promise(function (resolve) {
+    const srv = http.createServer(function (req, res) {
+      const url = new URL(req.url, 'http://127.0.0.1');
+      const send = function (code, obj) {
+        res.writeHead(code, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(obj));
+      };
+      let m;
+      if ((m = /^\/soop\/([^/]+)\/station$/.exec(url.pathname))) {
+        const id = decodeURIComponent(m[1]);
+        const row = streamState.soop[id];
+        if (!row) return send(200, { station: { user_id: id, user_nick: id }, broad: null });
+        return send(200, {
+          station: { user_id: id, user_nick: row.title, station_title: row.title },
+          broad: {
+            broad_no: 1,
+            broad_title: row.title,
+            current_sum_viewer: row.viewers,
+            broad_start: row.startedAt
+          }
+        });
+      }
+      if ((m = /^\/chzzk\/([^/]+)\/live-status$/.exec(url.pathname))) {
+        const id = decodeURIComponent(m[1]);
+        const row = streamState.chzzk[id];
+        if (!row) return send(200, { code: 200, message: null, content: null });
+        return send(200, {
+          code: 200,
+          message: null,
+          content: { status: 'OPEN', liveTitle: row.title, concurrentUserCount: row.viewers, openDate: row.openAt }
+        });
+      }
+      send(404, { error: 'unknown stream path ' + url.pathname });
+    });
+    srv.listen(0, '127.0.0.1', function () { resolve({ srv: srv, port: srv.address().port }); });
+  });
+}
+
 /* ---------------- 함수 호출 도우미 ---------------- */
 function call(handler, opts) {
   const o = opts || {};
@@ -199,6 +244,7 @@ function assertNoSecrets(obj) {
 async function main() {
   const redis = await startMockRedis();
   const riotSrv = await startMockRiot();
+  const streamSrv = await startMockStreams();
 
   process.env.UPSTASH_REDIS_REST_URL = 'http://127.0.0.1:' + redis.port;
   process.env.UPSTASH_REDIS_REST_TOKEN = 'test-token';
@@ -207,6 +253,8 @@ async function main() {
   process.env.CHECK_SECRET = 'smoke-secret';
   process.env.RIOT_ASIA_BASE = 'http://127.0.0.1:' + riotSrv.port;
   process.env.RIOT_KR_BASE = 'http://127.0.0.1:' + riotSrv.port;
+  process.env.DK_SOOP_BASE = 'http://127.0.0.1:' + streamSrv.port + '/soop/';
+  process.env.DK_CHZZK_BASE = 'http://127.0.0.1:' + streamSrv.port + '/chzzk/';
 
   /* --- 1. 공식 일정: 실제 API --- */
   const official = require('../api/official');
@@ -287,7 +335,7 @@ async function main() {
   const endpoint = 'https://fcm.googleapis.com/wp/smoke-test-endpoint';
   const subBody = {
     subscription: { endpoint: endpoint, keys: { p256dh: p256dh, auth: auth } },
-    prefs: { solo: ['doran', 'bogus'], official: true },
+    prefs: { solo: ['doran', 'bogus'], official: true, live: true },
     ua: 'smoke'
   };
   const sub1 = await call(subscribe, { method: 'POST', url: '/api/subscribe', body: subBody });
@@ -309,21 +357,56 @@ async function main() {
   const auth401 = await call(checkFn, { url: '/api/check', headers: { authorization: 'Bearer wrong' } });
   check('check rejects wrong secret', auth401.status === 401, auth401.status);
 
+  /* --- 6-1. 라이브 방송 상태 (/api/live) — 가짜 SOOP·CHZZK --- */
+  const liveFn = require('../api/live');
+  const liveOff = await call(liveFn, { url: '/api/live?refresh=1' });
+  check('live all offline', liveOff.json && liveOff.json.ok === true && liveOff.json.liveCount === 0,
+        liveOff.json && JSON.stringify(liveOff.json.liveCount));
+  check('live shows every player', liveOff.json && Object.keys(liveOff.json.players).length === 5,
+        liveOff.json && Object.keys(liveOff.json.players).join(','));
+
+  streamState.soop['choi15778'] = { title: '솔랭 가즈아', viewers: 3120, startedAt: '2026-11-27 14:02:11' };
+  streamState.chzzk['e351edbd85f1ebf4eb975c21179a4c43'] = { title: 'HLE Kanavi', viewers: 880, openAt: '2026-11-27T14:20:00+09:00' };
+  const liveOn = await call(liveFn, { url: '/api/live?refresh=1' });
+  const lvDoran = liveOn.json && liveOn.json.players.doran;
+  const lvKanavi = liveOn.json && liveOn.json.players.kanavi;
+  check('live soop parsed', !!lvDoran && lvDoran.live === true && lvDoran.platform === 'soop' && lvDoran.title === '솔랭 가즈아' && lvDoran.viewers === 3120,
+        lvDoran && JSON.stringify(lvDoran));
+  check('live soop start time KST', !!lvDoran && lvDoran.startedAt === '2026-11-27T05:02:11.000Z', lvDoran && lvDoran.startedAt);
+  check('live soop url', !!lvDoran && lvDoran.url === 'https://ch.sooplive.co.kr/choi15778', lvDoran && lvDoran.url);
+  check('live chzzk parsed', !!lvKanavi && lvKanavi.live === true && lvKanavi.platform === 'chzzk' && lvKanavi.viewers === 880,
+        lvKanavi && JSON.stringify(lvKanavi));
+  check('live count', liveOn.json && liveOn.json.liveCount === 2, liveOn.json && liveOn.json.liveCount);
+  check('live cache hit', (await call(liveFn, { url: '/api/live' })).json.servedFrom === 'cache', null);
+  check('live offline player stays off', liveOn.json && liveOn.json.players.smash.live === false, null);
+
   const run1 = await call(checkFn, { url: '/api/check?dry=1&token=smoke-secret' });
   check('check run1 200', run1.status === 200 && run1.json.ok === true, run1.status);
+  check('check run1 live baseline', run1.json.live && run1.json.live.liveCount === 2 && run1.json.live.pushes.length === 0,
+        run1.json.live && JSON.stringify(run1.json.live.players.map(function (p) { return p.key + ':' + p.live; })));
   check('check run1 official baseline', run1.json.official.status === 'no_upcoming' || run1.json.official.status === 'scheduled', run1.json.official.status);
   check('check run1 solo baseline', run1.json.solo.players.filter(function (p) { return p.status === 'baseline'; }).length === 2, JSON.stringify(run1.json.solo.players.map(function (p) { return p.key + ':' + p.status; })));
   check('check run1 no push', run1.json.pushed === 0, run1.json.pushed);
   check('check state saved', kv.has('dk:state'), null);
 
-  /* 새 랭크 게임 추가 */
+  /* 새 랭크 게임 + 새 라이브(딜라이트 CHZZK) + 도란 방송 종료 */
   riotState.matchIds['puuid:어리고싶다'].unshift({ id: 'KR_9', puuid: 'puuid:어리고싶다', champ: '레넥톤', kills: 5, deaths: 9, assists: 0, win: false, agoMinutes: 2 });
+  delete streamState.soop['choi15778'];
+  streamState.chzzk['59dd654778e3d0b64f3ed06baece805d'] = { title: 'DK Delight', viewers: 540, openAt: '2026-11-27T16:05:00+09:00' };
   withFixture('next');
   const run2 = await call(checkFn, { url: '/api/check?token=smoke-secret' });
   check('check run2 sees new match', run2.json.solo.players.filter(function (p) { return p.isNew; }).length === 1, JSON.stringify(run2.json.solo.players.map(function (p) { return p.key + ':' + p.isNew; })));
   const soloPush = run2.json.solo.pushes[0];
   check('check run2 solo push preview', !!soloPush && /레넥톤 5\/9\/0/.test(soloPush.preview.body), soloPush && soloPush.preview.body);
   check('check run2 solo push target 1', !!soloPush && soloPush.targets === 1, soloPush && soloPush.targets);
+  const livePush = (run2.json.live.pushes || [])[0];
+  check('check run2 live push', !!livePush && livePush.player === 'delight' && livePush.targets === 1,
+        livePush && JSON.stringify({ player: livePush.player, targets: livePush.targets }));
+  check('check run2 live push title', !!livePush && /딜라이트/.test(livePush.preview.title) && /CHZZK/.test(livePush.preview.title),
+        livePush && livePush.preview.title);
+  check('check run2 live push url', !!livePush && /chzzk\.naver\.com\/59dd/.test(livePush.preview.url || ''),
+        livePush && livePush.preview.url);
+  check('check run2 live push body', !!livePush && /DK Delight/.test(livePush.preview.body), livePush && livePush.preview.body);
   const offPush = run2.json.official.pushes.filter(function (p) { return p.event === 'new_match'; })[0];
   check('check run2 official new schedule push', !!offPush && /12\. 3\./.test(offPush.preview.body), offPush && offPush.preview.body);
   check('check run2 official push target 1', !!offPush && offPush.targets === 1, offPush && offPush.targets);
@@ -331,6 +414,8 @@ async function main() {
 
   const run3 = await call(checkFn, { url: '/api/check?token=smoke-secret' });
   check('check run3 no duplicate push', run3.json.pushed === 0, run3.json.pushed);
+  check('check run3 live quiet', run3.json.live && run3.json.live.liveCount === 2 && run3.json.live.pushes.length === 0,
+        run3.json.live && JSON.stringify(run3.json.live.players.map(function (p) { return p.key + ':' + p.live; })));
 
   const testPush = await call(checkFn, { url: '/api/check?token=smoke-secret&test=1&dry=1' });
   check('check test push targets subscriber', !!testPush.json.test && testPush.json.test.targets === 1, testPush.json.test && testPush.json.test.targets);
@@ -370,6 +455,7 @@ async function main() {
 
   redis.srv.close();
   riotSrv.srv.close();
+  streamSrv.srv.close();
 
   console.log('\n== api smoke ==');
   console.log((pass) + ' passed, ' + failCount + ' failed');

@@ -1,9 +1,9 @@
 /* GET /api/official — DK 공식 경기(다음 경기 + 최근 결과)를 LoL Esports 공개 API에서 가져옵니다.
- *   ?lang=ko|en|ja  : 일정 문구 언어 (기본 ko)
+ *   ?lang=ko|en|ja|zh : 일정 문구 언어 (기본 ko)
  *   ?refresh=1      : 캐시 건너뛰기
  */
 const { json, fail } = require('./_lib/http');
-const { getDkOfficial, hlFor } = require('./_lib/official');
+const { getDkOfficial, hlFor, messageFor } = require('./_lib/official');
 const store = require('./_lib/store');
 
 const CACHE_TTL = 90; /* 초 */
@@ -35,7 +35,7 @@ module.exports = async function handler(req, res) {
       ok: false,
       source: 'lolesports',
       status: 'unavailable',
-      error: '공식 일정을 가져오지 못했어요',
+      error: messageFor(lang, 'unavailable'),
       detail: String(e && e.message ? e.message : e),
       lang: lang,
       fetchedAt: new Date().toISOString(),

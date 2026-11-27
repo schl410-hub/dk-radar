@@ -99,7 +99,7 @@ async def main():
         await page.wait_for_timeout(600)
 
         check("default theme dark", await page.get_attribute("html", "data-theme") == "dark")
-        check("four tabs", await page.eval_on_selector_all(".tab", "e=>e.length") == 4)
+        check("five tabs", await page.eval_on_selector_all(".tab", "e=>e.length") == 5)
         check("five tiles", await page.eval_on_selector_all(".tile", "e=>e.length") == 5)
         check("no horizontal overflow",
               await page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1"),
@@ -122,7 +122,7 @@ async def main():
         await page.wait_for_timeout(300)
 
         # ---- 탭 4개 ----
-        for tab, label in [("official", "공식일정"), ("solo", "경기로그"), ("records", "기록실")]:
+        for tab, label in [("official", "공식일정"), ("video", "영상"), ("solo", "경기로그"), ("records", "기록실")]:
             await page.click(f'[data-tab="{tab}"]')
             await page.wait_for_timeout(SETTLE)
             visible = await page.is_visible(f"#panel-{tab}")
@@ -173,15 +173,16 @@ async def main():
         doran_on = await page.get_attribute('[data-solo-toggle="doran"]', "aria-checked")
         kanavi_on = await page.get_attribute('[data-solo-toggle="kanavi"]', "aria-checked")
         official_on = await page.get_attribute('#panel-feed [data-official-toggle]', "aria-checked")
-        check("initial alerts", summary.startswith("2개") and doran_on == "true" and kanavi_on == "false" and official_on == "true",
-              f"{summary} doran={doran_on} kanavi={kanavi_on} official={official_on}")
+        live_on = await page.get_attribute("[data-live-toggle]", "aria-checked")
+        check("initial alerts", summary.startswith("3개") and doran_on == "true" and kanavi_on == "false" and official_on == "true" and live_on == "true",
+              f"{summary} doran={doran_on} kanavi={kanavi_on} official={official_on} live={live_on}")
 
         # 선수별 토글 + 저장
         await page.click('[data-solo-toggle="kanavi"]')
         await page.wait_for_timeout(200)
         check("kanavi alert on", await page.get_attribute('[data-solo-toggle="kanavi"]', "aria-checked") == "true",
               await page.evaluate("localStorage.getItem('dk.signal.solo.kanavi')"))
-        check("summary counts 3", (await page.inner_text("#notifySummary")).startswith("3개"),
+        check("summary counts 4", (await page.inner_text("#notifySummary")).startswith("4개"),
               await page.inner_text("#notifySummary"))
 
         # 공식 경기 알림은 홈/공식일정 두 곳 동기화
@@ -219,6 +220,9 @@ async def main():
                 await page.wait_for_timeout(120)
         await page.click('#panel-feed [data-official-toggle]')
         await page.wait_for_timeout(200)
+        if await page.get_attribute("[data-live-toggle]", "aria-checked") == "true":
+            await page.click("[data-live-toggle]")
+            await page.wait_for_timeout(150)
         check("all alerts off", (await page.inner_text("#notifySummary")) == "모두 꺼짐",
               await page.inner_text("#notifySummary"))
         await page.click("#testBtn")
@@ -235,6 +239,7 @@ async def main():
         # 다시 켜고 저장 확인
         await page.click('[data-solo-toggle="doran"]')
         await page.click('#panel-feed [data-official-toggle]')
+        await page.click("[data-live-toggle]")
         await page.wait_for_timeout(250)
 
         # ---- 한 줄 응원 ----
@@ -268,7 +273,8 @@ async def main():
         check("theme persists after reload", await page.get_attribute("html", "data-theme") == "mint")
         check("alerts persist after reload",
               await page.get_attribute('[data-solo-toggle="doran"]', "aria-checked") == "true"
-              and await page.get_attribute('#panel-feed [data-official-toggle]', "aria-checked") == "true")
+              and await page.get_attribute('#panel-feed [data-official-toggle]', "aria-checked") == "true"
+              and await page.get_attribute("[data-live-toggle]", "aria-checked") == "true")
         check("cheer persists after reload",
               await page.eval_on_selector_all("#cheerList .cheer-item", "e=>e.length") == 1)
         await page.evaluate("(()=>{const el=document.querySelector('.notify-card'); window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - 88)})()")
