@@ -2065,7 +2065,7 @@ html[data-theme="mint"] .lh-chip.is-chzzk .lh-dot { background: #069B52; }
 }
 /* 히어로 캡션 가독성: 아래쪽을 더 진하게 + 글자 그림자 */
 .lh-scrim { background: linear-gradient(180deg, rgba(0,0,0,.30) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,.55) 62%, rgba(0,0,0,.94) 100%); }
-.lh-cap b { font-size: 17px; text-shadow: 0 2px 16px rgba(0,0,0,.85), 0 1px 3px rgba(0,0,0,.8); }
+.lh-cap b { font-size: 18px; text-shadow: 0 2px 16px rgba(0,0,0,.85), 0 1px 3px rgba(0,0,0,.8); }
 .lh-cap span { font-size: 9px; text-shadow: 0 1px 6px rgba(0,0,0,.9), 0 1px 2px rgba(0,0,0,.85); }
 .lh-cap { bottom: 11px; }
 /* 플레이어: 찜 목록에서 계속 링크를 오른쪽으로 */
@@ -2074,8 +2074,8 @@ html[data-theme="mint"] .lh-chip.is-chzzk .lh-dot { background: #069B52; }
 
 /* 캡션 뒤 어두운 판: 어떤 썸네일에서도 방제·시청자 수가 읽히게 */
 .lh-cap {
-  left: 0; right: 0; bottom: 0; padding: 34px 12px 11px;
-  background: linear-gradient(180deg, rgba(4,10,14,0) 0%, rgba(4,10,14,.55) 42%, rgba(4,10,14,.88) 100%);
+  left: 0; right: 0; bottom: 0; padding: 52px 12px 11px;
+  background: linear-gradient(180deg, rgba(4,10,14,0) 0%, rgba(4,10,14,.55) 24%, rgba(4,10,14,.94) 52%, rgba(4,10,14,.99) 100%);
 }
 .lh-scrim { background: linear-gradient(180deg, rgba(0,0,0,.26) 0%, rgba(0,0,0,0) 40%); }
 /* 목록·카드 안에서 글자/이미지가 만드는 미세한 가로 넘침을 잘라 냅니다 (가로 스크롤 0) */
@@ -5978,6 +5978,20 @@ const SPELL_IMG = {
     return (h > 0 ? p(h) + ':' : '') + p(m) + ':' + p(sec);
   }
 
+  /* 플랫폼이 주는 방송 카테고리 이름 — 널리 쓰이는 것만 4개 국어로, 나머지는 준 값 그대로 */
+  var LIVE_CATS = [
+    { re: /리그\s*오브\s*레전드|league\s*of\s*legends|^lol$|英雄联盟|リーグ・オブ・レジェンド/i,
+      t: { ko: '리그 오브 레전드', en: 'League of Legends', ja: 'リーグ・オブ・レジェンド', zh: '英雄联盟' } }
+  ];
+  function liveCatText(raw) {
+    var s = String(raw || '');
+    if (!s) return '';
+    for (var i = 0; i < LIVE_CATS.length; i++) {
+      if (LIVE_CATS[i].re.test(s)) return L(LIVE_CATS[i].t);
+    }
+    return s;
+  }
+
   function platformText(platform) {
     if (platform === 'chzzk') return T('video.chzzk');
     if (platform === 'soop') return T('video.soop');
@@ -6021,7 +6035,7 @@ const SPELL_IMG = {
     var extraLive = onAir.slice(1);
     var title = lv.title || (pName(top.p) + ' ' + T('live.badge'));
     var metaParts = [esc(pName(top.p))];
-    if (lv.category) metaParts.push(esc(lv.category));
+    if (lv.category) metaParts.push(esc(liveCatText(lv.category)));
     if (lv.startedAt && elapsedText(lv.startedAt)) {
       metaParts.push('<span id="lhElapsed" data-start="' + esc(lv.startedAt) + '">' + esc(elapsedText(lv.startedAt)) + '</span>');
     }

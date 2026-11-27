@@ -1020,7 +1020,9 @@ async def main():
 
             errors = [l for l in logs if l[0] == "pageerror"]
             check("no page errors", not errors, errors[:3])
-            console_err = [l for l in logs if l[0] == "error" and "favicon" not in l[1]]
+            # 유튜브 임베드 플레이어가 스스로 내는 브라우저 정책 안내(compute-pressure)는 앱 오류가 아닙니다.
+            skip = ("favicon", "Permissions policy violation")
+            console_err = [l for l in logs if l[0] == "error" and not any(k in l[1] for k in skip)]
             check("no console errors", not console_err, console_err[:3])
 
             await browser.close()
