@@ -9,7 +9,7 @@ module.exports = async function handler(req, res) {
   try { last = await store.getJSON('dk:lastcheck'); } catch (e) {}
   return json(res, 200, {
     ok: true,
-    version: '3.0.0',
+    version: '3.2.0',
     serverTime: new Date().toISOString(),
     official: { source: 'lolesports' },
     solo: { source: process.env.RIOT_API_KEY ? 'riot' : 'snapshot' },
