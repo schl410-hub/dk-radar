@@ -226,23 +226,25 @@ styles.css            듀얼 테마 토큰 + 컴포넌트 스타일 (+ 언어·�
 i18n.js               KO·EN·JA·ZH 사전 + 날짜/요일 표기 + 언어 저장·전환
 data.js               선수·경기·대회 기록 (2026-11-26) · 방송국 · 영상 아카이브 45편 + DK 공식 재생목록 6종(태그·챔피언 사전 포함) · 챔피언 이름 4개 언어
 app.js                탭/선수·MY PICK·테마·알림·언어, 서버 실시간 연동·푸시 구독
-sw.js                 서비스 워커 (캐시 v10 + 웹 푸시 + 구독 갱신)
+sw.js                 서비스 워커 (캐시 v18 + 웹 푸시 + 구독 갱신)
 api/_lib/ingame.js    Spectator-V5 → 양 팀 챔피언·스펠·DK/프로 참가자·배지 계산
 api/_lib/pros.js      타 팀 프로 계정 표(21명) + PUUID 미리 받기(30일 캐시 · 못 찾으면 24시간 건너뜀)
 api/_lib/matchups.js  끝난 경기 참가자 비교로 듀오/내전/프로 매치업 판정
 api/_lib/champions.js Riot 숫자 id → 챔피언·스펠 영어 이름 (tools/make_riot_names.js 로 생성)
 manifest.json         PWA 설정 (manifest.webmanifest 와 동일 내용)
 admin.html            관리자 앱 화면 (잠금 화면 + 대시보드)
-admin.css             관리자 앱 전용 스타일 (앰버 · 딥 네이비)
-admin.js              잠금(PIN 해시·localStorage) · 실시간 대시보드 · 설치 안내
+admin.css             관리자 앱 전용 스타일 (검정 + 민트)
+admin.js              잠금(PIN 해시·localStorage) · 실시간 대시보드 · 7개 카드 · 점검/공지/전체 알림(PIN 헤더)
 manifest-admin.json   관리자 앱 PWA 설정 (id/start_url/scope = /admin)
 admin-sw.js           관리자 앱 전용 서비스 워커 (범위 /admin)
 api/official.js       DK 공식 일정
 api/solo.js           솔로랭크
-api/config.js         프론트용 공개 설정
+api/config.js         프론트용 공개 설정 + 관리자 집계(GET) + 관리자 동작(POST · PIN 검증)
 api/subscribe.js      푸시 구독 저장/해지
 api/check.js          주기 점검·푸시 발송 (공식 경기·솔랭·라이브 방송)
 api/live.js           선수 라이브 방송 상태(SOOP·CHZZK)
+api/_lib/stats.js     구독자 일별 통계(dk:stats:daily · 오늘 기준값 + 최근 7일)
+api/_lib/pushlog.js   실제 발송 기록(dk:pushlog · 최대 15건 · 개인정보 없음)
 api/_lib/             공식 일정·Riot·저장소·푸시·HTTP 유틸, 스냅샷(자동 생성)
 vercel.json           Cron(하루 1회) · 함수 실행시간 · /api 캐시 금지 헤더
 package.json          의존성(web-push)
@@ -259,7 +261,7 @@ tools/make_vapid.js   VAPID 키 생성
 tools/make_dk_youtube_snapshot.js  /api/dk-youtube 폴백 스냅샷 생성
 tools/make_preview.py 단일 파일 프리뷰 빌드
 tools/make_icons.py   아이콘 생성
-tools/make_admin_icons.py  관리자 앱 아이콘(앰버 방패) 생성
+tools/make_admin_icons.py  관리자 앱 아이콘(민트 방패 · ADMIN) 생성
 tools/verify_admin.py 관리자 앱 검증(잠금·PIN·대시보드·설치 조건 39항목)
 tools/mockup_admin.py 관리자 앱 시안 캡처(390×844) → downloads/dk-signal-v3
 tools/make_font.py    Pretendard 서브셋 생성
