@@ -6,7 +6,6 @@ dev_server 를 8765 포트에 띄우고 390x844 모바일 뷰포트에서 확인
 스크린샷은 /workspace/downloads/dk-signal-v3 에 남깁니다.
 """
 import asyncio
-import datetime
 import json
 import pathlib
 import re
@@ -137,7 +136,9 @@ def start_server():
 
 async def launch(p):
     chrome = pathlib.Path("/workspace/.pw-browsers/chromium-1255/chrome-linux64/chrome")
-    opts = {"args": ["--force-color-profile=srgb", "--font-render-hinting=none"]}
+    # 컨테이너의 /dev/shm 이 64MB 라 영상 탭처럼 긴 페이지 full_page 캡처가 실패합니다.
+    opts = {"args": ["--force-color-profile=srgb", "--font-render-hinting=none",
+                     "--disable-dev-shm-usage", "--disable-gpu"]}
     if chrome.exists():
         opts["executable_path"] = str(chrome)
     return await p.chromium.launch(**opts)
@@ -186,20 +187,17 @@ async def main():
                 got = [h for h in hrefs if "op.gg" not in h and "u.gg" not in h]
                 check(f"{key} stream links", got == expect, got)
 
-            # ---------- 이벤트 · D-DAY 스트립 ----------
-            check("event strip visible", await page.is_visible("#eventStrip"))
-            ev_text = await page.inner_text("#eventStrip")
-            check("event awards card", "2026 LCK 어워드" in ev_text and "D-" in ev_text, ev_text[:100])
-            dday_awards = (datetime.date(2026, 12, 16) - datetime.date.today()).days
-            check("event awards dday number", f"D-{dday_awards}" in ev_text, ev_text[:60])
-            check("event lck cup tentative", "2027 LCK 컵" in ev_text and "예상" in ev_text, ev_text[:200])
-            check("event birthday card", "생일" in ev_text, ev_text[-60:])
-            ev_links = await page.eval_on_selector_all("#eventStrip a.ev-card", "e=>e.map(x=>x.href)")
-            check("event hiwon vote card link", any("my1pick.com" in h for h in ev_links), ev_links)
-            check("event official links", len([h for h in ev_links if "lolesports.com" in h]) >= 2, ev_links)
-            ev_cards = await page.eval_on_selector_all("#eventStrip .ev-card", "e=>e.length")
-            check("event strip 5-6 cards", 5 <= ev_cards <= 6, ev_cards)
-            check("event debut cards", "데뷔" in ev_text and "주년" in ev_text, ev_text[-120:])
+            # ---------- 홈 D-DAY 스트립: 사용자 요청으로 홈에서 뺐습니다 (일정·투표는 캘린더 탭에서) ----------
+            check("home has no event strip",
+                  await page.eval_on_selector_all("#eventStrip, #panel-feed .events", "e=>e.length") == 0)
+            check("home board follows my pick", await page.evaluate("""() => {
+                const pick = document.querySelector('#panel-feed #pickBanner');
+                const grid = document.querySelector('#panel-feed #statusGrid');
+                if (!pick || !grid) return false;
+                /* MY PICK 이 보드보다 위에 있고, 둘 사이에 D-DAY 스트립이 없으면 됩니다 */
+                return !!(pick.compareDocumentPosition(grid) & Node.DOCUMENT_POSITION_FOLLOWING)
+                    && !document.querySelector('#panel-feed .events');
+            }"""))
             await page.screenshot(path=str(OUT / "30-events-ko.png"))
 
 
@@ -384,19 +382,16 @@ async def main():
             await page.wait_for_timeout(700)
             en_feed = await page.inner_text("#panel-feed")
             check("en in-game badge", "In game" in en_feed, en_feed[:120])
-            check("en event strip", "2026 LCK Awards" in await page.inner_text("#eventStrip"))
             en_mu = await page.eval_on_selector_all("#pickBanner .mu", "e=>e.map(x=>x.textContent)")
             check("en matchup words", any(("duo" in t or "same game" in t or "with" in t or "vs" in t) for t in en_mu), en_mu)
             await page.click('[data-lang="ja"]')
             await page.wait_for_timeout(700)
             ja_feed = await page.inner_text("#panel-feed")
             check("ja in-game badge", "ゲーム中" in ja_feed, ja_feed[:120])
-            check("ja event strip", "2026 LCKアワード" in await page.inner_text("#eventStrip"))
             await page.click('[data-lang="zh"]')
             await page.wait_for_timeout(700)
             zh_feed = await page.inner_text("#panel-feed")
             check("zh in-game badge", "游戏中" in zh_feed, zh_feed[:120])
-            check("zh event strip", "2026 LCK 颁奖礼" in await page.inner_text("#eventStrip"))
             await page.click("#pickBanner .pick-live")
             await page.wait_for_timeout(600)
             zh_sheet = await page.inner_text("#lgBody")
@@ -1144,11 +1139,6 @@ async def main():
             await page.wait_for_timeout(300)
             await page.screenshot(path=str(OUT / "13-home-vi-dark.png"))
             await page.screenshot(path=str(OUT / "13-home-vi-dark-full.png"), full_page=True)
-
-            vi_strip = await page.inner_text("#eventStrip")
-            check("vi event strip", "Lễ trao giải LCK 2026" in vi_strip, vi_strip[:100])
-            check("vi debut card in strip", "kỷ niệm" in vi_strip or "năm ra mắt" in vi_strip, vi_strip[:200])
-            check("vi dd format", "D-" in vi_strip)
 
             await page.click('[data-tab="records"]')
             await page.wait_for_timeout(500)

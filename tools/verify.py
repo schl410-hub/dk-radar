@@ -83,7 +83,9 @@ async def main():
     async with async_playwright() as p:
         # headless shell 은 알림 권한을 항상 거부하므로 풀 Chromium(신형 headless)으로 실행합니다.
         chrome = pathlib.Path("/workspace/.pw-browsers/chromium-1255/chrome-linux64/chrome")
-        launch = {"args": ["--force-color-profile=srgb", "--font-render-hinting=none"]}
+        # 컨테이너(/dev/shm 64MB)에서도 긴 페이지 full_page 캡처가 되도록
+        launch = {"args": ["--force-color-profile=srgb", "--font-render-hinting=none",
+                           "--disable-dev-shm-usage", "--disable-gpu"]}
         if chrome.exists():
             launch["executable_path"] = str(chrome)
         browser = await p.chromium.launch(**launch)

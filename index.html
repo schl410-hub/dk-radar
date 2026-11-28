@@ -112,8 +112,9 @@
         <button class="ic-x" id="installCardX" type="button" data-i18n-attr="aria-label:install.dismiss" aria-label="설치 안내 닫기">✕</button>
       </section>
 
-      <!-- 이벤트 · D-DAY: 하이원 어워드 투표 · LCK 어워드 · 2027 LCK 컵 · 다음 생일 (지난 일정은 앱이 자동으로 숨깁니다) -->
-      <section class="events" id="eventStrip" hidden aria-label="이벤트 · D-DAY" data-i18n-attr="aria-label:event.stripAria"></section>
+      <!-- 홈 D-DAY 스트립은 뺐습니다. 일정·D-DAY는 [캘린더] 탭(리스트·월간 캘린더)에서 모두 볼 수 있어요.
+           되살리려면 아래 한 줄의 주석을 풀면 됩니다(app.js renderEvents()가 그대로 채워 줍니다).
+           <section class="events" id="eventStrip" hidden aria-label="이벤트 · D-DAY" data-i18n-attr="aria-label:event.stripAria"></section> -->
 
       <div class="sec"><b data-i18n="board.title">5인 상태 보드</b><span class="sec-sub" data-i18n="board.sub">타일을 눌러 둘러보기 · 별로 최애 고정</span></div>
       <div class="tiles" id="statusGrid"></div>

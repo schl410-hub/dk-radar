@@ -91,7 +91,8 @@ async def open_page(ctx, port):
 async def main():
     OUT.mkdir(parents=True, exist_ok=True)
     chrome = pathlib.Path("/workspace/.pw-browsers/chromium-1255/chrome-linux64/chrome")
-    launch = {"args": ["--force-color-profile=srgb", "--font-render-hinting=none"]}
+    launch = {"args": ["--force-color-profile=srgb", "--font-render-hinting=none",
+                        "--disable-dev-shm-usage", "--disable-gpu"]}
     if chrome.exists():
         launch["executable_path"] = str(chrome)
 

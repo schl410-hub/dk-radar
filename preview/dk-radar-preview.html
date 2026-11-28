@@ -286,7 +286,8 @@ html[data-theme="mint"] .theme-btn .ic-moon { display: none; }
 }
 .tab {
   position: relative;
-  flex: 1 1 0;
+  flex: 1 1 auto;
+  min-width: 0;
   display: flex; align-items: center; justify-content: center; gap: 4px;
   padding: 8px 2px;
   border-radius: 11px;
@@ -295,6 +296,7 @@ html[data-theme="mint"] .theme-btn .ic-moon { display: none; }
   transition: background .25s ease, color .2s ease, box-shadow .25s ease;
 }
 .tab svg { flex: 0 0 auto; opacity: .8; }
+.tab span { white-space: nowrap; }
 .tab.is-active {
   color: var(--tab-active-ink);
   background: var(--tab-active-bg);
@@ -1654,6 +1656,8 @@ html[data-theme="mint"] .vp-veil { background: rgba(18, 48, 42, .48); }
   background: radial-gradient(circle, var(--accent-soft), transparent 70%);
 }
 .ev-card.is-awards { border-color: var(--accent-line); background: linear-gradient(155deg, var(--accent-soft) 0%, var(--card) 62%); }
+.ev-card.is-vote { border-color: var(--accent-line); background: linear-gradient(155deg, var(--accent-soft) 0%, var(--card) 62%); }
+.ev-card.is-vote .ev-kind i { filter: none; }
 a.ev-card:hover, a.ev-card:focus-visible { border-color: var(--accent-line); }
 .ev-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; position: relative; z-index: 1; }
 .ev-kind {
@@ -1680,6 +1684,61 @@ a.ev-card:hover, a.ev-card:focus-visible { border-color: var(--accent-line); }
   max-height: 23px; overflow: hidden;
 }
 .ev-go { margin-top: 2px; font-size: 7.5px; font-weight: 800; color: var(--accent); position: relative; z-index: 1; }
+
+/* ---------- 🗳️ 투표 모아보기: 일정&투표 탭 안의 카드 ---------- */
+.vote-hub-badge {
+  flex: none; min-width: 16px; height: 16px; padding: 0 5px; box-sizing: border-box;
+  border-radius: 999px; background: var(--accent); color: var(--accent-ink);
+  font-size: 8.5px; font-weight: 900; line-height: 16px; text-align: center;
+  font-variant-numeric: tabular-nums; align-self: center;
+}
+.vote-hub-badge[hidden] { display: none; }
+#voteListHost, #calVoteHost { margin-top: 10px; }
+
+.vote-sec + .vote-sec { margin-top: 13px; padding-top: 11px; border-top: 1px solid var(--line-soft); }
+.vote-head { display: flex; align-items: center; gap: 5px; margin: 0 0 7px; }
+.vote-head b { font-size: 9.5px; font-weight: 800; letter-spacing: -.015em; color: var(--ink); }
+.vote-head em {
+  font-style: normal; min-width: 14px; height: 14px; padding: 0 4px; box-sizing: border-box;
+  border-radius: 999px; background: var(--accent-soft); color: var(--accent);
+  font-size: 8px; font-weight: 900; line-height: 14px; text-align: center;
+}
+.vote-head span { margin-left: auto; font-size: 7.5px; color: var(--muted-2); }
+.vote-sec.is-shut .vote-head b { color: var(--muted); }
+.vote-sec.is-shut .vote-head em { background: var(--chip-bg); color: var(--muted-2); }
+.vote-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+.vote-item { border-radius: 13px; border: 1px solid var(--card-border); background: var(--card); overflow: hidden; }
+.vote-item.is-open { border-color: var(--accent-line); background: linear-gradient(150deg, var(--accent-soft) 0%, var(--card) 72%); }
+.vote-item.is-closed { opacity: .7; background: var(--chip-bg); }
+.vote-link { display: flex; flex-direction: column; gap: 2px; padding: 9px 11px 8px; color: inherit; text-decoration: none; }
+.vote-top { display: flex; align-items: center; gap: 6px; }
+.vote-event {
+  flex: 1 1 auto; min-width: 0; font-size: 8px; font-weight: 800; letter-spacing: -.01em; color: var(--muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.vote-badge {
+  flex: none; padding: 1px 5px; border-radius: 5px;
+  background: var(--accent); color: var(--accent-ink);
+  font-size: 7.5px; font-weight: 900; font-variant-numeric: tabular-nums; letter-spacing: 0;
+}
+.vote-badge.is-closed { background: var(--chip-bg); color: var(--muted-2); }
+.vote-name { font-size: 11px; font-weight: 800; letter-spacing: -.02em; color: var(--ink); line-height: 1.3; }
+.vote-cand { display: flex; align-items: center; gap: 4px; min-width: 0; font-size: 9.5px; font-weight: 700; color: var(--ink-2); }
+.vote-dk {
+  flex: none; font-style: normal; padding: 0 4px; border-radius: 4px;
+  background: var(--accent-soft); color: var(--accent); font-size: 7px; font-weight: 900; letter-spacing: .02em;
+}
+.vote-cand-note {
+  font-style: normal; font-size: 7.5px; font-weight: 500; color: var(--muted-2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+.vote-rule { font-size: 7.5px; line-height: 1.5; color: var(--muted); }
+.vote-foot { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
+.vote-when { font-size: 7.5px; color: var(--muted-2); }
+.vote-go { margin-left: auto; font-size: 8px; font-weight: 800; color: var(--accent); white-space: nowrap; }
+.vote-item.is-closed .vote-go { color: var(--muted); }
+.vote-empty { margin: 0; padding: 6px 2px; font-size: 8.5px; color: var(--muted); }
+.vote-note { margin: 10px 0 0; font-size: 7.5px; line-height: 1.55; color: var(--muted-2); }
 
 /* ---------- MY PICK 안의 인게임 줄 ---------- */
 .pick-live {
@@ -2255,6 +2314,188 @@ html[data-theme="mint"] .in-sec.is-warn { border-color: rgba(190, 120, 10, .38);
 html[lang="en"] .pick-switch .psw,
 html[lang="vi"] .pick-switch .psw { flex: 1 1 auto; font-size: 9.5px; padding: 6px 4px; }
 
+/* ---------- 일정&투표: 리스트 | 캘린더 전환 ---------- */
+.view-switch {
+  display: flex; gap: 5px; margin: 12px 16px 0; padding: 3px;
+  border-radius: 14px; background: var(--tab-bg); border: 1px solid var(--tab-line);
+}
+.vs-btn {
+  flex: 1 1 0; display: flex; align-items: center; justify-content: center; gap: 4px;
+  padding: 8px 4px; border-radius: 11px; border: 1px solid transparent;
+  background: transparent; color: var(--tab-ink);
+  font-family: inherit; font-size: 10px; font-weight: 700; letter-spacing: -.02em;
+  cursor: pointer; transition: background .25s ease, color .2s ease;
+}
+.vs-btn.is-on {
+  color: var(--tab-active-ink); background: var(--tab-active-bg);
+  border-color: var(--tab-active-line); box-shadow: 0 6px 16px -12px rgba(0, 0, 0, .6);
+}
+.vs-ico { font-size: 11px; line-height: 1; }
+
+/* ---------- 📅 캘린더 ---------- */
+.cal-filters {
+  display: flex; gap: 5px; margin: 10px 16px 0;
+  overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.cal-filters::-webkit-scrollbar { display: none; }
+.cal-chip {
+  flex: none; display: inline-flex; align-items: center; gap: 4px;
+  padding: 5px 9px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--chip-bg); color: var(--muted);
+  font-family: inherit; font-size: 9px; font-weight: 700; letter-spacing: -.02em;
+  white-space: nowrap; cursor: pointer;
+}
+.cal-chip.is-on {
+  border-color: var(--accent-line); background: var(--accent-soft); color: var(--ink);
+}
+.cal-dot { width: 5px; height: 5px; border-radius: 50%; flex: none; }
+.cal-dot.is-match { background: #FF6B7A; }
+.cal-dot.is-anniv { background: #C79BFF; }
+.cal-dot.is-vote { background: #00F5C4; }
+.cal-dot.is-cast { background: #5AA8FF; }
+
+/* 캘린더 가독성: 좌우 여백을 줄여 화면 너비를 넓게 쓰고, 셀 높이와 글자를 키웁니다 */
+.cal-card { margin: 10px 6px 0; padding: 11px 6px 9px; border-radius: 20px; }
+.cal-top { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; padding: 0 2px; }
+.cal-nav {
+  flex: none; width: 30px; height: 30px; border-radius: 50%;
+  border: 1px solid var(--line); background: var(--chip-bg); color: var(--ink-2);
+  font-family: inherit; font-size: 16px; line-height: 1; cursor: pointer;
+}
+.cal-nav:disabled { opacity: .35; cursor: default; }
+.cal-month {
+  flex: 1 1 auto; text-align: center; font-size: 15px; font-weight: 800;
+  letter-spacing: -.03em; color: var(--ink);
+}
+.cal-today-btn {
+  flex: none; padding: 5px 10px; border-radius: 999px;
+  border: 1px solid var(--accent-line); background: var(--accent-soft); color: var(--accent);
+  font-family: inherit; font-size: 9.5px; font-weight: 800; cursor: pointer;
+}
+.cal-dow { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3.5px; margin-bottom: 6px; }
+.cal-dow span { text-align: center; font-size: 9px; font-weight: 700; color: var(--muted-2); }
+.cal-dow span.is-sun { color: #FF6B7A; }
+.cal-dow span.is-sat { color: #5AA8FF; }
+
+.cal-grid { display: flex; flex-direction: column; gap: 4px; }
+.cal-week { display: grid; grid-template-columns: repeat(7, 1fr); grid-template-rows: 28px; grid-auto-rows: 27px; gap: 0 3.5px; }
+.cal-cell {
+  display: flex; align-items: flex-start; justify-content: flex-start;
+  border-radius: 9px; border: 1px solid var(--line-soft);
+  background: rgba(255, 255, 255, .022); cursor: pointer; padding: 0;
+  font-family: inherit; text-align: left; min-height: 30px; overflow: hidden;
+}
+html[data-theme="mint"] .cal-cell { background: rgba(18, 60, 52, .03); }
+.cal-cell.is-out { opacity: .45; }
+.cal-cell.is-today { border-color: var(--accent-line); background: var(--accent-soft); }
+.cal-cell.is-sel { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent-line); }
+.cal-num {
+  padding: 4px 0 0 6px; font-size: 11px; font-weight: 800; line-height: 15px;
+  color: var(--ink-2); font-variant-numeric: tabular-nums;
+}
+.cal-num.is-sun { color: #FF6B7A; }
+.cal-num.is-sat { color: #5AA8FF; }
+.cal-num.is-out { color: var(--muted-2); }
+.cal-num.is-today {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; margin: 3px 0 0 4px; padding: 0;
+  border-radius: 50%; background: var(--accent); color: var(--accent-ink); font-size: 10px;
+}
+/* 일정 배지는 한 줄에 잘리지 않고 두 줄까지 보여 줍니다 */
+.cal-bar {
+  grid-row: auto; align-self: center; height: auto; min-height: 14px; max-height: 23px; margin: 1px 0;
+  padding: 2px 4px; border-radius: 6px; border: 1px solid transparent;
+  font-size: 8px; font-weight: 700; line-height: 9.5px; letter-spacing: -.03em;
+  white-space: normal; word-break: keep-all;
+  overflow: hidden; text-overflow: ellipsis;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  pointer-events: none;
+}
+.cal-bar.cat-match { background: rgba(255, 107, 122, .18); border-color: rgba(255, 107, 122, .34); color: #FF9AA4; }
+.cal-bar.cat-anniv { background: rgba(199, 155, 255, .18); border-color: rgba(199, 155, 255, .34); color: #D9BEFF; }
+.cal-bar.cat-vote { background: var(--accent-soft); border-color: var(--accent-line); color: var(--accent); }
+.cal-bar.cat-cast { background: rgba(90, 168, 255, .16); border-color: rgba(90, 168, 255, .32); color: #9CC8FF; }
+html[data-theme="mint"] .cal-bar.cat-match { color: #B5323F; }
+html[data-theme="mint"] .cal-bar.cat-anniv { color: #6B3BA8; }
+html[data-theme="mint"] .cal-bar.cat-cast { color: #25619E; }
+.cal-foot {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  margin-top: 9px; padding: 8px 2px 0; border-top: 1px solid var(--line-soft);
+  font-size: 8.5px; color: var(--muted); line-height: 1.4;
+}
+.cal-foot b { color: var(--accent); font-weight: 800; }
+.cal-basis { color: var(--muted-2); white-space: nowrap; }
+
+.cal-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.cal-badge {
+  flex: none; align-self: center; padding: 4px 8px; border-radius: 999px;
+  border: 1px solid var(--accent-line); background: var(--accent-soft); color: var(--accent);
+  font-size: 8px; font-weight: 800; white-space: nowrap;
+}
+.cal-day-list, .cal-month-list { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.cal-day-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 9px 10px; border-radius: 13px; border: 1px solid var(--card-border); background: var(--chip-bg);
+}
+.cal-tag {
+  flex: none; min-width: 42px; text-align: center; padding: 3px 6px; border-radius: 8px;
+  font-size: 7.5px; font-weight: 800; letter-spacing: -.02em; white-space: nowrap;
+}
+.cal-tag.is-match { background: rgba(255, 107, 122, .18); color: #FF9AA4; }
+.cal-tag.is-anniv { background: rgba(199, 155, 255, .18); color: #D9BEFF; }
+.cal-tag.is-vote { background: var(--accent-soft); color: var(--accent); }
+.cal-tag.is-cast { background: rgba(90, 168, 255, .16); color: #9CC8FF; }
+html[data-theme="mint"] .cal-tag.is-match { color: #B5323F; }
+html[data-theme="mint"] .cal-tag.is-anniv { color: #6B3BA8; }
+html[data-theme="mint"] .cal-tag.is-cast { color: #25619E; }
+.cal-day-body { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.cal-day-body b { font-size: 10.5px; font-weight: 800; letter-spacing: -.02em; color: var(--ink); line-height: 1.35; }
+.cal-day-body span { font-size: 8px; color: var(--muted); line-height: 1.45; }
+.cal-day-go, .cal-dday {
+  flex: none; font-size: 8px; font-weight: 800; color: var(--accent);
+  white-space: nowrap; text-decoration: none;
+}
+.cal-dday { font-variant-numeric: tabular-nums; }
+.cal-empty { margin: 8px 0 0; font-size: 8.5px; color: var(--muted); }
+.cal-link {
+  flex: none; align-self: center; padding: 5px 9px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--chip-bg); color: var(--ink-2);
+  font-family: inherit; font-size: 8px; font-weight: 800; white-space: nowrap; cursor: pointer;
+}
+.cal-row {
+  display: flex; align-items: center; gap: 7px;
+  padding: 8px 2px; border-top: 1px solid var(--line-soft); cursor: pointer;
+  background: none; border-left: 0; border-right: 0; border-bottom: 0; width: 100%;
+  font-family: inherit; text-align: left;
+}
+.cal-month-list li:first-child .cal-row { border-top: 0; }
+.cal-row-date {
+  flex: none; min-width: 38px; font-size: 8.5px; font-weight: 700; color: var(--muted-2);
+  font-variant-numeric: tabular-nums;
+}
+.cal-row-title {
+  flex: 1 1 auto; min-width: 0; font-size: 10px; font-weight: 700; color: var(--ink);
+  letter-spacing: -.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cal-row-tag {
+  flex: none; padding: 3px 6px; border-radius: 7px; font-size: 7.5px; font-weight: 800;
+  background: var(--chip-bg); color: var(--muted);
+}
+.cal-row.cat-match .cal-row-tag { background: rgba(255, 107, 122, .18); color: #FF9AA4; }
+.cal-row.cat-anniv .cal-row-tag { background: rgba(199, 155, 255, .18); color: #D9BEFF; }
+.cal-row.cat-vote .cal-row-tag { background: var(--accent-soft); color: var(--accent); }
+.cal-row.cat-cast .cal-row-tag { background: rgba(90, 168, 255, .16); color: #9CC8FF; }
+html[data-theme="mint"] .cal-row.cat-match .cal-row-tag { color: #B5323F; }
+html[data-theme="mint"] .cal-row.cat-anniv .cal-row-tag { color: #6B3BA8; }
+html[data-theme="mint"] .cal-row.cat-cast .cal-row-tag { color: #25619E; }
+.cal-vote-link {
+  width: 100%; margin-top: 10px; padding: 8px 10px; border-radius: 11px;
+  border: 1px dashed var(--accent-line); background: var(--accent-soft); color: var(--accent);
+  font-family: inherit; font-size: 8.5px; font-weight: 800; text-align: center; cursor: pointer;
+}
+.cal-vote-link[hidden] { display: none; }
+.cal-note { margin: 10px 18px 0; font-size: 8px; line-height: 1.6; color: var(--muted-2); }
+
 </style>
 <script>
 /* 저장된 테마·언어를 첫 페인트 전에 적용해 깜빡임을 막습니다. */
@@ -2312,7 +2553,7 @@ html[lang="vi"] .pick-switch .psw { flex: 1 1 auto; font-size: 9.5px; padding: 6
       </button>
       <button class="tab" role="tab" aria-selected="false" data-tab="official">
         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 10h17M8 3.5v3M16 3.5v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
-        <span data-i18n="tab.official">공식일정</span>
+        <span data-i18n="tab.official">캘린더</span>
       </button>
       <button class="tab" role="tab" aria-selected="false" data-tab="video">
         <svg viewBox="0 0 24 24" width="13" height="13" fill="none" aria-hidden="true"><rect x="3.2" y="5.6" width="17.6" height="12.8" rx="3.2" stroke="currentColor" stroke-width="1.7"/><path d="M10.3 9.4v5.2l4.3-2.6-4.3-2.6Z" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/></svg>
@@ -2352,8 +2593,9 @@ html[lang="vi"] .pick-switch .psw { flex: 1 1 auto; font-size: 9.5px; padding: 6
         <button class="ic-x" id="installCardX" type="button" data-i18n-attr="aria-label:install.dismiss" aria-label="설치 안내 닫기">✕</button>
       </section>
 
-      <!-- 이벤트 · D-DAY: LCK 어워드 · 2027 LCK 컵 · 다음 생일 (지난 일정은 앱이 자동으로 숨깁니다) -->
-      <section class="events" id="eventStrip" hidden aria-label="이벤트 · D-DAY" data-i18n-attr="aria-label:event.stripAria"></section>
+      <!-- 홈 D-DAY 스트립은 뺐습니다. 일정·D-DAY는 [캘린더] 탭(리스트·월간 캘린더)에서 모두 볼 수 있어요.
+           되살리려면 아래 한 줄의 주석을 풀면 됩니다(app.js renderEvents()가 그대로 채워 줍니다).
+           <section class="events" id="eventStrip" hidden aria-label="이벤트 · D-DAY" data-i18n-attr="aria-label:event.stripAria"></section> -->
 
       <div class="sec"><b data-i18n="board.title">5인 상태 보드</b><span class="sec-sub" data-i18n="board.sub">타일을 눌러 둘러보기 · 별로 최애 고정</span></div>
       <div class="tiles" id="statusGrid"></div>
@@ -2390,6 +2632,13 @@ html[lang="vi"] .pick-switch .psw { flex: 1 1 auto; font-size: 9.5px; padding: 6
           </span>
           <span class="nr-text"><b data-i18n="notify.live">선수 라이브 방송 알림</b><span data-i18n="notify.liveSub">SOOP·CHZZK에서 방송을 켜면 바로</span></span>
           <button class="toggle" data-live-toggle type="button" role="switch" aria-checked="true" aria-label="선수 라이브 방송 알림 끄기"><span></span></button>
+        </div>
+        <div class="nr nr-notice">
+          <span class="nr-av">
+            <svg viewBox="0 0 20 20" width="13" height="13" fill="none" aria-hidden="true"><path d="M3.6 8.4h2.2l4.9-3.3v9.8L5.8 11.6H3.6a1 1 0 0 1-1-1V9.4a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M13.4 7.6a3.2 3.2 0 0 1 0 4.8M15.6 5.4a6.2 6.2 0 0 1 0 9.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </span>
+          <span class="nr-text"><b data-i18n="notify.notice">방송국 공지 알림</b><span data-i18n="notify.noticeSub">SOOP 방송국에 새 공지가 올라오면</span></span>
+          <button class="toggle" data-notice-toggle type="button" role="switch" aria-checked="true" aria-label="방송국 공지 알림 끄기"><span></span></button>
         </div>
         <div class="ping-foot">
           <button class="test-btn" id="testBtn" type="button" data-i18n="notify.test">테스트 알림 보내기</button>
@@ -2447,12 +2696,22 @@ html[lang="vi"] .pick-switch .psw { flex: 1 1 auto; font-size: 9.5px; padding: 6
     </section>
 
     <!-- ================= 공식일정 ================= -->
-    <section class="panel" id="panel-official" role="tabpanel" data-i18n-attr="aria-label:tab.official" aria-label="공식일정" hidden>
+    <section class="panel" id="panel-official" role="tabpanel" data-i18n-attr="aria-label:tab.official" aria-label="캘린더" hidden>
       <div class="panel-head">
-        <div class="eyebrow">OFFICIAL SCHEDULE</div>
-        <h2 class="panel-title" data-i18n="official.title">공식일정</h2>
-        <p class="panel-sub"><span data-i18n="official.sub">다음 일정과 최근 공식 경기를 모아 봤어요.</span> <span class="live-chip" id="officialChip" hidden>자동 갱신</span></p>
+        <div class="eyebrow">SCHEDULE &amp; VOTE</div>
+        <h2 class="panel-title" data-i18n="official.title">캘린더</h2>
+        <p class="panel-sub"><span data-i18n="official.sub">다음 일정과 최근 공식 경기, 진행 중인 투표를 모아 봤어요.</span> <span class="live-chip" id="officialChip" hidden>자동 갱신</span></p>
       </div>
+      <!-- 📋 리스트 | 📅 캘린더: 같은 공식일정 탭을 두 가지 보기로 나눕니다 -->
+      <div class="view-switch" id="officialViews" role="tablist" data-i18n-attr="aria-label:official.viewsAria" aria-label="공식일정 보기 방식">
+        <button class="vs-btn is-on" type="button" role="tab" aria-selected="true" data-official-view="list">
+          <span class="vs-ico" aria-hidden="true">📋</span><span data-i18n="official.viewList">리스트</span>
+        </button>
+        <button class="vs-btn" type="button" role="tab" aria-selected="false" data-official-view="calendar">
+          <span class="vs-ico" aria-hidden="true">📅</span><span data-i18n="official.viewCalendar">캘린더</span>
+        </button>
+      </div>
+      <div id="officialListView">
       <section class="card next-match" id="nextCard">
         <div class="next-top">
           <span class="tag">NEXT</span>
@@ -2470,6 +2729,17 @@ html[lang="vi"] .pick-switch .psw { flex: 1 1 auto; font-size: 9.5px; padding: 6
           <button class="toggle" data-official-toggle type="button" role="switch" aria-checked="true" aria-label="DK 공식 경기 알림 끄기"><span></span></button>
         </div>
         <a class="wide-btn" id="lolesportsLink" href="https://lolesports.com/ko-KR/schedule" target="_blank" rel="noopener" data-i18n="official.scheduleLink">LoL Esports 일정 확인 ↗</a>
+      </section>
+      <!-- 🗳️ 투표 모아보기: 진행 중인 투표와 마감된 투표를 카드 한 장에 모읍니다 -->
+      <section class="card vote-card" id="officialVoteCard">
+        <div class="card-head">
+          <div>
+            <div class="eyebrow">VOTES</div>
+            <h3 class="card-title" data-i18n="vote.hub">투표 모아보기</h3>
+          </div>
+          <span class="vote-hub-badge" id="voteCountBadge"></span>
+        </div>
+        <div id="voteListHost"></div>
       </section>
       <section class="card" id="officialRecentCard" hidden>
         <div class="eyebrow">LATEST RESULTS</div>
@@ -2491,6 +2761,69 @@ html[lang="vi"] .pick-switch .psw { flex: 1 1 auto; font-size: 9.5px; padding: 6
         <ul class="official-list" id="officialList"></ul>
       </section>
       <footer class="foot"><p data-i18n="foot.official">경기 일정·결과는 LoL Esports 공개 일정에서 자동으로 받아옵니다.</p></footer>
+      </div>
+
+      <!-- 📅 캘린더: 월 단위로 경기·기념일·투표·방송을 한눈에 -->
+      <section id="officialCalView" hidden>
+        <div class="cal-filters" id="calFilters" role="group" data-i18n-attr="aria-label:cal.filterAria" aria-label="일정 분류">
+          <button class="cal-chip is-on" type="button" data-cal-cat="all" aria-pressed="true"><span data-i18n="cal.all">전체</span></button>
+          <button class="cal-chip" type="button" data-cal-cat="match" aria-pressed="false"><i class="cal-dot is-match" aria-hidden="true"></i><span data-i18n="cal.match">경기</span></button>
+          <button class="cal-chip" type="button" data-cal-cat="anniv" aria-pressed="false"><i class="cal-dot is-anniv" aria-hidden="true"></i><span data-i18n="cal.anniv">기념일</span></button>
+          <button class="cal-chip" type="button" data-cal-cat="vote" aria-pressed="false"><i class="cal-dot is-vote" aria-hidden="true"></i><span data-i18n="cal.vote">투표</span></button>
+          <button class="cal-chip" type="button" data-cal-cat="cast" aria-pressed="false"><i class="cal-dot is-cast" aria-hidden="true"></i><span data-i18n="cal.cast">방송</span></button>
+        </div>
+
+        <section class="card cal-card">
+          <div class="cal-top">
+            <button class="cal-nav" id="calPrev" type="button" data-i18n-attr="aria-label:cal.prev" aria-label="이전 달">‹</button>
+            <b class="cal-month" id="calMonth">11월, 2026</b>
+            <button class="cal-nav" id="calNext" type="button" data-i18n-attr="aria-label:cal.next" aria-label="다음 달">›</button>
+            <button class="cal-today-btn" id="calToday" type="button" data-i18n="cal.today">오늘</button>
+          </div>
+          <div class="cal-dow" id="calDow" aria-hidden="true"></div>
+          <div class="cal-grid" id="calGrid"></div>
+          <div class="cal-foot">
+            <span id="calCount"></span>
+            <span class="cal-basis" data-i18n="cal.basis">일정은 공지 기준</span>
+          </div>
+        </section>
+
+        <section class="card cal-day" id="calDay">
+          <div class="cal-card-head">
+            <div>
+              <div class="eyebrow">SELECTED DAY</div>
+              <h3 class="card-title" id="calDayTitle">11월 29일 (일)</h3>
+            </div>
+            <span class="cal-badge" id="calDayCount">일정 2개</span>
+          </div>
+          <ul class="cal-day-list" id="calDayList"></ul>
+        </section>
+
+        <section class="card cal-month-card">
+          <div class="cal-card-head">
+            <div>
+              <div class="eyebrow">THIS MONTH</div>
+              <h3 class="card-title" id="calMonthTitle">11월 일정 한눈에</h3>
+            </div>
+            <button class="cal-link" id="calToList" type="button" data-i18n="cal.toList">리스트로 보기 ›</button>
+          </div>
+          <ul class="cal-month-list" id="calMonthList"></ul>
+        </section>
+
+        <!-- 캘린더 보기에서도 투표만 따로 모아 봅니다 -->
+        <section class="card vote-card" id="calVoteCard">
+          <div class="card-head">
+            <div>
+              <div class="eyebrow">VOTES</div>
+              <h3 class="card-title" data-i18n="vote.hub">투표 모아보기</h3>
+            </div>
+            <span class="vote-hub-badge" id="calVoteCountBadge"></span>
+          </div>
+          <div id="calVoteHost"></div>
+        </section>
+
+        <p class="cal-note" id="calNote" data-i18n="cal.note">기념일은 선수 생일·데뷔일에서 자동으로 계산하고, 투표·방송 일정은 공식 공지를 확인해 채워요.</p>
+      </section>
     </section>
 
     <!-- ================= 영상 ================= -->
@@ -2800,7 +3133,7 @@ html[lang="vi"] .pick-switch .psw { flex: 1 1 auto; font-size: 9.5px; padding: 6
       'install': '설치',
       'nav.aria': '화면 선택',
       'tab.feed': '홈',
-      'tab.official': '공식일정',
+      'tab.official': '캘린더',
       'tab.video': '영상',
       'tab.solo': '경기로그',
       'tab.records': '기록실',
@@ -2851,6 +3184,58 @@ html[lang="vi"] .pick-switch .psw { flex: 1 1 auto; font-size: 9.5px; padding: 6
       'event.today': 'D-DAY',
       'event.tentative': '예상',
       'event.link': '공식 안내 ↗',
+      'vote.hub': '투표 모아보기',
+      'vote.hubAria': '투표 모아보기 · 진행 중 {n}건',
+      'vote.sheetTitle': '투표 모아보기',
+      'vote.close': '닫기',
+      'vote.ongoing': '진행 중',
+      'vote.ongoingSub': '마감이 가까운 순',
+      'vote.closedHead': '마감됨',
+      'vote.closed': '마감',
+      'vote.deadline': '{md} {time} 마감',
+      'vote.cta': '투표하러 가기 ↗',
+      'vote.closedCta': '안내 보기 ↗',
+      'vote.empty': '지금은 진행 중인 투표가 없어요.',
+      'vote.note': '투표는 공식 페이지에서 직접 해요 · 마이원픽은 1일 1회 무료',
+      'official.viewList': '리스트',
+      'official.viewCalendar': '캘린더',
+      'official.viewsAria': '일정 보기 방식',
+      'cal.all': '전체',
+      'cal.match': '경기',
+      'cal.anniv': '기념일',
+      'cal.vote': '투표',
+      'cal.cast': '방송',
+      'cal.filterAria': '일정 분류',
+      'cal.prev': '이전 달',
+      'cal.next': '다음 달',
+      'cal.today': '오늘',
+      'cal.basis': '일정은 공지 기준',
+      'cal.toList': '리스트로 보기 ›',
+      'cal.note': '기념일은 선수 생일·데뷔일에서 자동으로 계산하고, 투표·방송 일정은 공식 공지를 확인해 채워요.',
+      'cal.foot': '오늘 {today} · {n}개 일정',
+      'cal.dayCount': '일정 {n}개',
+      'cal.monthHead': '{month} 일정 한눈에',
+      'cal.emptyDay': '이 날은 일정이 없어요.',
+      'cal.emptyMonth': '이 달에는 등록된 일정이 없어요.',
+      'cal.birthdayTitle': '{name} 생일',
+      'cal.birthdaySub': '{real} · {date}',
+      'cal.debutTitle': '{name} 데뷔 {n}주년',
+      'cal.debutBar': '데뷔 {n}주년',
+      'cal.debutSub': '{real} · {note}',
+      'cal.gameWin': '{opp}에 {score} 승리',
+      'cal.gameLoss': '{opp}에 {score} 패배',
+      'cal.voteTitle': '{event} 투표',
+      'cal.voteRange': '{from} ~ {to}',
+      'cal.voteSame': '{md} 마감',
+      'cal.castSub': 'SOOP · {handle} 채널',
+      'cal.noticeLink': '공지 보기 ↗',
+      'cal.matchLink': '일정 확인 ↗',
+      'cal.voteOngoing': '진행 중',
+      'cal.voteClosed': '마감',
+      'notify.notice': '방송국 공지 알림',
+      'notify.noticeSub': 'SOOP 방송국에 새 공지가 올라오면',
+      'notify.noticeToggleOn': '방송국 공지 알림 끄기',
+      'notify.noticeToggleOff': '방송국 공지 알림 켜기',
       'event.birthday': '{name} 생일',
       'event.birthdaySub': '{md} · 해마다 같은 날',
       'ingame.title': '지금 게임 중',
@@ -3079,8 +3464,8 @@ html[lang="vi"] .pick-switch .psw { flex: 1 1 auto; font-size: 9.5px; padding: 6
       'foot.solo': '솔로랭크 기록은 각 선수 계정의 공개 전적을 기준으로 표시합니다.',
       'foot.records': '2026 시즌 대회 기록은 KO.LOL 공개 데이터를 옮겼어요. 우승·준우승 표기는 확인된 대회만 적었습니다.',
 
-      'official.title': '공식일정',
-      'official.sub': '다음 일정과 최근 공식 경기를 모아 봤어요.',
+      'official.title': '캘린더',
+      'official.sub': '다음 일정과 최근 공식 경기, 진행 중인 투표를 모아 봤어요.',
       'official.next': 'NEXT',
       'official.nextDateFallback': '2027 LCK 컵',
       'official.nextTitleFallback': 'DK 2027 첫 경기',
@@ -3232,7 +3617,7 @@ html[lang="vi"] .pick-switch .psw { flex: 1 1 auto; font-size: 9.5px; padding: 6
       'install': 'Install',
       'nav.aria': 'Choose a screen',
       'tab.feed': 'Home',
-      'tab.official': 'Schedule',
+      'tab.official': 'Calendar',
       'tab.video': 'Videos',
       'tab.solo': 'Match log',
       'tab.records': 'Records',
@@ -3283,6 +3668,58 @@ html[lang="vi"] .pick-switch .psw { flex: 1 1 auto; font-size: 9.5px; padding: 6
       'event.today': 'D-DAY',
       'event.tentative': 'tentative',
       'event.link': 'Official ↗',
+      'vote.hub': 'All votes',
+      'vote.hubAria': 'All votes · {n} open',
+      'vote.sheetTitle': 'All votes',
+      'vote.close': 'Close',
+      'vote.ongoing': 'Open now',
+      'vote.ongoingSub': 'closing soonest first',
+      'vote.closedHead': 'Closed',
+      'vote.closed': 'Closed',
+      'vote.deadline': 'closes {md} {time}',
+      'vote.cta': 'Vote now ↗',
+      'vote.closedCta': 'Details ↗',
+      'vote.empty': 'No votes open right now.',
+      'vote.note': 'Voting happens on the official pages · My1Pick gives one free vote a day',
+      'official.viewList': 'List',
+      'official.viewCalendar': 'Calendar',
+      'official.viewsAria': 'Schedule view',
+      'cal.all': 'All',
+      'cal.match': 'Matches',
+      'cal.anniv': 'Milestones',
+      'cal.vote': 'Votes',
+      'cal.cast': 'Streams',
+      'cal.filterAria': 'Schedule filters',
+      'cal.prev': 'Previous month',
+      'cal.next': 'Next month',
+      'cal.today': 'Today',
+      'cal.basis': 'Based on official notices',
+      'cal.toList': 'Open list ›',
+      'cal.note': 'Milestones are calculated from birthdays and debut dates; votes and streams come from official notices.',
+      'cal.foot': 'Today {today} · {n} events',
+      'cal.dayCount': '{n} events',
+      'cal.monthHead': 'Everything in {month}',
+      'cal.emptyDay': 'No events on this day.',
+      'cal.emptyMonth': 'No events this month.',
+      'cal.birthdayTitle': "{name}'s birthday",
+      'cal.birthdaySub': '{real} · {date}',
+      'cal.debutTitle': '{name} · {n} years since debut',
+      'cal.debutBar': 'Debut +{n}y',
+      'cal.debutSub': '{real} · {note}',
+      'cal.gameWin': 'Beat {opp} {score}',
+      'cal.gameLoss': 'Lost to {opp} {score}',
+      'cal.voteTitle': '{event} vote',
+      'cal.voteRange': '{from} – {to}',
+      'cal.voteSame': 'closes {md}',
+      'cal.castSub': 'SOOP · {handle} channel',
+      'cal.noticeLink': 'Notice ↗',
+      'cal.matchLink': 'Schedule ↗',
+      'cal.voteOngoing': 'Open',
+      'cal.voteClosed': 'Closed',
+      'notify.notice': 'Station notices',
+      'notify.noticeSub': 'when a new SOOP station notice goes up',
+      'notify.noticeToggleOn': 'Turn off station notice alerts',
+      'notify.noticeToggleOff': 'Turn on station notice alerts',
       'event.birthday': "{name}'s birthday",
       'event.birthdaySub': '{md} · same day every year',
       'ingame.title': 'In game now',
@@ -3511,8 +3948,8 @@ html[lang="vi"] .pick-switch .psw { flex: 1 1 auto; font-size: 9.5px; padding: 6
       'foot.solo': 'Solo queue records come from each player’s public match history.',
       'foot.records': '2026 tournament records are carried over from public KO.LOL data. Titles and runner-up marks are listed only where confirmed.',
 
-      'official.title': 'Schedule',
-      'official.sub': 'The next match and DK’s latest official games.',
+      'official.title': 'Calendar',
+      'official.sub': 'Next up, recent official matches, and the votes you can join.',
       'official.next': 'NEXT',
       'official.nextDateFallback': '2027 LCK Cup',
       'official.nextTitleFallback': 'DK’s first 2027 match',
@@ -3664,7 +4101,7 @@ html[lang="vi"] .pick-switch .psw { flex: 1 1 auto; font-size: 9.5px; padding: 6
       'install': 'インストール',
       'nav.aria': '画面を選択',
       'tab.feed': 'ホーム',
-      'tab.official': '公式日程',
+      'tab.official': 'カレンダー',
       'tab.video': '動画',
       'tab.solo': '試合ログ',
       'tab.records': '記録室',
@@ -3715,6 +4152,58 @@ html[lang="vi"] .pick-switch .psw { flex: 1 1 auto; font-size: 9.5px; padding: 6
       'event.today': 'D-DAY',
       'event.tentative': '予定',
       'event.link': '公式案内 ↗',
+      'vote.hub': '投票まとめ',
+      'vote.hubAria': '投票まとめ・開催中{n}件',
+      'vote.sheetTitle': '投票まとめ',
+      'vote.close': '閉じる',
+      'vote.ongoing': '開催中',
+      'vote.ongoingSub': '締切が近い順',
+      'vote.closedHead': '終了',
+      'vote.closed': '終了',
+      'vote.deadline': '{md} {time} 締切',
+      'vote.cta': '投票する ↗',
+      'vote.closedCta': '案内を見る ↗',
+      'vote.empty': 'いま開催中の投票はありません。',
+      'vote.note': '投票は公式ページで・マイワンピックは1日1回無料',
+      'official.viewList': 'リスト',
+      'official.viewCalendar': 'カレンダー',
+      'official.viewsAria': '日程の表示方法',
+      'cal.all': 'すべて',
+      'cal.match': '試合',
+      'cal.anniv': '記念日',
+      'cal.vote': '投票',
+      'cal.cast': '配信',
+      'cal.filterAria': '日程の分類',
+      'cal.prev': '前の月',
+      'cal.next': '次の月',
+      'cal.today': '今日',
+      'cal.basis': '日程は告知基準',
+      'cal.toList': 'リストで見る ›',
+      'cal.note': '記念日は選手の誕生日・デビュー日から自動計算し、投票・配信の日程は公式告知を確認して入れています。',
+      'cal.foot': '今日 {today} · 予定 {n}件',
+      'cal.dayCount': '予定 {n}件',
+      'cal.monthHead': '{month}の予定をひと目で',
+      'cal.emptyDay': 'この日の予定はありません。',
+      'cal.emptyMonth': 'この月の予定はありません。',
+      'cal.birthdayTitle': '{name}の誕生日',
+      'cal.birthdaySub': '{real} · {date}',
+      'cal.debutTitle': '{name} デビュー{n}周年',
+      'cal.debutBar': 'デビュー{n}周年',
+      'cal.debutSub': '{real} · {note}',
+      'cal.gameWin': '{opp}に{score}で勝利',
+      'cal.gameLoss': '{opp}に{score}で敗退',
+      'cal.voteTitle': '{event} 投票',
+      'cal.voteRange': '{from} ~ {to}',
+      'cal.voteSame': '{md} 締切',
+      'cal.castSub': 'SOOP · {handle} チャンネル',
+      'cal.noticeLink': '告知を見る ↗',
+      'cal.matchLink': '日程を見る ↗',
+      'cal.voteOngoing': '開催中',
+      'cal.voteClosed': '終了',
+      'notify.notice': '配信局の告知通知',
+      'notify.noticeSub': 'SOOP配信局に新しい告知が上がったら',
+      'notify.noticeToggleOn': '配信局の告知通知をオフ',
+      'notify.noticeToggleOff': '配信局の告知通知をオン',
       'event.birthday': '{name}の誕生日',
       'event.birthdaySub': '{md} · 毎年同じ日',
       'ingame.title': 'いまゲーム中',
@@ -3943,8 +4432,8 @@ html[lang="vi"] .pick-switch .psw { flex: 1 1 auto; font-size: 9.5px; padding: 6
       'foot.solo': 'ソロランク記録は各選手アカウントの公開戦績を基準に表示します。',
       'foot.records': '2026シーズンの大会記録はKO.LOLの公開データを移したものです。優勝・準優勝は確認できた大会のみ記載しています。',
 
-      'official.title': '公式日程',
-      'official.sub': '次の試合と直近の公式戦をまとめました。',
+      'official.title': 'カレンダー',
+      'official.sub': '次の日程と最近の公式戦、開催中の投票をまとめました。',
       'official.next': 'NEXT',
       'official.nextDateFallback': '2027 LCKカップ',
       'official.nextTitleFallback': 'DK 2027 初戦',
@@ -4094,7 +4583,7 @@ html[lang="vi"] .pick-switch .psw { flex: 1 1 auto; font-size: 9.5px; padding: 6
       'install': '安装',
       'nav.aria': '选择页面',
       'tab.feed': '首页',
-      'tab.official': '官方赛程',
+      'tab.official': '日历',
       'tab.video': '视频',
       'tab.solo': '对局记录',
       'tab.records': '记录室',
@@ -4141,6 +4630,58 @@ html[lang="vi"] .pick-switch .psw { flex: 1 1 auto; font-size: 9.5px; padding: 6
       'event.today': 'D-DAY',
       'event.tentative': '预计',
       'event.link': '官方公告 ↗',
+      'vote.hub': '投票一览',
+      'vote.hubAria': '投票一览 · 进行中 {n} 项',
+      'vote.sheetTitle': '投票一览',
+      'vote.close': '关闭',
+      'vote.ongoing': '进行中',
+      'vote.ongoingSub': '按截止临近排序',
+      'vote.closedHead': '已截止',
+      'vote.closed': '已截止',
+      'vote.deadline': '{md} {time} 截止',
+      'vote.cta': '去投票 ↗',
+      'vote.closedCta': '查看公告 ↗',
+      'vote.empty': '目前没有进行中的投票。',
+      'vote.note': '投票在官方页面进行 · My1Pick 每日免费一票',
+      'official.viewList': '列表',
+      'official.viewCalendar': '日历',
+      'official.viewsAria': '日程显示方式',
+      'cal.all': '全部',
+      'cal.match': '比赛',
+      'cal.anniv': '纪念日',
+      'cal.vote': '投票',
+      'cal.cast': '直播',
+      'cal.filterAria': '日程分类',
+      'cal.prev': '上个月',
+      'cal.next': '下个月',
+      'cal.today': '今天',
+      'cal.basis': '日程以公告为准',
+      'cal.toList': '查看列表 ›',
+      'cal.note': '纪念日由选手生日·出道日自动计算，投票·直播日程来自官方公告。',
+      'cal.foot': '今天 {today} · {n} 项日程',
+      'cal.dayCount': '{n} 项',
+      'cal.monthHead': '{month}日程一览',
+      'cal.emptyDay': '这一天没有日程。',
+      'cal.emptyMonth': '这个月没有日程。',
+      'cal.birthdayTitle': '{name} 生日',
+      'cal.birthdaySub': '{real} · {date}',
+      'cal.debutTitle': '{name} 出道 {n} 周年',
+      'cal.debutBar': '出道 {n} 周年',
+      'cal.debutSub': '{real} · {note}',
+      'cal.gameWin': '以 {score} 战胜 {opp}',
+      'cal.gameLoss': '以 {score} 负于 {opp}',
+      'cal.voteTitle': '{event} 投票',
+      'cal.voteRange': '{from} ~ {to}',
+      'cal.voteSame': '{md} 截止',
+      'cal.castSub': 'SOOP · {handle} 频道',
+      'cal.noticeLink': '查看公告 ↗',
+      'cal.matchLink': '查看日程 ↗',
+      'cal.voteOngoing': '进行中',
+      'cal.voteClosed': '已截止',
+      'notify.notice': '直播间公告通知',
+      'notify.noticeSub': 'SOOP 直播间有新公告时',
+      'notify.noticeToggleOn': '关闭直播间公告通知',
+      'notify.noticeToggleOff': '开启直播间公告通知',
       'event.birthday': '{name}生日',
       'event.birthdaySub': '{md} · 每年同一天',
       'ingame.title': '正在游戏中',
@@ -4359,8 +4900,8 @@ html[lang="vi"] .pick-switch .psw { flex: 1 1 auto; font-size: 9.5px; padding: 6
       'foot.official': '比赛日程 · 结果自动从 LoL Esports 公开赛程获取。',
       'foot.solo': '单双排记录以各选手账号的公开战绩为基准显示。',
       'foot.records': '2026 赛季赛事记录来自 KO.LOL 公开数据，冠亚军标注只记录已确认的赛事。',
-      'official.title': '官方赛程',
-      'official.sub': '汇总了下一场比赛和最近的官方比赛。',
+      'official.title': '日历',
+      'official.sub': '汇总了接下来的日程、最近的官方比赛和进行中的投票。',
       'official.next': '下一场',
       'official.nextDateFallback': '2027 LCK 杯',
       'official.nextTitleFallback': 'DK 2027 首场比赛',
@@ -4507,7 +5048,7 @@ html[lang="vi"] .pick-switch .psw { flex: 1 1 auto; font-size: 9.5px; padding: 6
       'install': 'Cài đặt',
       'nav.aria': 'Chọn màn hình',
       'tab.feed': 'Trang chủ',
-      'tab.official': 'Lịch đấu',
+      'tab.official': 'Lịch',
       'tab.video': 'Video',
       'tab.solo': 'Nhật ký đấu',
       'tab.records': 'Thành tích',
@@ -4554,6 +5095,58 @@ html[lang="vi"] .pick-switch .psw { flex: 1 1 auto; font-size: 9.5px; padding: 6
       'event.today': 'D-DAY',
       'event.tentative': 'dự kiến',
       'event.link': 'Thông báo chính thức ↗',
+      'vote.hub': 'Tổng hợp bình chọn',
+      'vote.hubAria': 'Tổng hợp bình chọn · {n} đang mở',
+      'vote.sheetTitle': 'Tổng hợp bình chọn',
+      'vote.close': 'Đóng',
+      'vote.ongoing': 'Đang mở',
+      'vote.ongoingSub': 'hạn gần nhất trước',
+      'vote.closedHead': 'Đã kết thúc',
+      'vote.closed': 'Đã hết hạn',
+      'vote.deadline': 'hết hạn {md} {time}',
+      'vote.cta': 'Bình chọn ngay ↗',
+      'vote.closedCta': 'Xem thông báo ↗',
+      'vote.empty': 'Hiện không có bình chọn nào đang mở.',
+      'vote.note': 'Bình chọn trên trang chính thức · My1Pick miễn phí 1 phiếu mỗi ngày',
+      'official.viewList': 'Danh sách',
+      'official.viewCalendar': 'Lịch',
+      'official.viewsAria': 'Cách xem lịch',
+      'cal.all': 'Tất cả',
+      'cal.match': 'Trận đấu',
+      'cal.anniv': 'Kỷ niệm',
+      'cal.vote': 'Bình chọn',
+      'cal.cast': 'Phát sóng',
+      'cal.filterAria': 'Phân loại lịch',
+      'cal.prev': 'Tháng trước',
+      'cal.next': 'Tháng sau',
+      'cal.today': 'Hôm nay',
+      'cal.basis': 'Theo thông báo chính thức',
+      'cal.toList': 'Xem danh sách ›',
+      'cal.note': 'Ngày kỷ niệm tự tính từ sinh nhật·ngày ra mắt; lịch bình chọn·phát sóng lấy từ thông báo chính thức.',
+      'cal.foot': 'Hôm nay {today} · {n} lịch',
+      'cal.dayCount': '{n} lịch',
+      'cal.monthHead': 'Toàn bộ lịch {month}',
+      'cal.emptyDay': 'Ngày này không có lịch.',
+      'cal.emptyMonth': 'Tháng này chưa có lịch.',
+      'cal.birthdayTitle': 'Sinh nhật {name}',
+      'cal.birthdaySub': '{real} · {date}',
+      'cal.debutTitle': '{name} · {n} năm ra mắt',
+      'cal.debutBar': 'Ra mắt {n} năm',
+      'cal.debutSub': '{real} · {note}',
+      'cal.gameWin': 'Thắng {opp} {score}',
+      'cal.gameLoss': 'Thua {opp} {score}',
+      'cal.voteTitle': 'Bình chọn {event}',
+      'cal.voteRange': '{from} ~ {to}',
+      'cal.voteSame': 'hết hạn {md}',
+      'cal.castSub': 'SOOP · kênh {handle}',
+      'cal.noticeLink': 'Xem thông báo ↗',
+      'cal.matchLink': 'Xem lịch ↗',
+      'cal.voteOngoing': 'Đang mở',
+      'cal.voteClosed': 'Đã hết hạn',
+      'notify.notice': 'Thông báo kênh phát sóng',
+      'notify.noticeSub': 'khi kênh SOOP có thông báo mới',
+      'notify.noticeToggleOn': 'Tắt thông báo kênh',
+      'notify.noticeToggleOff': 'Bật thông báo kênh',
       'event.birthday': 'Sinh nhật {name}',
       'event.birthdaySub': '{md} · cùng ngày mỗi năm',
       'ingame.title': 'Đang trong trận',
@@ -4770,8 +5363,8 @@ html[lang="vi"] .pick-switch .psw { flex: 1 1 auto; font-size: 9.5px; padding: 6
       'foot.official': 'Lịch và kết quả trận tự động lấy từ lịch công khai LoL Esports.',
       'foot.solo': 'Thành tích đơn/đôi hiển thị theo dữ liệu công khai của từng tài khoản tuyển thủ.',
       'foot.records': 'Thành tích mùa 2026 chép từ dữ liệu công khai KO.LOL. Chỉ ghi vô địch/á quân ở giải đã xác nhận.',
-      'official.title': 'Lịch đấu',
-      'official.sub': 'Trận tiếp theo và các trận chính thức gần đây của DK.',
+      'official.title': 'Lịch',
+      'official.sub': 'Tổng hợp lịch sắp tới, trận chính thức gần đây và các bình chọn đang mở.',
       'official.next': 'NEXT',
       'official.nextDateFallback': 'LCK Cup 2027',
       'official.nextTitleFallback': 'Trận đầu tiên của DK năm 2027',
@@ -5010,6 +5603,41 @@ html[lang="vi"] .pick-switch .psw { flex: 1 1 auto; font-size: 9.5px; padding: 6
     return mo + '. ' + d + '.';
   }
 
+  /* 캘린더 달 이름: 11월, 2026 / November, 2026 / 2026年11月 / Tháng 11, 2026 */
+  var MONTH_EN_FULL = ['January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'];
+  function monthLabel(date) {
+    var y = date.getFullYear();
+    var mo = date.getMonth() + 1;
+    if (lang === 'en') return MONTH_EN_FULL[mo - 1] + ', ' + y;
+    if (lang === 'ja' || lang === 'zh') return y + '年' + mo + '月';
+    if (lang === 'vi') return 'Tháng ' + mo + ', ' + y;
+    return mo + '월, ' + y;
+  }
+  function monthShort(date) {
+    var mo = date.getMonth() + 1;
+    if (lang === 'en') return MONTH_EN_FULL[mo - 1];
+    if (lang === 'ja' || lang === 'zh') return mo + '月';
+    if (lang === 'vi') return 'tháng ' + mo;
+    return mo + '월';
+  }
+  /* 11월 29일 (일) / Sun, Nov 29 / 11月29日(日) / 29/11 (CN) */
+  function dayLabel(date) {
+    var mo = date.getMonth() + 1;
+    var d = date.getDate();
+    if (lang === 'en') return WD.en[date.getDay()] + ', ' + MONTH_EN[mo - 1] + ' ' + d;
+    if (lang === 'ja') return mo + '月' + d + '日(' + WD.ja[date.getDay()] + ')';
+    if (lang === 'zh') return mo + '月' + d + '日 (' + WD.zh[date.getDay()] + ')';
+    if (lang === 'vi') return d + '/' + mo + ' (' + WD.vi[date.getDay()] + ')';
+    return mo + '월 ' + d + '일 (' + WD.ko[date.getDay()] + ')';
+  }
+  /* 캘린더 요일 머리글 */
+  function wdShort() {
+    var list = WD[lang] || WD.ko;
+    if (lang === 'zh') return ['日', '一', '二', '三', '四', '五', '六'];
+    return list;
+  }
+
   function setLang(code, opts) {
     if (!DICT[code]) code = 'ko';
     lang = code;
@@ -5041,6 +5669,10 @@ html[lang="vi"] .pick-switch .psw { flex: 1 1 auto; font-size: 9.5px; padding: 6
     stamp: stamp,
     clock: clock,
     shortDate: shortDate,
+    monthLabel: monthLabel,
+    monthShort: monthShort,
+    dayLabel: dayLabel,
+    wdShort: wdShort,
     pad: pad
   };
 })(window);
@@ -5894,12 +6526,35 @@ const SPELLS = {
   'Snowball': ['눈덩이', 'Snowball', 'スノーボール', '雪球']
 };
 
-/* 홈 상단 이벤트 · D-DAY (2026-11-27 확인)
+/* 홈 상단 이벤트 · D-DAY (2026-11-28 확인)
+ *  - 2026 하이원 e스포츠 대상: 본선 팬 투표 11.23 ~ 12.04 23:59 (마이원픽 1일 1회 무료) · 시상식 12.17(목) 15:00
  *  - 2026 LCK 어워드: 12월 16일(수) 치지직 롤파크 개최 · CHZZK/SOOP 생중계 (라이엇 게임즈 11-05 발표)
- *    팬 팀 투표(업비트 ALL-TIME HIGH)는 11-26 23:59 마감, 올해의 선수·포지션별 선수는 선정단 투표로 시상식 당일 공개.
+ *    정규 시즌 부문은 8월 발표(스매쉬 신인왕·김대호 감독상·카나비 1st·딜라이트 2nd·쇼메이커 3rd),
+ *    팬 팀 투표(업비트 ALL-TIME HIGH)는 11-26 23:59 마감, 올해의 선수·포지션별 선수는 시상식 당일 공개.
  *  - 2027 LCK 컵: 개막일 공식 발표 전(1월~2월 예정) — 2026 시즌 개막일(1/14)을 기준으로 '예상' 카운트다운만 표시합니다.
  *  날짜가 확정되거나 새 이벤트가 생기면 이 표만 고치면 됩니다. (지난 이벤트는 앱이 자동으로 숨깁니다) */
 const EVENTS = [
+  {
+    id: 'hiwon-awards-2026',
+    date: '2026-12-04',
+    kind: 'vote',
+    title: {
+      ko: '2026 하이원 e스포츠 대상 투표',
+      en: '2026 High1 Esports Awards vote',
+      ja: '2026 High1 eスポーツ大賞 投票',
+      zh: '2026 High1 电竞大奖投票', 'vi': 'Bình chọn Giải thưởng Esports High1 2026'},
+    sub: {
+      ko: '인기상 쇼메이커 · 신인상 스매쉬',
+      en: 'ShowMaker for Popularity · Smash for Rookie',
+      ja: '人気賞ショーメイカー・新人賞スマッシュ',
+      zh: '人气奖 秀梅克 · 新人奖 斯马什', 'vi': 'ShowMaker hạng Yêu thích · Smash Tân binh'},
+    note: {
+      ko: '12.04 마감 · 마이원픽 1일 1회 무료 투표',
+      en: 'Closes 12/4 · one free My1Pick vote a day',
+      ja: '12/4締切・マイワンピックで1日1回無料投票',
+      zh: '12/4 截止 · My1Pick 每日免费一票', 'vi': 'Hết hạn 4/12 · mỗi ngày 1 phiếu miễn phí trên My1Pick'},
+    url: 'https://fsn-app.my1pick.com/app/link'
+  },
   {
     id: 'lck-awards-2026',
     date: '2026-12-16',
@@ -5911,10 +6566,10 @@ const EVENTS = [
       ja: 'CHZZK LoL Park・CHZZK/SOOP 生中継',
       zh: 'CHZZK LoL Park · CHZZK/SOOP 直播', 'vi': 'CHZZK LoL Park, Seoul · phát trực tiếp trên CHZZK & SOOP'},
     note: {
-      ko: 'DK 스매쉬 신인왕 · 팬 팀 투표 11.26 마감',
-      en: 'DK Smash took Rookie of the Year · fan vote closed 11/26',
-      ja: 'DK スマッシュ新人王・ファン投票は11/26終了',
-      zh: 'DK Smash 最佳新人 · 粉丝投票 11/26 截止', 'vi': 'Smash (DK) đoạt Tân binh xuất sắc nhất · bình chọn fan kết thúc 26/11'},
+      ko: '스매쉬 신인왕 · 김대호 감독상 · 카나비 1st · 딜라이트 2nd · 쇼메이커 3rd',
+      en: 'Smash Rookie · Kim Dae-ho Coach · Kanavi 1st · Delight 2nd · ShowMaker 3rd',
+      ja: 'スマッシュ新人王・キム・デホ監督賞・カナビ1st・ディライト2nd・ショーメイカー3rd',
+      zh: '斯马什 最佳新人 · 金大浩 最佳教练 · Kanavi 一阵 · Delight 二阵 · 秀梅克 三阵', 'vi': 'Smash Tân binh · HLV Kim Dae-ho · Kanavi đội 1 · Delight đội 2 · ShowMaker đội 3'},
     url: 'https://lolesports.com/ko-KR/news/2026-lck-awards-voting-method-and-criteria'
   },
   {
@@ -5934,6 +6589,226 @@ const EVENTS = [
       ja: '2026シーズンは1月14日開幕・確定次第更新',
       zh: '2026 赛季 1月14日开幕 · 确定后更新', 'vi': 'Mùa 2026 khai mạc ngày 14/1 · sẽ báo khi có xác nhận'},
     url: 'https://lolesports.com/ko-KR/schedule'
+  }
+];
+
+/* 🗳️ 투표 모아보기 (2026-11-28 확인)
+ *  - 하이원 e스포츠 대상 본선 팬 투표: 11.23 ~ 12.04 23:59 · 마이원픽 1일 1회 무료 투표
+ *  - LCK 어워드 업비트 ALL-TIME HIGH 팀 상: 11.26 23:59 마감 (지난 투표는 앱이 '마감'으로 내려 보여줍니다)
+ *  deadline 은 마감 시각까지 적어 두고, 앱이 지금 시각과 비교해 진행 중/마감을 스스로 나눕니다. */
+const VOTES = [
+  {
+    id: 'hiwon-popularity-2026',
+    start: '2026-11-23',
+    deadline: '2026-12-04T23:59:00+09:00',
+    event: {
+      ko: '2026 하이원 e스포츠 대상',
+      en: '2026 High1 Esports Awards',
+      ja: '2026 High1 eスポーツ大賞',
+      zh: '2026 High1 电竞大奖', 'vi': 'Giải thưởng Esports High1 2026'},
+    dk: true,
+    title: {
+      ko: '인기상',
+      en: 'Popularity Award',
+      ja: '人気賞',
+      zh: '人气奖', 'vi': 'Giải thưởng Yêu thích'},
+    calLabel: {
+      ko: '하이원 어워즈 본선',
+      en: 'High1 Awards vote',
+      ja: 'High1大賞 本戦投票',
+      zh: 'High1 大奖投票', vi: 'Bình chọn High1'},
+    candidate: {
+      ko: '쇼메이커 (허수)',
+      en: 'ShowMaker (Heo Su)',
+      ja: 'ショーメイカー（ホ・ス）',
+      zh: '秀梅克（许秀）', 'vi': 'ShowMaker (Heo Su)'},
+    candidateNote: {
+      ko: '4개 종목 20명 중 1명',
+      en: 'one of 20 players across 4 titles',
+      ja: '4種目20名から1名',
+      zh: '4个项目 20名中选1名', 'vi': '1 trong 20 tuyển thủ của 4 bộ môn'},
+    method: {
+      ko: '팬 투표 100%',
+      en: '100% fan vote',
+      ja: 'ファン投票100%',
+      zh: '粉丝投票 100%', 'vi': '100% bình chọn của fan'},
+    rule: {
+      ko: '마이원픽 1일 1회 무료 투표',
+      en: 'one free vote a day on My1Pick',
+      ja: 'マイワンピックで1日1回無料投票',
+      zh: 'My1Pick 每日免费一票', 'vi': 'mỗi ngày 1 phiếu miễn phí trên My1Pick'},
+    url: 'https://fsn-app.my1pick.com/app/link'
+  },
+  {
+    id: 'hiwon-rookie-2026',
+    start: '2026-11-23',
+    deadline: '2026-12-04T23:59:00+09:00',
+    event: {
+      ko: '2026 하이원 e스포츠 대상',
+      en: '2026 High1 Esports Awards',
+      ja: '2026 High1 eスポーツ大賞',
+      zh: '2026 High1 电竞大奖', 'vi': 'Giải thưởng Esports High1 2026'},
+    dk: true,
+    title: {
+      ko: '하이원 신인상 (LoL)',
+      en: 'High1 Rookie of the Year (LoL)',
+      ja: 'High1 新人賞（LoL）',
+      zh: 'High1 最佳新人（LoL）', 'vi': 'Tân binh xuất sắc nhất (LoL)'},
+    calLabel: {
+      ko: '하이원 어워즈 본선',
+      en: 'High1 Awards vote',
+      ja: 'High1大賞 本戦投票',
+      zh: 'High1 大奖投票', vi: 'Bình chọn High1'},
+    candidate: {
+      ko: '스매쉬 (신금재)',
+      en: 'Smash (Shin Geum-jae)',
+      ja: 'スマッシュ（シン・クムジェ）',
+      zh: '斯马什（申锦宰）', 'vi': 'Smash (Shin Geum-jae)'},
+    candidateNote: {
+      ko: '오형석·커리어 등과 경합',
+      en: 'up against Oh Hyung-seok, Career and more',
+      ja: 'オ・ヒョンソク、キャリアらと競う',
+      zh: '与吴衡锡、Career 等竞争', 'vi': 'cạnh tranh cùng Oh Hyung-seok, Career…'},
+    method: {
+      ko: '팬 투표 50% + 위원회 50%',
+      en: '50% fan vote + 50% committee',
+      ja: 'ファン投票50%＋委員会50%',
+      zh: '粉丝投票 50% + 委员会 50%', 'vi': '50% fan + 50% hội đồng'},
+    rule: {
+      ko: '마이원픽 1일 1회 무료 투표',
+      en: 'one free vote a day on My1Pick',
+      ja: 'マイワンピックで1日1回無料投票',
+      zh: 'My1Pick 每日免费一票', 'vi': 'mỗi ngày 1 phiếu miễn phí trên My1Pick'},
+    url: 'https://fsn-app.my1pick.com/app/link'
+  },
+  {
+    id: 'lck-alltime-high-team-2026',
+    deadline: '2026-11-26T23:59:00+09:00',
+    event: {
+      ko: '2026 LCK 어워드',
+      en: '2026 LCK Awards',
+      ja: '2026 LCKアワード',
+      zh: '2026 LCK 颁奖礼', 'vi': 'Lễ trao giải LCK 2026'},
+    title: {
+      ko: '업비트 ALL-TIME HIGH 팀 상',
+      en: 'Upbit ALL-TIME HIGH Team Award',
+      ja: 'Upbit ALL-TIME HIGH チーム賞',
+      zh: 'Upbit ALL-TIME HIGH 战队奖', 'vi': 'Giải Đội tuyển Upbit ALL-TIME HIGH'},
+    calLabel: {
+      ko: '업비트 팀 투표 마감',
+      en: 'Upbit team vote closes',
+      ja: 'Upbitチーム投票 締切',
+      zh: 'Upbit 战队投票截止', vi: 'Hết hạn bình chọn Upbit'},
+    candidate: {
+      ko: '팬 팀 투표',
+      en: 'fan team vote',
+      ja: 'ファンチーム投票',
+      zh: '粉丝战队投票', 'vi': 'bình chọn đội của fan'},
+    candidateNote: {
+      ko: '시상식 12.16 치지직 롤파크',
+      en: 'ceremony 12/16 at CHZZK LoL Park',
+      ja: '授賞式12/16 CHZZK LoL Park',
+      zh: '颁奖礼 12/16 CHZZK LoL Park', 'vi': 'lễ trao giải 16/12 tại CHZZK LoL Park'},
+    method: {
+      ko: '팬 팀 투표',
+      en: 'fan team vote',
+      ja: 'ファンチーム投票',
+      zh: '粉丝战队投票', 'vi': 'bình chọn đội của fan'},
+    rule: {
+      ko: '',
+      en: '',
+      ja: '',
+      zh: '', 'vi': ''},
+    url: 'https://lolesports.com/ko-KR/news/2026-lck-awards-voting-method-and-criteria'
+  }
+];
+
+/* 📅 캘린더 · 경기 기록 (지난 DK 공식 경기)
+ *  DK_PATH 는 2026 월즈 여정을 화면용 문구로 들고 있고, 캘린더는 날짜로 계산해야 해서
+ *  같은 경기를 ISO 날짜로 한 번 더 적어 둡니다. 새 경기는 /api/official 이 준 recent·next 를
+ *  앱이 실행 중에 합칩니다. */
+const MATCH_LOG = [
+  {
+    date: '2026-10-24',
+    league: { ko: '2026 월즈', en: 'Worlds 2026', ja: '2026 ワールズ', zh: '2026 全球总决赛', vi: 'Worlds 2026' },
+    round: { ko: '1라운드', en: 'Round 1', ja: '第1ラウンド', zh: '第1轮', vi: 'Vòng 1' },
+    opp: 'G2', score: '1 : 0', win: true, url: 'https://lolesports.com/ko-KR/schedule'
+  },
+  {
+    date: '2026-10-25',
+    league: { ko: '2026 월즈', en: 'Worlds 2026', ja: '2026 ワールズ', zh: '2026 全球总决赛', vi: 'Worlds 2026' },
+    round: { ko: '2라운드', en: 'Round 2', ja: '第2ラウンド', zh: '第2轮', vi: 'Vòng 2' },
+    opp: 'T1', score: '1 : 0', win: true, url: 'https://lolesports.com/ko-KR/schedule'
+  },
+  {
+    date: '2026-10-26',
+    league: { ko: '2026 월즈', en: 'Worlds 2026', ja: '2026 ワールズ', zh: '2026 全球总决赛', vi: 'Worlds 2026' },
+    round: { ko: '3라운드', en: 'Round 3', ja: '第3ラウンド', zh: '第3轮', vi: 'Vòng 3' },
+    opp: 'MKOI', score: '2 : 0', win: true, url: 'https://lolesports.com/ko-KR/schedule'
+  },
+  {
+    date: '2026-11-06',
+    league: { ko: '2026 월즈', en: 'Worlds 2026', ja: '2026 ワールズ', zh: '2026 全球总决赛', vi: 'Worlds 2026' },
+    round: { ko: '8강', en: 'Quarterfinals', ja: 'ベスト8', zh: '八强', vi: 'Tứ kết' },
+    opp: 'BLG', score: '0 : 3', win: false, url: 'https://lolesports.com/ko-KR/schedule'
+  }
+];
+
+/* 📅 캘린더 전용 일정 (홈 D-DAY 스트립에는 넣지 않는 것들)
+ *  - 2026 하이원 e스포츠 대상 시상식: 12.17(목) 15:00 (본선 팬 투표 12.04 23:59 마감)
+ *  새 일정은 여기에 한 줄씩 추가하면 캘린더에 바로 나옵니다. */
+const CAL_EXTRA = [
+  {
+    id: 'hiwon-ceremony-2026',
+    date: '2026-12-17',
+    cat: 'cast',
+    title: {
+      ko: '2026 하이원 e스포츠 대상 시상식',
+      en: '2026 High1 Esports Awards ceremony',
+      ja: '2026 High1 eスポーツ大賞 授賞式',
+      zh: '2026 High1 电竞大奖 颁奖礼', vi: 'Lễ trao giải Esports High1 2026' },
+    sub: {
+      ko: '15:00 · 본선 투표 결과 발표',
+      en: '15:00 · fan vote results announced',
+      ja: '15:00 · 本戦投票の結果発表',
+      zh: '15:00 · 公布投票结果', vi: '15:00 · công bố kết quả bình chọn' },
+    url: 'https://fsn-app.my1pick.com/app/link'
+  }
+];
+
+/* 📢 선수 SOOP 방송국 최신 공지 (2026-11-28 15:08 공개 API 로 확인)
+ *  /api/notices 가 서버에 저장된 최신 공지를 주면 그것을 우선 쓰고, 없을 때 이 값으로 캘린더를 채웁니다.
+ *  date 는 공지가 말하는 방송 날짜, posted 는 공지가 올라온 날입니다. */
+const SOOP_NOTICES = [
+  {
+    player: 'showmaker', soop: 'showmakerr', titleNo: 213808933,
+    posted: '2026-11-28', date: '2026-11-29',
+    title: {
+      ko: '11월 29일 방송공지',
+      en: 'Nov 29 stream notice',
+      ja: '11月29日 配信告知',
+      zh: '11月29日 直播公告', vi: 'Thông báo phát sóng 29/11' },
+    url: 'https://ch.sooplive.co.kr/showmakerr/post/213808933'
+  },
+  {
+    player: 'doran', soop: 'choi15778', titleNo: 202801017,
+    posted: '2026-07-29', date: '2026-07-29',
+    title: {
+      ko: 'T1 LoL 선수단 방송국 구독&구독플러스 혜택 안내',
+      en: 'T1 LoL squad channel subscription benefits',
+      ja: 'T1 LoL 選手団チャンネル登録特典のご案内',
+      zh: 'T1 LoL 选手团频道订阅福利说明', vi: 'Quyền lợi đăng ký kênh T1 LoL' },
+    url: 'https://ch.sooplive.co.kr/choi15778/post/202801017'
+  },
+  {
+    player: 'smash', soop: 'tlsrmawo', titleNo: 199293067,
+    posted: '2026-06-21', date: '2026-06-21',
+    title: {
+      ko: '2026 Cross Regional - LoL DAY2 DK Smash 출전 안내',
+      en: '2026 Cross Regional LoL Day 2 · DK Smash',
+      ja: '2026 Cross Regional LoL DAY2 DK Smash 出場案内',
+      zh: '2026 Cross Regional LoL DAY2 DK Smash 出战公告', vi: 'Cross Regional 2026 LoL DAY2 · DK Smash' },
+    url: 'https://ch.sooplive.co.kr/tlsrmawo/post/199293067'
   }
 ];
 
@@ -6038,6 +6913,9 @@ const SPELL_IMG = {
   /* 라이브 방송 알림: 선수가 SOOP·CHZZK에서 방송을 켰을 때 (기본 켜짐) */
   var LIVE_KEY = 'dk.signal.live';
   var liveAlerts = store.get(LIVE_KEY, '1') === '1';
+  /* 방송국 공지 알림: SOOP 방송국에 새 공지가 올라왔을 때 (기본 켜짐) */
+  var NOTICE_KEY = 'dk.signal.notice';
+  var noticeAlerts = store.get(NOTICE_KEY, '1') === '1';
 
   /* ---------- 데이터 헬퍼 ---------- */
   function player(key) {
@@ -6563,7 +7441,7 @@ const SPELL_IMG = {
   }
 
   function eventCardHTML(ev, n) {
-    var icon = ev.kind === 'awards' ? '🏆' : '📅';
+    var icon = ev.kind === 'awards' ? '🏆' : (ev.kind === 'vote' ? '🗳️' : '📅');
     return '<a class="ev-card is-' + ev.kind + (ev.tentative ? ' is-est' : '') + '" href="' + esc(ev.url) + '" target="_blank" rel="noopener">' +
       '<span class="ev-top"><span class="ev-kind"><i aria-hidden="true">' + icon + '</i>' + esc(L(ev.title)) +
         (ev.tentative ? '<em class="ev-est-tag">' + T('event.tentative') + '</em>' : '') + '</span>' +
@@ -6606,7 +7484,7 @@ const SPELL_IMG = {
       if (!b) return;
       if (!best || b.days < best.b.days) best = { p: p, b: b };
     });
-    if (best) cards.push({ days: best.b.days, html: birthdayCardHTML(best.p, best.b) });
+    if (best) cards.push({ days: best.b.days, html: birthdayCardHTML(best.p, best.b), keep: true });
 
     /* 다가오는 데뷔 기념일: 가까운 두 명을 함께 보여줍니다. */
     var debuts = [];
@@ -6619,9 +7497,445 @@ const SPELL_IMG = {
     debuts.slice(0, 2).forEach(function (c) { cards.push(c); });
 
     cards.sort(function (a, b) { return a.days - b.days; });
-    var show = cards.slice(0, 5);
+    /* 생일 카드는 이벤트가 늘어도 항상 보이게 하고, 나머지를 날짜 순으로 6장까지 채웁니다. */
+    var show = cards.filter(function (c) { return c.keep; }).slice(0, 1);
+    cards.forEach(function (c) {
+      if (show.length < 6 && show.indexOf(c) < 0) show.push(c);
+    });
+    show.sort(function (a, b) { return a.days - b.days; });
     host.innerHTML = show.map(function (c) { return c.html; }).join('');
     host.hidden = !show.length;
+  }
+
+  /* ---------- 🗳️ 투표 모아보기 (일정&투표 탭의 카드) ----------
+   *  홈 상단 버튼·시트는 사용자 요청으로 빼고, 일정&투표 탭(리스트·캘린더)에서
+   *  진행 중/마감 투표를 카드 한 장으로 모아 보여줍니다. */
+  function voteClosed(v) {
+    var t = Date.parse(v.deadline);
+    return isNaN(t) ? false : Date.now() > t;
+  }
+  function openVotes() {
+    return (typeof VOTES !== 'undefined' ? VOTES : []).filter(function (v) { return !voteClosed(v); })
+      .sort(function (a, b) { return Date.parse(a.deadline) - Date.parse(b.deadline); });
+  }
+  function voteMd(v) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(v.deadline || ''));
+    if (!m) return '';
+    var l = lang();
+    if (l === 'vi') return m[3] + '/' + m[2];
+    if (l === 'en') return m[2] + '/' + m[3];
+    return m[2] + '.' + m[3];
+  }
+  function voteDeadlineText(v) {
+    var t = /T(\d{2}:\d{2})/.exec(String(v.deadline || ''));
+    var md = voteMd(v);
+    if (!md) return '';
+    return T('vote.deadline', { md: md, time: t ? t[1] : '' });
+  }
+  function voteItemHTML(v, closed) {
+    var dd = closed ? T('vote.closed') : (T('vote.ongoing') + ' ' + ddayText(daysUntil(v.deadline)));
+    var rule = [L(v.method), L(v.rule)].filter(function (s) { return !!s; }).join(' · ');
+    return '<li class="vote-item ' + (closed ? 'is-closed' : 'is-open') + '">' +
+      '<a class="vote-link" href="' + esc(v.url) + '" target="_blank" rel="noopener">' +
+        '<span class="vote-top"><span class="vote-event">' + esc(L(v.event)) + '</span>' +
+          '<span class="vote-badge' + (closed ? ' is-closed' : '') + '">' + esc(dd) + '</span></span>' +
+        '<span class="vote-name">' + esc(L(v.title)) + '</span>' +
+        '<span class="vote-cand">' + (v.dk ? '<em class="vote-dk">DK</em>' : '') + esc(L(v.candidate)) +
+          '<i class="vote-cand-note">' + esc(L(v.candidateNote)) + '</i></span>' +
+        (rule ? '<span class="vote-rule">' + esc(rule) + '</span>' : '') +
+        '<span class="vote-foot"><span class="vote-when">' + esc(voteDeadlineText(v)) + '</span>' +
+          '<span class="vote-go">' + esc(T(closed ? 'vote.closedCta' : 'vote.cta')) + '</span></span>' +
+      '</a></li>';
+  }
+  /* 리스트·캘린더 두 곳에 같은 내용을 그립니다. */
+  function renderVotes() {
+    var hosts = ['#voteListHost', '#calVoteHost'].map(function (sel) { return $(sel); }).filter(Boolean);
+    if (!hosts.length) return;
+    var all = (typeof VOTES !== 'undefined' ? VOTES : []);
+    var open = openVotes();
+    var shut = all.filter(voteClosed).sort(function (a, b) { return Date.parse(b.deadline) - Date.parse(a.deadline); });
+    var html = '<div class="vote-sec">' +
+      '<div class="vote-head"><b>' + esc(T('vote.ongoing')) + '</b><em>' + open.length + '</em>' +
+        (open.length ? '<span>' + esc(T('vote.ongoingSub')) + '</span>' : '') + '</div>' +
+      (open.length ? '<ul class="vote-list">' + open.map(function (v) { return voteItemHTML(v, false); }).join('') + '</ul>'
+                   : '<p class="vote-empty">' + esc(T('vote.empty')) + '</p>') +
+      '</div>';
+    if (shut.length) {
+      html += '<div class="vote-sec is-shut">' +
+        '<div class="vote-head"><b>' + esc(T('vote.closedHead')) + '</b><em>' + shut.length + '</em></div>' +
+        '<ul class="vote-list">' + shut.map(function (v) { return voteItemHTML(v, true); }).join('') + '</ul></div>';
+    }
+    html += '<p class="vote-note">' + esc(T('vote.note')) + '</p>';
+    hosts.forEach(function (host) { host.innerHTML = html; });
+    ['#voteCountBadge', '#calVoteCountBadge'].forEach(function (sel) {
+      var badge = $(sel);
+      if (!badge) return;
+      badge.hidden = !open.length;
+      badge.textContent = open.length;
+      badge.setAttribute('aria-label', T('vote.hubAria', { n: open.length }));
+    });
+  }
+
+  /* ---------- 📅 월간 캘린더 (일정&투표 탭) ----------
+   *  기념일은 PLAYERS 의 birthday·debut 에서 그 해 기준으로 계산하고,
+   *  경기는 MATCH_LOG + /api/official(다음·최근), 투표는 VOTES(시작일~마감일),
+   *  방송은 EVENTS(시상식) · CAL_EXTRA · SOOP 방송국 공지에서 모읍니다. */
+  var OFFICIAL_VIEW_KEY = 'dk.signal.officialView';
+  var calState = {
+    view: store.get(OFFICIAL_VIEW_KEY, 'calendar') === 'list' ? 'list' : 'calendar',
+    year: null, month: null, sel: null, cat: 'all'
+  };
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function ymd(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+  function dateOf(value) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(value || ''));
+    return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null;
+  }
+  function sameDay(a, b) {
+    return !!a && !!b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  }
+  function startOfDay(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+  function calMd(d) {
+    if (lang() === 'ko') return pad2(d.getMonth() + 1) + '.' + pad2(d.getDate());
+    return window.I18N.shortDate(d);
+  }
+  function bornLabel(iso) {
+    var d = dateOf(iso);
+    if (!d) return '';
+    var y = d.getFullYear(), mo = d.getMonth() + 1, da = d.getDate();
+    if (lang() === 'ko') return y + '년 ' + mo + '월 ' + da + '일';
+    if (lang() === 'ja' || lang() === 'zh') return y + '年' + mo + '月' + da + '日';
+    if (lang() === 'vi') return da + '/' + mo + '/' + y;
+    return window.I18N.shortDate(d) + ', ' + y;
+  }
+  function calPlayer(key) {
+    for (var i = 0; i < PLAYERS.length; i++) if (PLAYERS[i].key === key) return PLAYERS[i];
+    return null;
+  }
+  function soopOf(p) {
+    var st = (p && p.streams) || [];
+    for (var i = 0; i < st.length; i++) if (st[i].platform === 'soop') return st[i];
+    return null;
+  }
+
+  /* 선수 SOOP 공지: data.js 기본값 + /api/notices 가 준 최신 공지 (제목_no 가 큰 쪽) */
+  function calNotices() {
+    var out = [];
+    function merge(item) {
+      for (var i = 0; i < out.length; i++) {
+        if (out[i].player !== item.player) continue;
+        var prev = out[i];
+        if (Number(item.titleNo) === Number(prev.titleNo) && prev.title) {
+          /* 같은 공지면 번역해 둔 제목(data.js)을 그대로 살립니다. */
+          prev.posted = item.posted || prev.posted;
+          prev.url = item.url || prev.url;
+          return;
+        }
+        if (Number(item.titleNo || 0) >= Number(prev.titleNo || 0)) out[i] = item;
+        return;
+      }
+      out.push(item);
+    }
+    (typeof SOOP_NOTICES !== 'undefined' ? SOOP_NOTICES : []).forEach(function (n) {
+      merge({ player: n.player, titleNo: n.titleNo, posted: n.posted, date: n.date || n.posted,
+        title: n.title, titleName: '', url: n.url });
+    });
+    (LIVE.notices || []).forEach(function (n) {
+      var p = calPlayer(n.player);
+      if (!p) return;
+      var name = n.titleName || '';
+      var m = /(\d{1,2})\s*월\s*(\d{1,2})\s*일/.exec(name);
+      var day = (m && n.posted) ? n.posted.slice(0, 4) + '-' + pad2(m[1]) + '-' + pad2(m[2]) : (n.posted || '');
+      merge({ player: n.player, titleNo: n.titleNo, posted: n.posted, date: day,
+        title: null, titleName: name, url: n.url });
+    });
+    return out;
+  }
+
+  /* 투표는 같은 대회·같은 기간을 한 묶음으로 보여줍니다 (인기상·신인상 → 하이원 본선 투표). */
+  function calVoteGroups() {
+    var groups = {};
+    (typeof VOTES !== 'undefined' ? VOTES : []).forEach(function (v) {
+      var end = dateOf(v.deadline);
+      if (!end) return;
+      var start = dateOf(v.start) || end;
+      var key = L(v.event) + '|' + ymd(start) + '|' + ymd(end);
+      var g = groups[key];
+      if (!g) g = groups[key] = { event: v.event, start: start, end: end, items: [], url: v.url, label: v.calLabel || v.event };
+      g.items.push(v);
+      if (!g.label && v.calLabel) g.label = v.calLabel;
+    });
+    return Object.keys(groups).map(function (k) { return groups[k]; });
+  }
+
+  var calCache = { year: null, lang: null, list: null };
+  function invalidateCalendar() { calCache.year = null; calCache.lang = null; calCache.list = null; }
+
+  function calEvents(year) {
+    /* 언어가 바뀌면 제목·부제를 다시 만들어야 합니다. */
+    if (calCache.year === year && calCache.lang === lang() && calCache.list) return calCache.list;
+    var list = [];
+    function push(ev) {
+      var s = dateOf(ev.start), e = dateOf(ev.end || ev.start);
+      if (!s || !e) return;
+      ev.startDate = s; ev.endDate = e;
+      ev.start = ymd(s); ev.end = ymd(e);
+      list.push(ev);
+    }
+
+    /* 1) 기념일 — 생일·데뷔일 */
+    PLAYERS.forEach(function (p) {
+      var b = dateOf(p.birthday);
+      if (b) push({
+        cat: 'anniv', start: ymd(new Date(year, b.getMonth(), b.getDate())), end: ymd(new Date(year, b.getMonth(), b.getDate())),
+        bar: '🎂 ' + pName(p),
+        title: T('cal.birthdayTitle', { name: pName(p) }) + ' 🎂',
+        sub: T('cal.birthdaySub', { real: pReal(p), date: bornLabel(p.birthday) }),
+        emoji: '🎂'
+      });
+      var db = dateOf(p.debut);
+      if (!db || year < db.getFullYear()) return;
+      var n = year - db.getFullYear();
+      var dd = new Date(year, db.getMonth(), db.getDate());
+      push({
+        cat: 'anniv', start: ymd(dd), end: ymd(dd),
+        bar: '🎉 ' + T('cal.debutBar', { n: n }),
+        title: T('cal.debutTitle', { name: pName(p), n: n }) + ' 🎉',
+        sub: T('cal.debutSub', { real: pReal(p), note: L(p.debutNote) }),
+        emoji: '🎉'
+      });
+    });
+
+    /* 2) 경기 — 저장된 2026 월즈 기록 + 서버 공식 일정 */
+    (typeof MATCH_LOG !== 'undefined' ? MATCH_LOG : []).forEach(function (g) {
+      push({
+        cat: 'match', start: g.date, end: g.date,
+        bar: g.opp + ' ' + g.score.replace(/\s*:\s*/, ':') + (g.win ? ' W' : ' L'),
+        title: L(g.league) + ' ' + L(g.round) + ' · DK ' + g.score + ' ' + g.opp,
+        sub: T(g.win ? 'cal.gameWin' : 'cal.gameLoss', { opp: g.opp, score: g.score }),
+        url: g.url, action: 'cal.matchLink'
+      });
+    });
+    var off = LIVE.official;
+    var seen = {};
+    list.forEach(function (ev) { if (ev.cat === 'match') seen[ev.start] = true; });
+    if (off && off.ok && off.next && off.next.startIso) {
+      var nd = dateOf(off.next.startIso);
+      if (nd) {
+        var oppN = (off.next.opponent && (off.next.opponent.code || off.next.opponent.name)) || 'TBD';
+        push({
+          cat: 'match', start: ymd(nd), end: ymd(nd),
+          bar: 'DK vs ' + oppN,
+          title: 'DK vs ' + oppN,
+          sub: [leagueName(off.next.league), blockText(off.next.block), off.next.time].filter(Boolean).join(' · '),
+          url: 'https://lolesports.com/ko-KR/schedule', action: 'cal.matchLink'
+        });
+        seen[ymd(nd)] = true;
+      }
+    }
+    if (off && off.ok && Array.isArray(off.recent)) {
+      off.recent.forEach(function (g) {
+        var d = dateOf(g.startIso);
+        if (!d || seen[ymd(d)]) return;
+        var opp = (g.opponent && (g.opponent.code || g.opponent.name)) || '';
+        push({
+          cat: 'match', start: ymd(d), end: ymd(d),
+          bar: opp + ' ' + String(g.score || '').replace(/\s*:\s*/, ':'),
+          title: (leagueName(g.league) || 'LCK') + ' ' + (blockText(g.block) || '') + ' · DK ' + (g.score || '') + ' ' + opp,
+          sub: g.win === true ? T('cal.gameWin', { opp: opp, score: g.score || '' })
+            : (g.win === false ? T('cal.gameLoss', { opp: opp, score: g.score || '' }) : ''),
+          url: 'https://lolesports.com/ko-KR/schedule', action: 'cal.matchLink'
+        });
+        seen[ymd(d)] = true;
+      });
+    }
+
+    /* 3) 투표 — 시작일 ~ 마감일 */
+    calVoteGroups().forEach(function (g) {
+      var closed = Date.now() > Date.parse(String(g.items[0].deadline));
+      var last = new Date(g.end.getFullYear(), g.end.getMonth(), g.end.getDate(), 23, 59);
+      var dd = Math.round((startOfDay(last) - startOfDay(new Date())) / 86400000);
+      push({
+        cat: 'vote', start: ymd(g.start), end: ymd(g.end),
+        bar: L(g.label),
+        title: T('cal.voteTitle', { event: L(g.event) }),
+        sub: sameDay(g.start, g.end)
+          ? T('cal.voteSame', { md: voteMd(g.items[0]) })
+          : T('cal.voteRange', { from: calMd(g.start), to: calMd(g.end) }),
+        url: g.url, action: 'vote.cta',
+        closed: closed, dday: closed ? null : dd
+      });
+    });
+
+    /* 4) 방송 — 시상식 일정 + SOOP 방송국 공지 */
+    (typeof EVENTS !== 'undefined' ? EVENTS : []).forEach(function (ev) {
+      if (ev.kind !== 'awards') return;
+      push({ cat: 'cast', start: ev.date, end: ev.date, bar: L(ev.title),
+        title: L(ev.title), sub: L(ev.sub), url: ev.url, action: 'cal.noticeLink' });
+    });
+    (typeof CAL_EXTRA !== 'undefined' ? CAL_EXTRA : []).forEach(function (ev) {
+      push({ cat: 'cast', start: ev.date, end: ev.date, bar: L(ev.title),
+        title: L(ev.title), sub: L(ev.sub), url: ev.url, action: 'cal.noticeLink' });
+    });
+    calNotices().forEach(function (n) {
+      var p = calPlayer(n.player);
+      if (!p || !n.date) return;
+      var st = soopOf(p);
+      push({ cat: 'cast', start: n.date, end: n.date,
+        bar: pName(p) + ' ' + (n.title ? L(n.title) : n.titleName),
+        title: pName(p) + ' ' + (n.title ? L(n.title) : n.titleName),
+        sub: T('cal.castSub', { handle: (st && st.handle) || n.soop }),
+        url: n.url, action: 'cal.noticeLink' });
+    });
+
+    list.sort(function (a, b) {
+      if (a.start !== b.start) return a.start < b.start ? -1 : 1;
+      return a.cat < b.cat ? -1 : (a.cat > b.cat ? 1 : 0);
+    });
+    calCache = { year: year, lang: lang(), list: list };
+    return list;
+  }
+
+  function calInMonth(ev, y, m) {
+    var first = new Date(y, m, 1), last = new Date(y, m + 1, 0);
+    return ev.startDate <= last && ev.endDate >= first;
+  }
+
+  /* 한 주 안의 이벤트를 겹치지 않게 레인에 배치합니다 (최대 4줄). */
+  function calWeekBars(week, events) {
+    var lanes = [];
+    var placed = [];
+    events.forEach(function (ev) {
+      var s = ev.startDate > week[0] ? ev.startDate : week[0];
+      var e = ev.endDate < week[6] ? ev.endDate : week[6];
+      if (s > e) return;
+      var cs = Math.round((startOfDay(s) - startOfDay(week[0])) / 86400000);
+      var ce = Math.round((startOfDay(e) - startOfDay(week[0])) / 86400000);
+      var lane = -1;
+      for (var i = 0; i < lanes.length; i++) {
+        var free = true;
+        for (var j = 0; j < lanes[i].length; j++) {
+          if (!(ce < lanes[i][j][0] || cs > lanes[i][j][1])) { free = false; break; }
+        }
+        if (free) { lane = i; break; }
+      }
+      if (lane < 0) { lane = lanes.length; lanes.push([]); }
+      if (lane > 3) return; /* 4줄을 넘는 주는 아래 목록에서 */
+      lanes[lane].push([cs, ce]);
+      placed.push({ ev: ev, cs: cs, ce: ce, lane: lane });
+    });
+    return { placed: placed, rows: Math.min(4, lanes.length) };
+  }
+
+  function renderCalendar() {
+    var wrap = $('#officialCalView');
+    if (!wrap) return;
+    var now = new Date();
+    if (calState.year == null || calState.month == null) {
+      calState.year = now.getFullYear();
+      calState.month = now.getMonth();
+    }
+    if (!calState.sel) calState.sel = ymd(now);
+    var y = calState.year, m = calState.month;
+    var first = new Date(y, m, 1);
+    var monthEl = $('#calMonth');
+    if (monthEl) monthEl.textContent = window.I18N.monthLabel(first);
+    var dow = $('#calDow');
+    if (dow) {
+      dow.innerHTML = window.I18N.wdShort().map(function (w, i) {
+        return '<span' + (i === 0 ? ' class="is-sun"' : (i === 6 ? ' class="is-sat"' : '')) + '>' + esc(w) + '</span>';
+      }).join('');
+    }
+
+    var events = calEvents(y).filter(function (ev) {
+      return calInMonth(ev, y, m) && (calState.cat === 'all' || ev.cat === calState.cat);
+    });
+    var selDate = dateOf(calState.sel) || now;
+    var today = startOfDay(now);
+    var gridStart = new Date(y, m, 1 - first.getDay());
+    var grid = $('#calGrid');
+    var html = '';
+    for (var w = 0; w < 6; w++) {
+      var week = [];
+      for (var d = 0; d < 7; d++) week.push(new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + w * 7 + d));
+      if (w === 5 && week[0].getMonth() !== m) break;
+      var bars = calWeekBars(week, events);
+      var rows = 1 + bars.rows;
+      var cells = week.map(function (day, i) {
+        var out = day.getMonth() !== m;
+        var cls = 'cal-cell' + (out ? ' is-out' : '') + (sameDay(day, today) ? ' is-today' : '') + (ymd(day) === calState.sel ? ' is-sel' : '');
+        var ncls = 'cal-num' + (day.getDay() === 0 ? ' is-sun' : (day.getDay() === 6 ? ' is-sat' : '')) + (out ? ' is-out' : '') + (sameDay(day, today) ? ' is-today' : '');
+        return '<button type="button" class="' + cls + '" data-cal-day="' + ymd(day) + '"' +
+          ' style="grid-area:1 / ' + (i + 1) + ' / span ' + rows + ' / span 1;"' +
+          ' aria-label="' + esc(window.I18N.dayLabel(day)) + '">' +
+          '<span class="' + ncls + '">' + day.getDate() + '</span></button>';
+      }).join('');
+      var barHTML = bars.placed.map(function (b) {
+        var openL = b.ev.startDate < week[0];
+        var openR = b.ev.endDate > week[6];
+        var label = (openL ? '‹ ' : '') + b.ev.bar + (openR ? ' ~' + calMd(b.ev.endDate) : '');
+        return '<span class="cal-bar cat-' + b.ev.cat + '" style="grid-area:' + (2 + b.lane) + ' / ' + (b.cs + 1) + ' / span 1 / span ' + (b.ce - b.cs + 1) + ';">' + esc(label) + '</span>';
+      }).join('');
+      html += '<div class="cal-week">' + cells + barHTML + '</div>';
+    }
+    if (grid) grid.innerHTML = html;
+
+    var countEl = $('#calCount');
+    if (countEl) countEl.textContent = T('cal.foot', { today: window.I18N.dayLabel(now), n: events.length });
+
+    renderCalDay(selDate, events);
+    renderCalMonth(y, m, events);
+  }
+
+  var CAL_ORDER = { cast: 0, match: 1, vote: 2, anniv: 3 };
+  function renderCalDay(selDate, events) {
+    var titleEl = $('#calDayTitle'), listEl = $('#calDayList'), countEl = $('#calDayCount');
+    if (titleEl) titleEl.textContent = window.I18N.dayLabel(selDate);
+    var day = events.filter(function (ev) { return ev.startDate <= selDate && ev.endDate >= selDate; });
+    day.sort(function (a, b) { return (CAL_ORDER[a.cat] || 0) - (CAL_ORDER[b.cat] || 0); });
+    if (countEl) countEl.textContent = T('cal.dayCount', { n: day.length });
+    if (!listEl) return;
+    if (!day.length) { listEl.innerHTML = '<li class="cal-empty">' + esc(T('cal.emptyDay')) + '</li>'; return; }
+    listEl.innerHTML = day.map(function (ev) {
+      var tag = T('cal.' + ev.cat);
+      if (ev.cat === 'vote') tag = ev.closed ? T('cal.voteClosed') : (T('cal.voteOngoing') + (ev.dday != null ? ' ' + ddayText(ev.dday) : ''));
+      return '<li class="cal-day-item">' +
+        '<span class="cal-tag is-' + ev.cat + '">' + esc(tag) + '</span>' +
+        '<span class="cal-day-body"><b>' + esc(ev.title) + '</b><span>' + esc(ev.sub) + '</span></span>' +
+        (ev.url ? '<a class="cal-day-go" href="' + esc(ev.url) + '" target="_blank" rel="noopener">' +
+          esc(T(ev.action || (ev.cat === 'cast' ? 'cal.noticeLink' : 'vote.cta'))) + '</a>' : '') +
+      '</li>';
+    }).join('');
+  }
+
+  function renderCalMonth(y, m, events) {
+    var titleEl = $('#calMonthTitle'), listEl = $('#calMonthList');
+    if (titleEl) titleEl.textContent = T('cal.monthHead', { month: window.I18N.monthShort(new Date(y, m, 1)) });
+    if (!listEl) return;
+    if (!events.length) { listEl.innerHTML = '<li class="cal-empty">' + esc(T('cal.emptyMonth')) + '</li>'; return; }
+    listEl.innerHTML = events.map(function (ev) {
+      var dateText = sameDay(ev.startDate, ev.endDate)
+        ? calMd(ev.startDate)
+        : (calMd(ev.startDate) + ' ~ ' + calMd(ev.endDate));
+      return '<li><button class="cal-row cat-' + ev.cat + '" type="button" data-cal-day="' + ev.start + '">' +
+        '<span class="cal-row-date">' + esc(dateText) + '</span>' +
+        '<b class="cal-row-title">' + esc(ev.title) + '</b>' +
+        '<span class="cal-row-tag">' + esc(T('cal.' + ev.cat)) + '</span>' +
+      '</button></li>';
+    }).join('');
+  }
+
+  function renderOfficialView() {
+    var wrap = $('#officialCalView'), list = $('#officialListView');
+    var showCal = calState.view === 'calendar';
+    $$('[data-official-view]').forEach(function (btn) {
+      var on = btn.getAttribute('data-official-view') === calState.view;
+      btn.classList.toggle('is-on', on);
+      btn.setAttribute('aria-selected', String(on));
+    });
+    if (wrap) wrap.hidden = !showCal;
+    if (list) list.hidden = showCal;
+    if (showCal) renderCalendar();
   }
 
   /* ---------- 인게임 레이더 (Spectator-V5) ---------- */
@@ -7725,9 +9039,13 @@ const SPELL_IMG = {
       btn.setAttribute('aria-checked', String(liveAlerts));
       btn.setAttribute('aria-label', T(liveAlerts ? 'notify.liveToggleOn' : 'notify.liveToggleOff'));
     });
+    $$('[data-notice-toggle]').forEach(function (btn) {
+      btn.setAttribute('aria-checked', String(noticeAlerts));
+      btn.setAttribute('aria-label', T(noticeAlerts ? 'notify.noticeToggleOn' : 'notify.noticeToggleOff'));
+    });
     var sum = $('#notifySummary');
     if (sum) {
-      var n = PLAYERS.filter(function (p) { return isSoloOn(p.key); }).length + (officialOn ? 1 : 0) + (liveAlerts ? 1 : 0);
+      var n = PLAYERS.filter(function (p) { return isSoloOn(p.key); }).length + (officialOn ? 1 : 0) + (liveAlerts ? 1 : 0) + (noticeAlerts ? 1 : 0);
       sum.textContent = n ? T('notify.summaryOn', { n: n }) : T('notify.summaryOff');
     }
     setNote('');
@@ -7939,6 +9257,7 @@ const SPELL_IMG = {
     solo: null,
     live: null,
     dkYt: null,
+    notices: null,
     soloSource: 'snapshot',
     offline: false,
     lastSync: 0,
@@ -8271,18 +9590,20 @@ const SPELL_IMG = {
       apiGet('./api/official?lang=' + lang()),
       apiGet('./api/solo'),
       apiGet('./api/live'),
-      apiGet('./api/dk-youtube')
+      apiGet('./api/dk-youtube'),
+      apiGet('./api/notices')
     ]).then(function (res) {
-      var cfg = res[0], off = res[1], solo = res[2], live = res[3], dkYt = res[4];
+      var cfg = res[0], off = res[1], solo = res[2], live = res[3], dkYt = res[4], notes = res[5];
       if (cfg && cfg.ok) LIVE.config = cfg;
       if (!cfg && !off && !solo) {
         LIVE.offline = true;
         applyLiveStatus();
         return;
       }
-      if (off) LIVE.official = off;
+      if (off) { LIVE.official = off; invalidateCalendar(); }
       if (live && live.ok) LIVE.live = live;
       if (dkYt) LIVE.dkYt = dkYt;
+      if (notes && notes.ok && Array.isArray(notes.notices)) { LIVE.notices = notes.notices; invalidateCalendar(); }
       if (solo) { LIVE.solo = solo; if (solo.source) LIVE.soloSource = solo.source; mergeSolo(solo); }
       LIVE.lastSync = Date.now();
       renderAll();
@@ -8327,7 +9648,8 @@ const SPELL_IMG = {
     return {
       solo: PLAYERS.filter(function (p) { return isSoloOn(p.key); }).map(function (p) { return p.key; }),
       official: officialOn,
-      live: liveAlerts
+      live: liveAlerts,
+      notice: noticeAlerts
     };
   }
 
@@ -8352,7 +9674,7 @@ const SPELL_IMG = {
   function syncPush(interactive) {
     var cfg = LIVE.config;
     if (!LIVE.push.supported || !cfg || !cfg.push || !cfg.push.ready || !cfg.store || !cfg.store.durable) return Promise.resolve(false);
-    var any = prefsPayload().solo.length > 0 || officialOn;
+    var any = prefsPayload().solo.length > 0 || officialOn || liveAlerts || noticeAlerts;
     var perm = ('Notification' in window) ? Notification.permission : 'denied';
 
     return navigator.serviceWorker.ready.then(function (reg) {
@@ -8391,6 +9713,7 @@ const SPELL_IMG = {
   function renderAll() {
     renderPills();
     renderEvents();
+    renderVotes();
     renderPick();
     renderTiles();
     renderHighlight();
@@ -8399,6 +9722,7 @@ const SPELL_IMG = {
     renderSolo();
     renderRoster();
     renderOfficial();
+    renderOfficialView();
     renderRecords();
     renderNotify();
   }
@@ -8415,6 +9739,58 @@ const SPELL_IMG = {
     }
     var lgDone = e.target.closest('#lgClose, #lgVeil');
     if (lgDone) { closeLive(); return; }
+    /* 일정&투표: 리스트 | 캘린더 전환 · 필터 · 달 이동 · 날짜 선택 */
+    var viewBtn = e.target.closest('[data-official-view]');
+    if (viewBtn) {
+      calState.view = viewBtn.getAttribute('data-official-view') === 'calendar' ? 'calendar' : 'list';
+      store.set(OFFICIAL_VIEW_KEY, calState.view);
+      renderOfficialView();
+      return;
+    }
+    var calCat = e.target.closest('[data-cal-cat]');
+    if (calCat) {
+      calState.cat = calCat.getAttribute('data-cal-cat');
+      $$('#calFilters .cal-chip').forEach(function (c) {
+        c.classList.toggle('is-on', c === calCat);
+        c.setAttribute('aria-pressed', String(c === calCat));
+      });
+      renderCalendar();
+      return;
+    }
+    if (e.target.closest('#calPrev') || e.target.closest('#calNext')) {
+      var step = e.target.closest('#calNext') ? 1 : -1;
+      var stepDate = new Date(calState.year, calState.month + step, 1);
+      calState.year = stepDate.getFullYear();
+      calState.month = stepDate.getMonth();
+      renderCalendar();
+      return;
+    }
+    if (e.target.closest('#calToday')) {
+      var nowDay = new Date();
+      calState.year = nowDay.getFullYear();
+      calState.month = nowDay.getMonth();
+      calState.sel = ymd(nowDay);
+      renderCalendar();
+      return;
+    }
+    if (e.target.closest('#calToList')) {
+      calState.view = 'list';
+      store.set(OFFICIAL_VIEW_KEY, 'list');
+      renderOfficialView();
+      return;
+    }
+    var calDayBtn = e.target.closest('[data-cal-day]');
+    if (calDayBtn) {
+      var picked = dateOf(calDayBtn.getAttribute('data-cal-day'));
+      if (!picked) return;
+      calState.sel = ymd(picked);
+      if (picked.getFullYear() !== calState.year || picked.getMonth() !== calState.month) {
+        calState.year = picked.getFullYear();
+        calState.month = picked.getMonth();
+      }
+      renderCalendar();
+      return;
+    }
     var langBtn = e.target.closest('[data-lang]');
     if (langBtn) {
       var code = langBtn.getAttribute('data-lang');
@@ -8454,6 +9830,14 @@ const SPELL_IMG = {
     if (liveT) {
       liveAlerts = !liveAlerts;
       store.set(LIVE_KEY, liveAlerts ? '1' : '0');
+      renderNotify();
+      syncPush(true);
+      return;
+    }
+    var noticeT = e.target.closest('[data-notice-toggle]');
+    if (noticeT) {
+      noticeAlerts = !noticeAlerts;
+      store.set(NOTICE_KEY, noticeAlerts ? '1' : '0');
       renderNotify();
       syncPush(true);
       return;
