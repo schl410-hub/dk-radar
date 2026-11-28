@@ -221,13 +221,16 @@
         <h2 class="panel-title" data-i18n="official.title">캘린더</h2>
         <p class="panel-sub"><span data-i18n="official.sub">다음 일정과 최근 공식 경기, 진행 중인 투표를 모아 봤어요.</span> <span class="live-chip" id="officialChip" hidden>자동 갱신</span></p>
       </div>
-      <!-- 📋 리스트 | 📅 캘린더: 같은 공식일정 탭을 두 가지 보기로 나눕니다 -->
+      <!-- 📋 리스트 | 📅 캘린더 | 🗳️ 투표: 같은 공식일정 탭을 세 가지 보기로 나눕니다 -->
       <div class="view-switch" id="officialViews" role="tablist" data-i18n-attr="aria-label:official.viewsAria" aria-label="공식일정 보기 방식">
         <button class="vs-btn is-on" type="button" role="tab" aria-selected="true" data-official-view="list">
           <span class="vs-ico" aria-hidden="true">📋</span><span data-i18n="official.viewList">리스트</span>
         </button>
         <button class="vs-btn" type="button" role="tab" aria-selected="false" data-official-view="calendar">
           <span class="vs-ico" aria-hidden="true">📅</span><span data-i18n="official.viewCalendar">캘린더</span>
+        </button>
+        <button class="vs-btn" type="button" role="tab" aria-selected="false" data-official-view="votes">
+          <span class="vs-ico" aria-hidden="true">🗳️</span><span data-i18n="official.viewVotes">투표</span><span class="vs-count" id="vsVoteCount" hidden>0</span>
         </button>
       </div>
       <div id="officialListView">
@@ -248,17 +251,6 @@
           <button class="toggle" data-official-toggle type="button" role="switch" aria-checked="true" aria-label="DK 공식 경기 알림 끄기"><span></span></button>
         </div>
         <a class="wide-btn" id="lolesportsLink" href="https://lolesports.com/ko-KR/schedule" target="_blank" rel="noopener" data-i18n="official.scheduleLink">LoL Esports 일정 확인 ↗</a>
-      </section>
-      <!-- 🗳️ 투표 모아보기: 진행 중인 투표와 마감된 투표를 카드 한 장에 모읍니다 -->
-      <section class="card vote-card" id="officialVoteCard">
-        <div class="card-head">
-          <div>
-            <div class="eyebrow">VOTES</div>
-            <h3 class="card-title" data-i18n="vote.hub">투표 모아보기</h3>
-          </div>
-          <span class="vote-hub-badge" id="voteCountBadge"></span>
-        </div>
-        <div id="voteListHost"></div>
       </section>
       <section class="card" id="officialRecentCard" hidden>
         <div class="eyebrow">LATEST RESULTS</div>
@@ -329,19 +321,21 @@
           <ul class="cal-month-list" id="calMonthList"></ul>
         </section>
 
-        <!-- 캘린더 보기에서도 투표만 따로 모아 봅니다 -->
-        <section class="card vote-card" id="calVoteCard">
+        <p class="cal-note" id="calNote" data-i18n="cal.note">기념일은 선수 생일·데뷔일에서 자동으로 계산하고, 투표·방송 일정은 공식 공지를 확인해 채워요.</p>
+      </section>
+
+      <!-- 🗳️ 투표: 진행 중·마감된 투표를 한 화면에 (전환 바 바로 아래) -->
+      <section id="officialVotesView" hidden>
+        <section class="card vote-card" id="votesCard">
           <div class="card-head">
             <div>
               <div class="eyebrow">VOTES</div>
               <h3 class="card-title" data-i18n="vote.hub">투표 모아보기</h3>
             </div>
-            <span class="vote-hub-badge" id="calVoteCountBadge"></span>
+            <span class="vote-hub-badge" id="voteCountBadge"></span>
           </div>
-          <div id="calVoteHost"></div>
+          <div id="votesHost"></div>
         </section>
-
-        <p class="cal-note" id="calNote" data-i18n="cal.note">기념일은 선수 생일·데뷔일에서 자동으로 계산하고, 투표·방송 일정은 공식 공지를 확인해 채워요.</p>
       </section>
     </section>
 

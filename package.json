@@ -1,8 +1,8 @@
 {
   "name": "dk-signal",
-  "version": "3.8.0",
+  "version": "3.9.0",
   "private": true,
-  "description": "딮기 시그널 · DK SIGNAL — 공식 경기 자동 수집 + 인게임 레이더(Spectator-V5) + 내전/프로 매치업 + LCK 어워드 D-DAY + 영상 탭(LIVE NOW·찜·연속 재생) + 다국어(KO/EN/JA/ZH/VI)·PWA 설치 가이드·데뷔 기념일 + 웹 푸시 백엔드",
+  "description": "딮기 시그널 · DK SIGNAL — 공식 경기 자동 수집 + 인게임 레이더(Spectator-V5) + 내전/프로 매치업 + LCK 어워드 D-DAY + 영상 탭(LIVE NOW·찜·연속 재생) + 다국어(KO/EN/JA/ZH/VI)·PWA 설치 가이드·데뷔 기념일 + 웹 푸시 백엔드 · 캘린더 3단 전환(리스트·캘린더·투표) · 안드로이드 배지 아이콘",
   "engines": {
     "node": ">=20"
   },

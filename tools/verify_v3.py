@@ -207,14 +207,32 @@ async def main():
             await page.wait_for_timeout(700)
             check("calendar tab title", await page.inner_text("#panel-official .panel-title") == "캘린더",
                   await page.inner_text("#panel-official .panel-title"))
-            switch_text = await page.eval_on_selector_all("#officialViews .vs-btn", "e=>e.map(x=>x.innerText.replace(/\s+/g,' ').trim())")
-            check("view switch chips", switch_text == ["📋 리스트", "📅 캘린더"], switch_text)
-            check("calendar view first", await page.is_visible("#officialCalView") and not await page.is_visible("#officialListView"))
+            switch_text = await page.eval_on_selector_all("#officialViews .vs-btn", "e=>e.map(x=>x.innerText.replace(/\\s+/g,'').trim())")
+            check("view switch chips", switch_text == ["📋리스트", "📅캘린더", "🗳️투표2"], switch_text)
+            check("calendar view first", await page.is_visible("#officialCalView") and not await page.is_visible("#officialListView")
+                  and not await page.is_visible("#officialVotesView"))
             await page.click('[data-official-view="list"]')
             await page.wait_for_timeout(500)
-            check("list view opens", await page.is_visible("#officialListView") and not await page.is_visible("#officialCalView"))
-            vlinks = await page.eval_on_selector_all("#voteListHost .vote-link", "e=>e.map(x=>x.href)")
-            check("list vote card links", len(vlinks) >= 2 and all("my1pick.com" in h or "lolesports.com" in h for h in vlinks), vlinks)
+            check("list view opens", await page.is_visible("#officialListView") and not await page.is_visible("#officialCalView")
+                  and not await page.is_visible("#officialVotesView"))
+
+            # 🗳️ 투표 보기: 전환 바 바로 아래에 투표 모아보기가 스크롤 없이 떠야 합니다
+            await page.click('[data-official-view="votes"]')
+            await page.wait_for_timeout(600)
+            check("votes view opens", await page.is_visible("#officialVotesView")
+                  and not await page.is_visible("#officialCalView") and not await page.is_visible("#officialListView"))
+            votes_geo = await page.evaluate("""() => {
+                const sw = document.querySelector('#officialViews').getBoundingClientRect();
+                const card = document.querySelector('#officialVotesView .vote-card').getBoundingClientRect();
+                const shut = document.querySelector('#votesHost .vote-sec.is-shut');
+                return { gap: Math.round(card.top - sw.bottom), top: Math.round(card.top),
+                         vh: window.innerHeight, closedVisible: !!(shut && shut.getBoundingClientRect().bottom < window.innerHeight) };
+            }""")
+            check("vote card right under switch", 0 <= votes_geo["gap"] <= 40 and votes_geo["top"] < votes_geo["vh"], votes_geo)
+            check("votes visible without scroll", votes_geo["closedVisible"], votes_geo)
+            vlinks = await page.eval_on_selector_all("#votesHost .vote-link", "e=>e.map(x=>x.href)")
+            check("vote card links", len(vlinks) >= 2 and all("my1pick.com" in h or "lolesports.com" in h for h in vlinks), vlinks)
+            await page.screenshot(path=str(OUT / "31-votes-ko.png"))
 
             await page.click('[data-official-view="calendar"]')
             await page.wait_for_timeout(600)
@@ -252,10 +270,16 @@ async def main():
             check("vote filter only votes", len(vote_month) == 2 and all("cat-vote" in c for c in vote_month), vote_month)
             check("vote filter day item", "하이원 e스포츠 대상 투표" in await page.inner_text("#calDayList"))
             await page.screenshot(path=str(OUT / "61-calendar-vote-ko.png"), full_page=True)
-            votes_text = await page.inner_text("#calVoteHost")
+            check("calendar has no vote hub", await page.eval_on_selector_all("#officialCalView .vote-card", "e=>e.length") == 0)
+            await page.click('[data-official-view="votes"]')
+            await page.wait_for_timeout(500)
+            votes_text = await page.inner_text("#votesHost")
             check("vote card open + closed", "인기상" in votes_text and "하이원 신인상" in votes_text and "업비트" in votes_text, votes_text[:200])
-            vote_links = await page.eval_on_selector_all("#calVoteHost .vote-link", "e=>e.map(x=>x.href)")
+            vote_links = await page.eval_on_selector_all("#votesHost .vote-link", "e=>e.map(x=>x.href)")
             check("vote card direct links", len(vote_links) == 3 and all(h.startswith("https://") for h in vote_links), vote_links)
+            await page.screenshot(path=str(OUT / "61-votes-open-ko.png"), full_page=True)
+            await page.click('[data-official-view="calendar"]')
+            await page.wait_for_timeout(400)
 
             await page.click('[data-cal-cat="anniv"]')
             await page.wait_for_timeout(350)
@@ -306,6 +330,28 @@ async def main():
                         });
                     }""")
                     check(f"tabs one row {code} @{w}", tabs_fit)
+                    sw_fit = await page.evaluate("""() => {
+                        const btns = [...document.querySelectorAll('#officialViews .vs-btn')];
+                        const sw = document.querySelector('#officialViews');
+                        const hs = btns.map(b => Math.round(b.getBoundingClientRect().height));
+                        const ovf = btns.map(b => b.scrollWidth - b.clientWidth);
+                        return { hs, ovf, inner: sw.scrollWidth - sw.clientWidth,
+                                 doc: document.documentElement.scrollWidth - window.innerWidth };
+                    }""")
+                    check(f"switch one line {code} @{w}", len(set(sw_fit["hs"])) == 1 and max(sw_fit["ovf"]) <= 0
+                          and sw_fit["inner"] <= 0 and sw_fit["doc"] <= 0, sw_fit)
+                    await page.click('[data-official-view="votes"]')
+                    await page.wait_for_timeout(300)
+                    ovv = await page.evaluate("document.documentElement.scrollWidth - window.innerWidth")
+                    check(f"votes no overflow {code} @{w}", ovv <= 0, ovv)
+                    vote_chip = await page.evaluate("""() => {
+                        const b = document.querySelector('#officialViews .vs-btn[data-official-view=\"votes\"]');
+                        const r = b.getBoundingClientRect();
+                        return { h: Math.round(r.height), badge: (b.querySelector('.vs-count') || {}).textContent };
+                    }""")
+                    check(f"votes badge {code} @{w}", vote_chip["badge"] == "2", vote_chip)
+                    await page.click('[data-official-view="calendar"]')
+                    await page.wait_for_timeout(250)
                 await page.screenshot(path=str(OUT / f"64-calendar-{code}-390.png"), full_page=True)
                 await page.set_viewport_size({"width": 390, "height": 844})
                 await page.wait_for_timeout(250)

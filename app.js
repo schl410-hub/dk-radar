@@ -720,9 +720,9 @@
           '<span class="vote-go">' + esc(T(closed ? 'vote.closedCta' : 'vote.cta')) + '</span></span>' +
       '</a></li>';
   }
-  /* 리스트·캘린더 두 곳에 같은 내용을 그립니다. */
+  /* 🗳️ 투표 보기 한 곳에 진행 중·마감 투표를 그립니다. */
   function renderVotes() {
-    var hosts = ['#voteListHost', '#calVoteHost'].map(function (sel) { return $(sel); }).filter(Boolean);
+    var hosts = ['#votesHost'].map(function (sel) { return $(sel); }).filter(Boolean);
     if (!hosts.length) return;
     var all = (typeof VOTES !== 'undefined' ? VOTES : []);
     var open = openVotes();
@@ -740,7 +740,7 @@
     }
     html += '<p class="vote-note">' + esc(T('vote.note')) + '</p>';
     hosts.forEach(function (host) { host.innerHTML = html; });
-    ['#voteCountBadge', '#calVoteCountBadge'].forEach(function (sel) {
+    ['#voteCountBadge', '#vsVoteCount'].forEach(function (sel) {
       var badge = $(sel);
       if (!badge) return;
       badge.hidden = !open.length;
@@ -754,8 +754,10 @@
    *  경기는 MATCH_LOG + /api/official(다음·최근), 투표는 VOTES(시작일~마감일),
    *  방송은 EVENTS(시상식) · CAL_EXTRA · SOOP 방송국 공지에서 모읍니다. */
   var OFFICIAL_VIEW_KEY = 'dk.signal.officialView';
+  /* 보기는 리스트 · 캘린더 · 투표 세 가지입니다. */
+  function officialViewName(v) { return v === 'list' || v === 'votes' ? v : 'calendar'; }
   var calState = {
-    view: store.get(OFFICIAL_VIEW_KEY, 'calendar') === 'list' ? 'list' : 'calendar',
+    view: officialViewName(store.get(OFFICIAL_VIEW_KEY, 'calendar')),
     year: null, month: null, sel: null, cat: 'all'
   };
   function pad2(n) { return (n < 10 ? '0' : '') + n; }
@@ -1099,16 +1101,19 @@
   }
 
   function renderOfficialView() {
-    var wrap = $('#officialCalView'), list = $('#officialListView');
+    var wrap = $('#officialCalView'), list = $('#officialListView'), votes = $('#officialVotesView');
     var showCal = calState.view === 'calendar';
+    var showVotes = calState.view === 'votes';
     $$('[data-official-view]').forEach(function (btn) {
       var on = btn.getAttribute('data-official-view') === calState.view;
       btn.classList.toggle('is-on', on);
       btn.setAttribute('aria-selected', String(on));
     });
     if (wrap) wrap.hidden = !showCal;
-    if (list) list.hidden = showCal;
+    if (list) list.hidden = showCal || showVotes;
+    if (votes) votes.hidden = !showVotes;
     if (showCal) renderCalendar();
+    if (showVotes) renderVotes();
   }
 
   /* ---------- 인게임 레이더 (Spectator-V5) ---------- */
@@ -2915,7 +2920,7 @@
     /* 일정&투표: 리스트 | 캘린더 전환 · 필터 · 달 이동 · 날짜 선택 */
     var viewBtn = e.target.closest('[data-official-view]');
     if (viewBtn) {
-      calState.view = viewBtn.getAttribute('data-official-view') === 'calendar' ? 'calendar' : 'list';
+      calState.view = officialViewName(viewBtn.getAttribute('data-official-view'));
       store.set(OFFICIAL_VIEW_KEY, calState.view);
       renderOfficialView();
       return;

@@ -1674,7 +1674,7 @@ a.ev-card:hover, a.ev-card:focus-visible { border-color: var(--accent-line); }
   font-variant-numeric: tabular-nums; align-self: center;
 }
 .vote-hub-badge[hidden] { display: none; }
-#voteListHost, #calVoteHost { margin-top: 10px; }
+#votesHost { margin-top: 10px; }
 
 .vote-sec + .vote-sec { margin-top: 13px; padding-top: 11px; border-top: 1px solid var(--line-soft); }
 .vote-head { display: flex; align-items: center; gap: 5px; margin: 0 0 7px; }
@@ -2312,6 +2312,21 @@ html[lang="vi"] .pick-switch .psw { flex: 1 1 auto; font-size: 9.5px; padding: 6
   border-color: var(--tab-active-line); box-shadow: 0 6px 16px -12px rgba(0, 0, 0, .6);
 }
 .vs-ico { font-size: 11px; line-height: 1; }
+/* 진행 중 투표 개수 배지 (🗳️ 투표 (2)) */
+.vs-count {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 15px; height: 15px; padding: 0 4px; box-sizing: border-box;
+  border-radius: 999px; background: var(--accent); color: var(--accent-ink);
+  font-size: 8.5px; font-weight: 900; line-height: 1; letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+.vs-count[hidden] { display: none; }
+/* 3단(리스트·캘린더·투표)에서도 360px 화면에 한 줄로 들어가게 */
+@media (max-width: 400px) {
+  .view-switch { gap: 3px; }
+  .vs-btn { gap: 3px; padding: 8px 2px; font-size: 9.5px; }
+  .vs-ico { font-size: 10px; }
+}
 
 /* ---------- 📅 캘린더 ---------- */
 .cal-filters {
