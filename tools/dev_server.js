@@ -51,7 +51,8 @@ const HANDLERS = {
   '/api/subscribe': require('../api/subscribe'),
   '/api/check': require('../api/check'),
   '/api/live': require('../api/live'),
-  '/api/dk-youtube': require('../api/dk-youtube')
+  '/api/dk-youtube': require('../api/dk-youtube'),
+  '/api/notices': require('../api/notices')
 };
 
 /* DK_LIVE_FAKE=1: 실제 방송이 없을 때도 라이브 배지 UI 를 검증할 수 있게 가짜 상태를 돌려줍니다. */

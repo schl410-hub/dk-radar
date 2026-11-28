@@ -6,6 +6,7 @@ dev_server 를 8765 포트에 띄우고 390x844 모바일 뷰포트에서 확인
 스크린샷은 /workspace/downloads/dk-signal-v3 에 남깁니다.
 """
 import asyncio
+import datetime
 import json
 import pathlib
 import re
@@ -172,7 +173,7 @@ async def main():
             check("five tabs", await page.eval_on_selector_all(".tab", "e=>e.length") == 5)
             check("five tiles", await page.eval_on_selector_all(".tile", "e=>e.length") == 5)
             check("ko tabs", await page.eval_on_selector_all(".tab", "e=>e.map(x=>x.innerText)") ==
-                  ["홈", "공식일정", "영상", "경기로그", "기록실"])
+                  ["홈", "캘린더", "영상", "경기로그", "기록실"])
             check("no horizontal overflow (ko)",
                   await page.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1"),
                   await page.evaluate("[document.documentElement.scrollWidth, innerWidth]"))
@@ -189,15 +190,133 @@ async def main():
             check("event strip visible", await page.is_visible("#eventStrip"))
             ev_text = await page.inner_text("#eventStrip")
             check("event awards card", "2026 LCK 어워드" in ev_text and "D-" in ev_text, ev_text[:100])
-            check("event awards dday number", "D-19" in ev_text, ev_text[:60])
+            dday_awards = (datetime.date(2026, 12, 16) - datetime.date.today()).days
+            check("event awards dday number", f"D-{dday_awards}" in ev_text, ev_text[:60])
             check("event lck cup tentative", "2027 LCK 컵" in ev_text and "예상" in ev_text, ev_text[:200])
             check("event birthday card", "생일" in ev_text, ev_text[-60:])
             ev_links = await page.eval_on_selector_all("#eventStrip a.ev-card", "e=>e.map(x=>x.href)")
-            check("event official links", len(ev_links) == 2 and all("lolesports.com" in h for h in ev_links), ev_links)
+            check("event hiwon vote card link", any("my1pick.com" in h for h in ev_links), ev_links)
+            check("event official links", len([h for h in ev_links if "lolesports.com" in h]) >= 2, ev_links)
             ev_cards = await page.eval_on_selector_all("#eventStrip .ev-card", "e=>e.length")
-            check("event strip 4-5 cards", 4 <= ev_cards <= 5, ev_cards)
+            check("event strip 5-6 cards", 5 <= ev_cards <= 6, ev_cards)
             check("event debut cards", "데뷔" in ev_text and "주년" in ev_text, ev_text[-120:])
             await page.screenshot(path=str(OUT / "30-events-ko.png"))
+
+
+            # ---------- 캘린더 탭: 리스트 | 캘린더 · 분류 필터 · 투표 모아보기 ----------
+            check("home has no vote hub", await page.eval_on_selector_all("#voteHub, #voteModal", "e=>e.length") == 0)
+            await page.click('[data-tab="official"]')
+            await page.wait_for_timeout(700)
+            check("calendar tab title", await page.inner_text("#panel-official .panel-title") == "캘린더",
+                  await page.inner_text("#panel-official .panel-title"))
+            switch_text = await page.eval_on_selector_all("#officialViews .vs-btn", "e=>e.map(x=>x.innerText.replace(/\s+/g,' ').trim())")
+            check("view switch chips", switch_text == ["📋 리스트", "📅 캘린더"], switch_text)
+            check("calendar view first", await page.is_visible("#officialCalView") and not await page.is_visible("#officialListView"))
+            await page.click('[data-official-view="list"]')
+            await page.wait_for_timeout(500)
+            check("list view opens", await page.is_visible("#officialListView") and not await page.is_visible("#officialCalView"))
+            vlinks = await page.eval_on_selector_all("#voteListHost .vote-link", "e=>e.map(x=>x.href)")
+            check("list vote card links", len(vlinks) >= 2 and all("my1pick.com" in h or "lolesports.com" in h for h in vlinks), vlinks)
+
+            await page.click('[data-official-view="calendar"]')
+            await page.wait_for_timeout(600)
+            check("calendar view opens", await page.is_visible("#officialCalView") and not await page.is_visible("#officialListView"))
+            check("calendar month label", "11월, 2026" in await page.inner_text("#calMonth"),
+                  await page.inner_text("#calMonth"))
+            filter_text = await page.eval_on_selector_all("#calFilters .cal-chip", "e=>e.map(x=>x.innerText.replace(/\s+/g,' ').trim())")
+            check("calendar filters", filter_text == ["전체", "경기", "기념일", "투표", "방송"], filter_text)
+            check("calendar filter dots", await page.eval_on_selector_all("#calFilters .cal-dot", "e=>e.length") == 4)
+            check("calendar weeks = 5", await page.eval_on_selector_all("#calGrid .cal-week", "e=>e.length") == 5,
+                  await page.eval_on_selector_all("#calGrid .cal-week", "e=>e.length"))
+            bars = await page.eval_on_selector_all("#calGrid .cal-bar", "e=>e.map(x=>x.className)")
+            check("calendar bars all categories", all(c in " ".join(bars) for c in ["cat-match", "cat-anniv", "cat-vote", "cat-cast"]), bars)
+            check("calendar no CHZZK in broadcast", "CHZZK" not in await page.inner_text("#officialCalView"))
+
+            await page.click('[data-cal-day="2026-11-29"]')
+            await page.wait_for_timeout(400)
+            day_text = await page.inner_text("#calDay")
+            check("selected day title", "11월 29일" in day_text, day_text[:80])
+            check("selected day notice", "쇼메이커 11월 29일 방송공지" in day_text and "SOOP" in day_text, day_text[:200])
+            check("selected day vote", "하이원 e스포츠 대상 투표" in day_text and "D-6" in day_text, day_text[:200])
+            day_links = await page.eval_on_selector_all("#calDayList a.cal-day-go", "e=>e.map(x=>x.href)")
+            check("selected day vote link", any("my1pick.com" in h for h in day_links), day_links)
+            check("selected day notice link", any("sooplive.co.kr" in h for h in day_links), day_links)
+            month_text = await page.inner_text("#calMonthList")
+            check("month list vote range", "11.23 ~ 12.04" in month_text, month_text[:120])
+            check("month list debut", "쇼메이커 데뷔 9주년" in month_text, month_text[:200])
+            check("month list match", "2026 월즈 8강" in month_text, month_text[:200])
+            await page.screenshot(path=str(OUT / "60-calendar-ko.png"))
+            await page.screenshot(path=str(OUT / "60-calendar-ko-full.png"), full_page=True)
+
+            await page.click('[data-cal-cat="vote"]')
+            await page.wait_for_timeout(400)
+            vote_month = await page.eval_on_selector_all("#calMonthList .cal-row", "e=>e.map(x=>x.className)")
+            check("vote filter only votes", len(vote_month) == 2 and all("cat-vote" in c for c in vote_month), vote_month)
+            check("vote filter day item", "하이원 e스포츠 대상 투표" in await page.inner_text("#calDayList"))
+            await page.screenshot(path=str(OUT / "61-calendar-vote-ko.png"), full_page=True)
+            votes_text = await page.inner_text("#calVoteHost")
+            check("vote card open + closed", "인기상" in votes_text and "하이원 신인상" in votes_text and "업비트" in votes_text, votes_text[:200])
+            vote_links = await page.eval_on_selector_all("#calVoteHost .vote-link", "e=>e.map(x=>x.href)")
+            check("vote card direct links", len(vote_links) == 3 and all(h.startswith("https://") for h in vote_links), vote_links)
+
+            await page.click('[data-cal-cat="anniv"]')
+            await page.wait_for_timeout(350)
+            anniv_rows = await page.eval_on_selector_all("#calMonthList .cal-row", "e=>e.map(x=>x.className)")
+            check("anniv filter only milestones", len(anniv_rows) >= 2 and all("cat-anniv" in c for c in anniv_rows), anniv_rows)
+            await page.screenshot(path=str(OUT / "62-calendar-anniv-ko.png"), full_page=True)
+
+            await page.click('[data-cal-cat="all"]')
+            await page.wait_for_timeout(300)
+            await page.click("#calNext")
+            await page.wait_for_timeout(400)
+            check("calendar next month", "12월" in await page.inner_text("#calMonth") and
+                  "2026 LCK 어워드" in await page.inner_text("#calMonthList"), await page.inner_text("#calMonth"))
+            await page.screenshot(path=str(OUT / "63-calendar-dec-ko.png"), full_page=True)
+            await page.click("#calToday")
+            await page.wait_for_timeout(400)
+            check("calendar today", "11월" in await page.inner_text("#calMonth"))
+            await page.click("#calToList")
+            await page.wait_for_timeout(400)
+            check("back to list view", await page.is_visible("#officialListView"))
+
+            # 5개 국어 · 360/390/430 가로 넘침 없음 (캘린더 보기)
+            for code in ("ko", "en", "ja", "zh", "vi"):
+                await page.click(f'[data-lang="{code}"]')
+                await page.wait_for_timeout(600)
+                await page.click('[data-official-view="calendar"]')
+                await page.wait_for_timeout(500)
+                cal_text = await page.inner_text("#officialCalView")
+                check(f"calendar {code} no raw keys", "cal." not in cal_text and "official." not in cal_text, cal_text[:120])
+                expect_month = {"ko": "11월, 2026", "en": "November", "ja": "2026年11月", "zh": "2026年11月", "vi": "Tháng 11"}[code]
+                check(f"calendar {code} month label", expect_month in await page.inner_text("#calMonth"),
+                      await page.inner_text("#calMonth"))
+                expect_chip = {"ko": "기념일", "en": "Milestones", "ja": "記念日", "zh": "纪念日", "vi": "Kỷ niệm"}[code]
+                check(f"calendar {code} filter labels", expect_chip in await page.inner_text("#calFilters"),
+                      await page.inner_text("#calFilters"))
+                check(f"calendar {code} month list localized", "데뷔" in cal_text or "debut" in cal_text.lower() or "出道" in cal_text or "ra mắt" in cal_text or "デビュー" in cal_text, cal_text[:80])
+                for w in (360, 390, 430):
+                    await page.set_viewport_size({"width": w, "height": 900})
+                    await page.wait_for_timeout(350)
+                    ov = await page.evaluate("document.documentElement.scrollWidth - window.innerWidth")
+                    check(f"calendar no overflow {code} @{w}", ov <= 0, ov)
+                    tabs_fit = await page.evaluate("""() => {
+                        const nav = document.querySelector('.tabs');
+                        const box = nav.getBoundingClientRect();
+                        return [...nav.querySelectorAll('.tab')].every(t => {
+                          const r = t.getBoundingClientRect();
+                          return r.left >= box.left - 1 && r.right <= box.right + 1 && Math.abs(r.top - box.top) < 20;
+                        });
+                    }""")
+                    check(f"tabs one row {code} @{w}", tabs_fit)
+                await page.screenshot(path=str(OUT / f"64-calendar-{code}-390.png"), full_page=True)
+                await page.set_viewport_size({"width": 390, "height": 844})
+                await page.wait_for_timeout(250)
+            await page.click('[data-lang="ko"]')
+            await page.wait_for_timeout(600)
+            await page.click('[data-official-view="list"]')
+            await page.wait_for_timeout(300)
+            await page.click('[data-tab="feed"]')
+            await page.wait_for_timeout(300)
 
             # ---------- 인게임 레이더 (DK_INGAME_FAKE=1) ----------
             await page.click('.tile[data-player="doran"]')
@@ -710,13 +829,13 @@ async def main():
             check("live tile badges", tiles == ["doran", "delight"], tiles)
             check("live pick badge", await page.is_visible("#pickBanner .pick-onair"))
             check("live alert toggle on", await page.get_attribute("[data-live-toggle]", "aria-checked") == "true")
-            check("live alert summary with live", "3개" in await page.inner_text("#notifySummary"),
+            check("live alert summary with live", "4개" in await page.inner_text("#notifySummary"),
                   await page.inner_text("#notifySummary"))
             await page.click("[data-live-toggle]")
             await page.wait_for_timeout(250)
             check("live alert toggle off", await page.get_attribute("[data-live-toggle]", "aria-checked") == "false")
             check("live alert saved", await page.evaluate("localStorage.getItem('dk.signal.live')") == "0")
-            check("live alert summary counts", "2개" in await page.inner_text("#notifySummary"),
+            check("live alert summary counts", "3개" in await page.inner_text("#notifySummary"),
                   await page.inner_text("#notifySummary"))
             await page.click("[data-live-toggle]")
             await page.wait_for_timeout(250)
@@ -777,11 +896,11 @@ async def main():
             check("title en", (await page.title()) == "DK SIGNAL", await page.title())
             check("lang saved", await page.evaluate("localStorage.getItem('dk.signal.lang')") == "en")
             check("en tabs", await page.eval_on_selector_all(".tab", "e=>e.map(x=>x.innerText)") ==
-                  ["Home", "Schedule", "Videos", "Match log", "Records"])
+                  ["Home", "Calendar", "Videos", "Match log", "Records"])
             check("en brand", await page.inner_text(".brand-sub") == "Dplus KIA tracker")
             check("en panel aria labels",
                   await page.eval_on_selector_all(".panel", "e=>e.map(x=>x.getAttribute('aria-label'))") ==
-                  ["Home", "Schedule", "Videos", "Match log", "Records"],
+                  ["Home", "Calendar", "Videos", "Match log", "Records"],
                   await page.eval_on_selector_all(".panel", "e=>e.map(x=>x.getAttribute('aria-label'))"))
             check("en theme label", (await page.inner_text("#themeTxt")) in ("Dark", "Soft"), await page.inner_text("#themeTxt"))
             check("en board title", "Squad status board" in await page.inner_text("#panel-feed"))
@@ -841,7 +960,7 @@ async def main():
             await page.click('[data-tab="official"]')
             await page.wait_for_timeout(1400)
             off = await page.inner_text("#panel-official")
-            check("en schedule", "Schedule" in off and "2027 season calendar" in off and "Live & replays are in Videos" in off)
+            check("en schedule", "2027 season calendar" in off and "Live & replays are in Videos" in off, off[:80])
             check("en next date fallback", "2027 LCK 컵" not in off and "2027 LCK Cup" in off,
                   [l for l in off.splitlines() if "2027" in l][:2])
             check("en stage names", "스위스" not in off and "8강" not in off,
@@ -865,7 +984,7 @@ async def main():
             await page.wait_for_timeout(800)
             check("html lang ja", await page.get_attribute("html", "lang") == "ja")
             check("ja tabs", await page.eval_on_selector_all(".tab", "e=>e.map(x=>x.innerText)") ==
-                  ["ホーム", "公式日程", "動画", "試合ログ", "記録室"])
+                  ["ホーム", "カレンダー", "動画", "試合ログ", "記録室"])
             ja = await page.inner_text("#panel-feed")
             check("ja board", "5人のステータスボード" in ja)
             check("ja video jump", "ライブ・ハイライト" in ja)
@@ -946,11 +1065,11 @@ async def main():
             check("zh title", (await page.title()) == "DK SIGNAL · 迪普基信号", await page.title())
             check("zh stored", await page.evaluate("localStorage.getItem('dk.signal.lang')") == "zh")
             check("zh tabs", await page.eval_on_selector_all(".tab", "e=>e.map(x=>x.innerText)") ==
-                  ["首页", "官方赛程", "视频", "对局记录", "记录室"],
+                  ["首页", "日历", "视频", "对局记录", "记录室"],
                   await page.eval_on_selector_all(".tab", "e=>e.map(x=>x.innerText)"))
             check("zh panel aria labels",
                   await page.eval_on_selector_all(".panel", "e=>e.map(x=>x.getAttribute('aria-label'))") ==
-                  ["首页", "官方赛程", "视频", "对局记录", "记录室"])
+                  ["首页", "日历", "视频", "对局记录", "记录室"])
             zh_home = await page.inner_text("#panel-feed")
             check("zh board", "五人状态板" in zh_home)
             check("zh pick banner", "今天的 多兰" in zh_home and "我的最爱" in zh_home, zh_home[:120])
@@ -991,7 +1110,7 @@ async def main():
             await page.click('[data-tab="official"]')
             await page.wait_for_timeout(1400)
             zh_off = await page.inner_text("#panel-official")
-            check("zh schedule", "官方赛程" in zh_off and "2027 赛季日历" in zh_off, zh_off[:80])
+            check("zh schedule", "2027 赛季日历" in zh_off, zh_off[:80])
             await page.click('[data-tab="records"]')
             await page.wait_for_timeout(500)
             check("zh records", "2026 赛季" in await page.inner_text("#panel-records"))
@@ -1005,11 +1124,11 @@ async def main():
             check("vi stored", await page.evaluate("localStorage.getItem('dk.signal.lang')") == "vi")
             check("vi title", "Tín hiệu DK" in await page.title(), await page.title())
             check("vi tabs", await page.eval_on_selector_all(".tab", "e=>e.map(x=>x.innerText)") ==
-                  ["Trang chủ", "Lịch đấu", "Video", "Nhật ký đấu", "Thành tích"],
+                  ["Trang chủ", "Lịch", "Video", "Nhật ký đấu", "Thành tích"],
                   await page.eval_on_selector_all(".tab", "e=>e.map(x=>x.innerText)"))
             check("vi panel aria labels",
                   await page.eval_on_selector_all(".panel", "e=>e.map(x=>x.getAttribute('aria-label'))") ==
-                  ["Trang chủ", "Lịch đấu", "Video", "Nhật ký đấu", "Thành tích"])
+                  ["Trang chủ", "Lịch", "Video", "Nhật ký đấu", "Thành tích"])
             vi_home = await page.inner_text("#panel-feed")
             check("vi board", "Bảng trạng thái 5 người" in vi_home)
             check("vi pick banner", "MY PICK · Doran hôm nay" in vi_home, vi_home[:120])
@@ -1060,7 +1179,7 @@ async def main():
             await page.click('[data-tab="official"]')
             await page.wait_for_timeout(1400)
             vi_off = await page.inner_text("#panel-official")
-            check("vi schedule", "Lịch đấu" in vi_off and "Lịch mùa 2027" in vi_off, vi_off[:80])
+            check("vi schedule", "Lịch mùa 2027" in vi_off, vi_off[:80])
             await page.click('[data-tab="feed"]')
             await page.wait_for_timeout(400)
 

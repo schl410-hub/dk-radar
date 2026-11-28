@@ -16,6 +16,9 @@
     },
     "api/dk-youtube.js": {
       "maxDuration": 15
+    },
+    "api/notices.js": {
+      "maxDuration": 20
     }
   },
   "crons": [

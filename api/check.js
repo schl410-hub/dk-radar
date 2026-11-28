@@ -20,8 +20,10 @@ const { getDkOfficial } = require('./_lib/official');
 const { getLive } = require('./_lib/live');
 const { loadProIndex } = require('./_lib/pros');
 const { buildLiveGame } = require('./_lib/ingame');
+const { stationNotice } = require('./_lib/soop-notice');
 
 const STATE_KEY = 'dk:state';
+const NOTICE_KEY = 'dk:state.notices';
 const SUBS_KEY = 'dk:subs';
 const SOON_MS = 40 * 60 * 1000; /* 경기 시작 40분 전 알림 */
 const PUUID_TTL = 2592000;
@@ -302,8 +304,7 @@ async function checkIngame(state, subs, dry) {
   return out;
 }
 
-/* 라이브 방송: 이전에 꺼져 있던 선수가 방송을 켜면 알립니다. 첫 실행은 기준값만 저장합니다. */
-async function checkLive(state, subs, dry) {
+/* 라이브 방송: 이전에 꺼져 있던 선수가 방송을 켜면 알립니다. 첫 실행은 기준값만 저장합니다. */async function checkLive(state, subs, dry) {
   const out = { status: 'checked', players: [], pushes: [] };
   let data;
   try {
@@ -347,6 +348,76 @@ async function checkLive(state, subs, dry) {
   return out;
 }
 
+/* SOOP 방송국 공지: 새 공지가 올라오면 '📢 {선수} 방송 공지: {제목}' 푸시
+ *  - Redis dk:state.notices 에 선수별 마지막 title_no 를 둡니다.
+ *  - 안전장치: 그 선수의 상태가 처음 비어 있을 때(초기 시딩)는 기존 공지를 보내지 않고
+ *    지금 최신 title_no 만 저장한 뒤, 그 다음에 올라오는 공지부터 알립니다. */
+async function checkNotices(subs, dry) {
+  const out = { status: 'checked', players: [], pushes: [], seeded: 0 };
+  const targets = PLAYERS.filter(function (p) { return p.stations && p.stations.soop; });
+  if (!targets.length) { out.status = 'empty'; return out; }
+
+  let saved = null;
+  try { saved = await store.getJSON(NOTICE_KEY); } catch (e) { saved = null; }
+  const state = saved && saved.players ? saved : { players: {} };
+  const now = new Date().toISOString();
+
+  for (const player of targets) {
+    const rec = { key: player.key, status: 'ok', titleNo: null, seeded: false, isNew: false };
+    let latest = null;
+    try {
+      latest = await stationNotice(player.stations.soop);
+    } catch (e) {
+      rec.status = 'error';
+      rec.error = String((e && e.message) || e).slice(0, 80);
+      out.players.push(rec);
+      continue;
+    }
+    if (!latest || !latest.titleNo) { rec.status = 'empty'; out.players.push(rec); continue; }
+    rec.titleNo = latest.titleNo;
+    rec.title = latest.titleName;
+
+    const prev = state.players[player.key];
+    if (!prev || !prev.titleNo) {
+      /* 초기 시딩: 저장만 하고 보내지 않습니다. */
+      rec.seeded = true;
+      out.seeded++;
+      state.players[player.key] = Object.assign({}, latest, {
+        soop: player.stations.soop, seeded: true, seededAt: now
+      });
+      out.players.push(rec);
+      continue;
+    }
+
+    if (Number(latest.titleNo) > Number(prev.titleNo)) {
+      rec.isNew = true;
+      const payload = {
+        title: '📢 ' + player.nameKo + ' 방송 공지: ' + latest.titleName,
+        body: 'SOOP 방송국에 새 공지가 올라왔어요. 눌러서 확인해 보세요.',
+        tag: 'notice-' + player.key + '-' + latest.titleNo,
+        url: latest.url,
+        kind: 'notice',
+        player: player.key
+      };
+      const res = await broadcast(subs, function (prefs) {
+        return !prefs || prefs.notice !== false;
+      }, payload, dry);
+      out.pushes.push(Object.assign({ player: player.key, titleNo: latest.titleNo }, res));
+    }
+
+    state.players[player.key] = Object.assign({}, prev, latest, {
+      soop: player.stations.soop, checkedAt: now
+    });
+    out.players.push(rec);
+  }
+
+  out.newCount = out.pushes.length;
+  try { await store.setJSON(NOTICE_KEY, state); } catch (e) {
+    out.storeError = String((e && e.message) || e).slice(0, 80);
+  }
+  return out;
+}
+
 module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return json(res, 204, {});
   if (req.method !== 'GET' && req.method !== 'POST') return fail(res, 405, 'GET · POST 만 지원해요');
@@ -369,7 +440,8 @@ module.exports = async function handler(req, res) {
     total: subs.length,
     official: subs.filter(function (s) { return s.prefs && s.prefs.official !== false; }).length,
     solo: subs.reduce(function (n, s) { return n + ((s.prefs && Array.isArray(s.prefs.solo)) ? s.prefs.solo.length : 0); }, 0),
-    live: subs.filter(function (s) { return s.prefs && s.prefs.live !== false; }).length
+    live: subs.filter(function (s) { return s.prefs && s.prefs.live !== false; }).length,
+    notice: subs.filter(function (s) { return !s.prefs || s.prefs.notice !== false; }).length
   };
 
   /* 구독 기기로 테스트 푸시 보내기 (?test=1) — 잠금화면 알림이 실제로 도착하는지 확인용 */
@@ -386,16 +458,19 @@ module.exports = async function handler(req, res) {
     testResult = Object.assign({ event: 'test' }, t);
   }
 
-  const official = (only === 'solo' || only === 'live') ? { status: 'skipped' } : await checkOfficial(state, subs, dry).catch(function (e) {
+  const official = (only === 'solo' || only === 'live' || only === 'ingame' || only === 'notices') ? { status: 'skipped' } : await checkOfficial(state, subs, dry).catch(function (e) {
     return { status: 'error', error: String(e && e.message ? e.message : e) };
   });
-  const solo = (only === 'official' || only === 'live') ? { status: 'skipped' } : await checkSolo(state, subs, dry).catch(function (e) {
+  const solo = (only === 'official' || only === 'live' || only === 'ingame' || only === 'notices') ? { status: 'skipped' } : await checkSolo(state, subs, dry).catch(function (e) {
     return { status: 'error', error: String(e && e.message ? e.message : e) };
   });
-  const live = (only === 'official' || only === 'solo' || only === 'ingame') ? { status: 'skipped', players: [], pushes: [] } : await checkLive(state, subs, dry).catch(function (e) {
+  const live = (only === 'official' || only === 'solo' || only === 'ingame' || only === 'notices') ? { status: 'skipped', players: [], pushes: [] } : await checkLive(state, subs, dry).catch(function (e) {
     return { status: 'error', error: String(e && e.message ? e.message : e), players: [], pushes: [] };
   });
-  const ingame = (only === 'official' || only === 'solo' || only === 'live') ? { status: 'skipped', players: [], pushes: [] } : await checkIngame(state, subs, dry).catch(function (e) {
+  const ingame = (only === 'official' || only === 'solo' || only === 'live' || only === 'notices') ? { status: 'skipped', players: [], pushes: [] } : await checkIngame(state, subs, dry).catch(function (e) {
+    return { status: 'error', error: String(e && e.message ? e.message : e), players: [], pushes: [] };
+  });
+  const notices = (only === 'official' || only === 'solo' || only === 'live' || only === 'ingame') ? { status: 'skipped', players: [], pushes: [] } : await checkNotices(subs, dry).catch(function (e) {
     return { status: 'error', error: String(e && e.message ? e.message : e), players: [], pushes: [] };
   });
 
@@ -404,7 +479,8 @@ module.exports = async function handler(req, res) {
     (official.pushes || []).reduce(function (a, p) { return a.concat(p.gone || []); }, []),
     (solo.pushes || []).reduce(function (a, p) { return a.concat(p.gone || []); }, []),
     (live.pushes || []).reduce(function (a, p) { return a.concat(p.gone || []); }, []),
-    (ingame.pushes || []).reduce(function (a, p) { return a.concat(p.gone || []); }, [])
+    (ingame.pushes || []).reduce(function (a, p) { return a.concat(p.gone || []); }, []),
+    (notices.pushes || []).reduce(function (a, p) { return a.concat(p.gone || []); }, [])
   );
   let pruned = 0;
   if (goneIds.length && store.durable()) {
@@ -417,7 +493,7 @@ module.exports = async function handler(req, res) {
     at: new Date().toISOString(),
     tookMs: Date.now() - started,
     dry: dry,
-    pushed: (official.pushes || []).length + (solo.pushes || []).length + (live.pushes || []).length + (ingame.pushes || []).length,
+    pushed: (official.pushes || []).length + (solo.pushes || []).length + (live.pushes || []).length + (ingame.pushes || []).length + (notices.pushes || []).length,
     pruned: pruned,
     targets: targets,
     pushReady: push.ready(),
@@ -425,6 +501,7 @@ module.exports = async function handler(req, res) {
     official: { status: official.status, next: official.next || null, pushes: official.pushes || [] },
     live: { status: live.status, liveCount: live.liveCount || 0, players: live.players || [], pushes: live.pushes || [] },
     ingame: { status: ingame.status, inGameCount: ingame.inGameCount || 0, players: ingame.players || [], pushes: ingame.pushes || [] },
+    notices: { status: notices.status, seeded: notices.seeded || 0, newCount: notices.newCount || 0, players: notices.players || [], pushes: notices.pushes || [] },
     solo: { status: solo.status, players: (solo.players || []).map(function (p) {
       return { key: p.key, status: p.status, latestId: p.latestId || null, isNew: !!p.isNew };
     }), pushes: solo.pushes || [] }

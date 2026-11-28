@@ -174,7 +174,8 @@ function startMockRiot() {
 /* ---------------- 가짜 SOOP / CHZZK (라이브 방송 상태) ---------------- */
 const streamState = {
   soop: {},   /* id -> { title, viewers, startedAt } */
-  chzzk: {}   /* id -> { title, viewers, openAt } */
+  chzzk: {},  /* id -> { title, viewers, openAt } */
+  notices: {} /* id -> [{ title_no, title_name, board_type, is_notice, reg_date }] */
 };
 
 function startMockStreams() {
@@ -200,6 +201,24 @@ function startMockStreams() {
             broad_thumb: row.thumb === undefined ? '//thumbs.sooplive.co.kr/choi15778/broad.jpg' : row.thumb,
             broad_cate: row.category === undefined ? '리그 오브 레전드' : row.category
           }
+        });
+      }
+      if ((m = /^\/soop\/([^/]+)\/home$/.exec(url.pathname))) {
+        const id = decodeURIComponent(m[1]);
+        const rows = streamState.notices[id] || [];
+        return send(200, {
+          station: { user_id: id, user_nick: id },
+          boards: rows.map(function (r) {
+            return {
+              bbs_no: r.bbs_no === undefined ? 130689055 : r.bbs_no,
+              title_no: r.title_no,
+              title_name: r.title_name,
+              board_type: r.board_type === undefined ? 104 : r.board_type,
+              is_notice: r.is_notice === undefined ? true : r.is_notice,
+              reg_date: r.reg_date || '2026-11-28 15:08:31',
+              user_id: id
+            };
+          })
         });
       }
       if ((m = /^\/chzzk\/([^/]+)\/live-status$/.exec(url.pathname))) {
@@ -540,6 +559,53 @@ async function main() {
   check('check run3 no duplicate push', run3.json.pushed === 0, run3.json.pushed);
   check('check run3 live quiet', run3.json.live && run3.json.live.liveCount === 2 && run3.json.live.pushes.length === 0,
         run3.json.live && JSON.stringify(run3.json.live.players.map(function (p) { return p.key + ':' + p.live; })));
+
+  /* --- 6-1b. SOOP 방송국 공지: 초기 시딩은 알리지 않고, 새 공지부터 푸시 --- */
+  streamState.notices['choi15778'] = [{ title_no: 202801017, title_name: 'T1 LoL 선수단 방송국 구독 안내', reg_date: '2026-07-29 17:22:54' }];
+  streamState.notices['showmakerr'] = [{ title_no: 213476127, title_name: '방송공지', reg_date: '2026-11-24 17:10:11' }];
+  streamState.notices['tlsrmawo'] = [{ title_no: 183948431, title_name: '[SOOP 구독 이어주기 관련 공지]', board_type: 104, reg_date: '2026-01-16 13:34:38' }];
+
+  const noticeSeed = await call(checkFn, { url: '/api/check?only=notices&dry=1&token=smoke-secret' });
+  check('check notices seed run 200', noticeSeed.status === 200 && noticeSeed.json.ok === true, noticeSeed.status);
+  check('check notices seeded 3 stations', noticeSeed.json.notices && noticeSeed.json.notices.seeded === 3,
+        noticeSeed.json.notices && noticeSeed.json.notices.seeded);
+  check('check notices seed sends nothing', noticeSeed.json.notices && noticeSeed.json.notices.pushes.length === 0 && noticeSeed.json.pushed === 0,
+        noticeSeed.json.notices && JSON.stringify(noticeSeed.json.notices.pushes));
+  check('check notices state stored', kv.has('dk:state.notices'), Array.from(kv.keys()).join(','));
+  const seedState = JSON.parse((kv.get('dk:state.notices') || {}).value || '{}');
+  check('check notices state keeps title_no', !!seedState.players && seedState.players.showmaker && seedState.players.showmaker.titleNo === 213476127,
+        seedState.players && seedState.players.showmaker && seedState.players.showmaker.titleNo);
+
+  const noticeQuiet = await call(checkFn, { url: '/api/check?only=notices&token=smoke-secret' });
+  check('check notices no push without new notice', noticeQuiet.json.notices.pushes.length === 0,
+        JSON.stringify(noticeQuiet.json.notices.players));
+
+  streamState.notices['showmakerr'].unshift({ title_no: 213808933, title_name: '11월 29일 방송공지', reg_date: '2026-11-28 15:08:31' });
+  streamState.notices['choi15778'].unshift({ title_no: 202801099, title_name: '새 공지', reg_date: '2026-11-28 16:00:00' });
+  const noticePush = await call(checkFn, { url: '/api/check?only=notices&token=smoke-secret' });
+  const nPushes = noticePush.json.notices.pushes || [];
+  check('check notices new push count 2', nPushes.length === 2, JSON.stringify(nPushes.map(function (p) { return p.player; })));
+  const smPush = nPushes.filter(function (p) { return p.player === 'showmaker'; })[0];
+  check('check notices push title', !!smPush && smPush.preview.title === '📢 쇼메이커 방송 공지: 11월 29일 방송공지',
+        smPush && smPush.preview.title);
+  check('check notices push url', !!smPush && smPush.preview.url === 'https://ch.sooplive.co.kr/showmakerr/post/213808933',
+        smPush && smPush.preview.url);
+  check('check notices push target 1', !!smPush && smPush.targets === 1, smPush && smPush.targets);
+  check('check notices push kind', !!smPush && smPush.preview.kind === 'notice', smPush && smPush.preview.kind);
+  const noticeAgain = await call(checkFn, { url: '/api/check?only=notices&token=smoke-secret' });
+  check('check notices no duplicate', noticeAgain.json.notices.pushes.length === 0,
+        JSON.stringify(noticeAgain.json.notices.players));
+
+  const noticesFn = require('../api/notices');
+  const noticesApi = await call(noticesFn, { url: '/api/notices' });
+  check('notices api ok', noticesApi.status === 200 && noticesApi.json.ok === true, noticesApi.status);
+  check('notices api lists three stations', noticesApi.json.notices && noticesApi.json.notices.length === 3,
+        noticesApi.json.notices && noticesApi.json.notices.map(function (n) { return n.player; }).join(','));
+  const smNotice = (noticesApi.json.notices || []).filter(function (n) { return n.player === 'showmaker'; })[0];
+  check('notices api latest title', !!smNotice && smNotice.titleNo === 213808933 && smNotice.titleName === '11월 29일 방송공지',
+        smNotice && JSON.stringify(smNotice));
+  check('notices api url', !!smNotice && smNotice.url === 'https://ch.sooplive.co.kr/showmakerr/post/213808933', smNotice && smNotice.url);
+  check('notices api no secret leak', assertNoSecrets(noticesApi.json));
 
   /* --- 6-2. 인게임 알림: 같은 게임은 한 번만, 새 게임이면 다시 --- */
   check('check ingame counts baseline game', run3.json.ingame && run3.json.ingame.inGameCount === 2,

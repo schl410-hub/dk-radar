@@ -86,6 +86,9 @@
   /* 라이브 방송 알림: 선수가 SOOP·CHZZK에서 방송을 켰을 때 (기본 켜짐) */
   var LIVE_KEY = 'dk.signal.live';
   var liveAlerts = store.get(LIVE_KEY, '1') === '1';
+  /* 방송국 공지 알림: SOOP 방송국에 새 공지가 올라왔을 때 (기본 켜짐) */
+  var NOTICE_KEY = 'dk.signal.notice';
+  var noticeAlerts = store.get(NOTICE_KEY, '1') === '1';
 
   /* ---------- 데이터 헬퍼 ---------- */
   function player(key) {
@@ -611,7 +614,7 @@
   }
 
   function eventCardHTML(ev, n) {
-    var icon = ev.kind === 'awards' ? '🏆' : '📅';
+    var icon = ev.kind === 'awards' ? '🏆' : (ev.kind === 'vote' ? '🗳️' : '📅');
     return '<a class="ev-card is-' + ev.kind + (ev.tentative ? ' is-est' : '') + '" href="' + esc(ev.url) + '" target="_blank" rel="noopener">' +
       '<span class="ev-top"><span class="ev-kind"><i aria-hidden="true">' + icon + '</i>' + esc(L(ev.title)) +
         (ev.tentative ? '<em class="ev-est-tag">' + T('event.tentative') + '</em>' : '') + '</span>' +
@@ -654,7 +657,7 @@
       if (!b) return;
       if (!best || b.days < best.b.days) best = { p: p, b: b };
     });
-    if (best) cards.push({ days: best.b.days, html: birthdayCardHTML(best.p, best.b) });
+    if (best) cards.push({ days: best.b.days, html: birthdayCardHTML(best.p, best.b), keep: true });
 
     /* 다가오는 데뷔 기념일: 가까운 두 명을 함께 보여줍니다. */
     var debuts = [];
@@ -667,9 +670,445 @@
     debuts.slice(0, 2).forEach(function (c) { cards.push(c); });
 
     cards.sort(function (a, b) { return a.days - b.days; });
-    var show = cards.slice(0, 5);
+    /* 생일 카드는 이벤트가 늘어도 항상 보이게 하고, 나머지를 날짜 순으로 6장까지 채웁니다. */
+    var show = cards.filter(function (c) { return c.keep; }).slice(0, 1);
+    cards.forEach(function (c) {
+      if (show.length < 6 && show.indexOf(c) < 0) show.push(c);
+    });
+    show.sort(function (a, b) { return a.days - b.days; });
     host.innerHTML = show.map(function (c) { return c.html; }).join('');
     host.hidden = !show.length;
+  }
+
+  /* ---------- 🗳️ 투표 모아보기 (일정&투표 탭의 카드) ----------
+   *  홈 상단 버튼·시트는 사용자 요청으로 빼고, 일정&투표 탭(리스트·캘린더)에서
+   *  진행 중/마감 투표를 카드 한 장으로 모아 보여줍니다. */
+  function voteClosed(v) {
+    var t = Date.parse(v.deadline);
+    return isNaN(t) ? false : Date.now() > t;
+  }
+  function openVotes() {
+    return (typeof VOTES !== 'undefined' ? VOTES : []).filter(function (v) { return !voteClosed(v); })
+      .sort(function (a, b) { return Date.parse(a.deadline) - Date.parse(b.deadline); });
+  }
+  function voteMd(v) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(v.deadline || ''));
+    if (!m) return '';
+    var l = lang();
+    if (l === 'vi') return m[3] + '/' + m[2];
+    if (l === 'en') return m[2] + '/' + m[3];
+    return m[2] + '.' + m[3];
+  }
+  function voteDeadlineText(v) {
+    var t = /T(\d{2}:\d{2})/.exec(String(v.deadline || ''));
+    var md = voteMd(v);
+    if (!md) return '';
+    return T('vote.deadline', { md: md, time: t ? t[1] : '' });
+  }
+  function voteItemHTML(v, closed) {
+    var dd = closed ? T('vote.closed') : (T('vote.ongoing') + ' ' + ddayText(daysUntil(v.deadline)));
+    var rule = [L(v.method), L(v.rule)].filter(function (s) { return !!s; }).join(' · ');
+    return '<li class="vote-item ' + (closed ? 'is-closed' : 'is-open') + '">' +
+      '<a class="vote-link" href="' + esc(v.url) + '" target="_blank" rel="noopener">' +
+        '<span class="vote-top"><span class="vote-event">' + esc(L(v.event)) + '</span>' +
+          '<span class="vote-badge' + (closed ? ' is-closed' : '') + '">' + esc(dd) + '</span></span>' +
+        '<span class="vote-name">' + esc(L(v.title)) + '</span>' +
+        '<span class="vote-cand">' + (v.dk ? '<em class="vote-dk">DK</em>' : '') + esc(L(v.candidate)) +
+          '<i class="vote-cand-note">' + esc(L(v.candidateNote)) + '</i></span>' +
+        (rule ? '<span class="vote-rule">' + esc(rule) + '</span>' : '') +
+        '<span class="vote-foot"><span class="vote-when">' + esc(voteDeadlineText(v)) + '</span>' +
+          '<span class="vote-go">' + esc(T(closed ? 'vote.closedCta' : 'vote.cta')) + '</span></span>' +
+      '</a></li>';
+  }
+  /* 리스트·캘린더 두 곳에 같은 내용을 그립니다. */
+  function renderVotes() {
+    var hosts = ['#voteListHost', '#calVoteHost'].map(function (sel) { return $(sel); }).filter(Boolean);
+    if (!hosts.length) return;
+    var all = (typeof VOTES !== 'undefined' ? VOTES : []);
+    var open = openVotes();
+    var shut = all.filter(voteClosed).sort(function (a, b) { return Date.parse(b.deadline) - Date.parse(a.deadline); });
+    var html = '<div class="vote-sec">' +
+      '<div class="vote-head"><b>' + esc(T('vote.ongoing')) + '</b><em>' + open.length + '</em>' +
+        (open.length ? '<span>' + esc(T('vote.ongoingSub')) + '</span>' : '') + '</div>' +
+      (open.length ? '<ul class="vote-list">' + open.map(function (v) { return voteItemHTML(v, false); }).join('') + '</ul>'
+                   : '<p class="vote-empty">' + esc(T('vote.empty')) + '</p>') +
+      '</div>';
+    if (shut.length) {
+      html += '<div class="vote-sec is-shut">' +
+        '<div class="vote-head"><b>' + esc(T('vote.closedHead')) + '</b><em>' + shut.length + '</em></div>' +
+        '<ul class="vote-list">' + shut.map(function (v) { return voteItemHTML(v, true); }).join('') + '</ul></div>';
+    }
+    html += '<p class="vote-note">' + esc(T('vote.note')) + '</p>';
+    hosts.forEach(function (host) { host.innerHTML = html; });
+    ['#voteCountBadge', '#calVoteCountBadge'].forEach(function (sel) {
+      var badge = $(sel);
+      if (!badge) return;
+      badge.hidden = !open.length;
+      badge.textContent = open.length;
+      badge.setAttribute('aria-label', T('vote.hubAria', { n: open.length }));
+    });
+  }
+
+  /* ---------- 📅 월간 캘린더 (일정&투표 탭) ----------
+   *  기념일은 PLAYERS 의 birthday·debut 에서 그 해 기준으로 계산하고,
+   *  경기는 MATCH_LOG + /api/official(다음·최근), 투표는 VOTES(시작일~마감일),
+   *  방송은 EVENTS(시상식) · CAL_EXTRA · SOOP 방송국 공지에서 모읍니다. */
+  var OFFICIAL_VIEW_KEY = 'dk.signal.officialView';
+  var calState = {
+    view: store.get(OFFICIAL_VIEW_KEY, 'calendar') === 'list' ? 'list' : 'calendar',
+    year: null, month: null, sel: null, cat: 'all'
+  };
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function ymd(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+  function dateOf(value) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(value || ''));
+    return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null;
+  }
+  function sameDay(a, b) {
+    return !!a && !!b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  }
+  function startOfDay(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+  function calMd(d) {
+    if (lang() === 'ko') return pad2(d.getMonth() + 1) + '.' + pad2(d.getDate());
+    return window.I18N.shortDate(d);
+  }
+  function bornLabel(iso) {
+    var d = dateOf(iso);
+    if (!d) return '';
+    var y = d.getFullYear(), mo = d.getMonth() + 1, da = d.getDate();
+    if (lang() === 'ko') return y + '년 ' + mo + '월 ' + da + '일';
+    if (lang() === 'ja' || lang() === 'zh') return y + '年' + mo + '月' + da + '日';
+    if (lang() === 'vi') return da + '/' + mo + '/' + y;
+    return window.I18N.shortDate(d) + ', ' + y;
+  }
+  function calPlayer(key) {
+    for (var i = 0; i < PLAYERS.length; i++) if (PLAYERS[i].key === key) return PLAYERS[i];
+    return null;
+  }
+  function soopOf(p) {
+    var st = (p && p.streams) || [];
+    for (var i = 0; i < st.length; i++) if (st[i].platform === 'soop') return st[i];
+    return null;
+  }
+
+  /* 선수 SOOP 공지: data.js 기본값 + /api/notices 가 준 최신 공지 (제목_no 가 큰 쪽) */
+  function calNotices() {
+    var out = [];
+    function merge(item) {
+      for (var i = 0; i < out.length; i++) {
+        if (out[i].player !== item.player) continue;
+        var prev = out[i];
+        if (Number(item.titleNo) === Number(prev.titleNo) && prev.title) {
+          /* 같은 공지면 번역해 둔 제목(data.js)을 그대로 살립니다. */
+          prev.posted = item.posted || prev.posted;
+          prev.url = item.url || prev.url;
+          return;
+        }
+        if (Number(item.titleNo || 0) >= Number(prev.titleNo || 0)) out[i] = item;
+        return;
+      }
+      out.push(item);
+    }
+    (typeof SOOP_NOTICES !== 'undefined' ? SOOP_NOTICES : []).forEach(function (n) {
+      merge({ player: n.player, titleNo: n.titleNo, posted: n.posted, date: n.date || n.posted,
+        title: n.title, titleName: '', url: n.url });
+    });
+    (LIVE.notices || []).forEach(function (n) {
+      var p = calPlayer(n.player);
+      if (!p) return;
+      var name = n.titleName || '';
+      var m = /(\d{1,2})\s*월\s*(\d{1,2})\s*일/.exec(name);
+      var day = (m && n.posted) ? n.posted.slice(0, 4) + '-' + pad2(m[1]) + '-' + pad2(m[2]) : (n.posted || '');
+      merge({ player: n.player, titleNo: n.titleNo, posted: n.posted, date: day,
+        title: null, titleName: name, url: n.url });
+    });
+    return out;
+  }
+
+  /* 투표는 같은 대회·같은 기간을 한 묶음으로 보여줍니다 (인기상·신인상 → 하이원 본선 투표). */
+  function calVoteGroups() {
+    var groups = {};
+    (typeof VOTES !== 'undefined' ? VOTES : []).forEach(function (v) {
+      var end = dateOf(v.deadline);
+      if (!end) return;
+      var start = dateOf(v.start) || end;
+      var key = L(v.event) + '|' + ymd(start) + '|' + ymd(end);
+      var g = groups[key];
+      if (!g) g = groups[key] = { event: v.event, start: start, end: end, items: [], url: v.url, label: v.calLabel || v.event };
+      g.items.push(v);
+      if (!g.label && v.calLabel) g.label = v.calLabel;
+    });
+    return Object.keys(groups).map(function (k) { return groups[k]; });
+  }
+
+  var calCache = { year: null, lang: null, list: null };
+  function invalidateCalendar() { calCache.year = null; calCache.lang = null; calCache.list = null; }
+
+  function calEvents(year) {
+    /* 언어가 바뀌면 제목·부제를 다시 만들어야 합니다. */
+    if (calCache.year === year && calCache.lang === lang() && calCache.list) return calCache.list;
+    var list = [];
+    function push(ev) {
+      var s = dateOf(ev.start), e = dateOf(ev.end || ev.start);
+      if (!s || !e) return;
+      ev.startDate = s; ev.endDate = e;
+      ev.start = ymd(s); ev.end = ymd(e);
+      list.push(ev);
+    }
+
+    /* 1) 기념일 — 생일·데뷔일 */
+    PLAYERS.forEach(function (p) {
+      var b = dateOf(p.birthday);
+      if (b) push({
+        cat: 'anniv', start: ymd(new Date(year, b.getMonth(), b.getDate())), end: ymd(new Date(year, b.getMonth(), b.getDate())),
+        bar: '🎂 ' + pName(p),
+        title: T('cal.birthdayTitle', { name: pName(p) }) + ' 🎂',
+        sub: T('cal.birthdaySub', { real: pReal(p), date: bornLabel(p.birthday) }),
+        emoji: '🎂'
+      });
+      var db = dateOf(p.debut);
+      if (!db || year < db.getFullYear()) return;
+      var n = year - db.getFullYear();
+      var dd = new Date(year, db.getMonth(), db.getDate());
+      push({
+        cat: 'anniv', start: ymd(dd), end: ymd(dd),
+        bar: '🎉 ' + T('cal.debutBar', { n: n }),
+        title: T('cal.debutTitle', { name: pName(p), n: n }) + ' 🎉',
+        sub: T('cal.debutSub', { real: pReal(p), note: L(p.debutNote) }),
+        emoji: '🎉'
+      });
+    });
+
+    /* 2) 경기 — 저장된 2026 월즈 기록 + 서버 공식 일정 */
+    (typeof MATCH_LOG !== 'undefined' ? MATCH_LOG : []).forEach(function (g) {
+      push({
+        cat: 'match', start: g.date, end: g.date,
+        bar: g.opp + ' ' + g.score.replace(/\s*:\s*/, ':') + (g.win ? ' W' : ' L'),
+        title: L(g.league) + ' ' + L(g.round) + ' · DK ' + g.score + ' ' + g.opp,
+        sub: T(g.win ? 'cal.gameWin' : 'cal.gameLoss', { opp: g.opp, score: g.score }),
+        url: g.url, action: 'cal.matchLink'
+      });
+    });
+    var off = LIVE.official;
+    var seen = {};
+    list.forEach(function (ev) { if (ev.cat === 'match') seen[ev.start] = true; });
+    if (off && off.ok && off.next && off.next.startIso) {
+      var nd = dateOf(off.next.startIso);
+      if (nd) {
+        var oppN = (off.next.opponent && (off.next.opponent.code || off.next.opponent.name)) || 'TBD';
+        push({
+          cat: 'match', start: ymd(nd), end: ymd(nd),
+          bar: 'DK vs ' + oppN,
+          title: 'DK vs ' + oppN,
+          sub: [leagueName(off.next.league), blockText(off.next.block), off.next.time].filter(Boolean).join(' · '),
+          url: 'https://lolesports.com/ko-KR/schedule', action: 'cal.matchLink'
+        });
+        seen[ymd(nd)] = true;
+      }
+    }
+    if (off && off.ok && Array.isArray(off.recent)) {
+      off.recent.forEach(function (g) {
+        var d = dateOf(g.startIso);
+        if (!d || seen[ymd(d)]) return;
+        var opp = (g.opponent && (g.opponent.code || g.opponent.name)) || '';
+        push({
+          cat: 'match', start: ymd(d), end: ymd(d),
+          bar: opp + ' ' + String(g.score || '').replace(/\s*:\s*/, ':'),
+          title: (leagueName(g.league) || 'LCK') + ' ' + (blockText(g.block) || '') + ' · DK ' + (g.score || '') + ' ' + opp,
+          sub: g.win === true ? T('cal.gameWin', { opp: opp, score: g.score || '' })
+            : (g.win === false ? T('cal.gameLoss', { opp: opp, score: g.score || '' }) : ''),
+          url: 'https://lolesports.com/ko-KR/schedule', action: 'cal.matchLink'
+        });
+        seen[ymd(d)] = true;
+      });
+    }
+
+    /* 3) 투표 — 시작일 ~ 마감일 */
+    calVoteGroups().forEach(function (g) {
+      var closed = Date.now() > Date.parse(String(g.items[0].deadline));
+      var last = new Date(g.end.getFullYear(), g.end.getMonth(), g.end.getDate(), 23, 59);
+      var dd = Math.round((startOfDay(last) - startOfDay(new Date())) / 86400000);
+      push({
+        cat: 'vote', start: ymd(g.start), end: ymd(g.end),
+        bar: L(g.label),
+        title: T('cal.voteTitle', { event: L(g.event) }),
+        sub: sameDay(g.start, g.end)
+          ? T('cal.voteSame', { md: voteMd(g.items[0]) })
+          : T('cal.voteRange', { from: calMd(g.start), to: calMd(g.end) }),
+        url: g.url, action: 'vote.cta',
+        closed: closed, dday: closed ? null : dd
+      });
+    });
+
+    /* 4) 방송 — 시상식 일정 + SOOP 방송국 공지 */
+    (typeof EVENTS !== 'undefined' ? EVENTS : []).forEach(function (ev) {
+      if (ev.kind !== 'awards') return;
+      push({ cat: 'cast', start: ev.date, end: ev.date, bar: L(ev.title),
+        title: L(ev.title), sub: L(ev.sub), url: ev.url, action: 'cal.noticeLink' });
+    });
+    (typeof CAL_EXTRA !== 'undefined' ? CAL_EXTRA : []).forEach(function (ev) {
+      push({ cat: 'cast', start: ev.date, end: ev.date, bar: L(ev.title),
+        title: L(ev.title), sub: L(ev.sub), url: ev.url, action: 'cal.noticeLink' });
+    });
+    calNotices().forEach(function (n) {
+      var p = calPlayer(n.player);
+      if (!p || !n.date) return;
+      var st = soopOf(p);
+      push({ cat: 'cast', start: n.date, end: n.date,
+        bar: pName(p) + ' ' + (n.title ? L(n.title) : n.titleName),
+        title: pName(p) + ' ' + (n.title ? L(n.title) : n.titleName),
+        sub: T('cal.castSub', { handle: (st && st.handle) || n.soop }),
+        url: n.url, action: 'cal.noticeLink' });
+    });
+
+    list.sort(function (a, b) {
+      if (a.start !== b.start) return a.start < b.start ? -1 : 1;
+      return a.cat < b.cat ? -1 : (a.cat > b.cat ? 1 : 0);
+    });
+    calCache = { year: year, lang: lang(), list: list };
+    return list;
+  }
+
+  function calInMonth(ev, y, m) {
+    var first = new Date(y, m, 1), last = new Date(y, m + 1, 0);
+    return ev.startDate <= last && ev.endDate >= first;
+  }
+
+  /* 한 주 안의 이벤트를 겹치지 않게 레인에 배치합니다 (최대 4줄). */
+  function calWeekBars(week, events) {
+    var lanes = [];
+    var placed = [];
+    events.forEach(function (ev) {
+      var s = ev.startDate > week[0] ? ev.startDate : week[0];
+      var e = ev.endDate < week[6] ? ev.endDate : week[6];
+      if (s > e) return;
+      var cs = Math.round((startOfDay(s) - startOfDay(week[0])) / 86400000);
+      var ce = Math.round((startOfDay(e) - startOfDay(week[0])) / 86400000);
+      var lane = -1;
+      for (var i = 0; i < lanes.length; i++) {
+        var free = true;
+        for (var j = 0; j < lanes[i].length; j++) {
+          if (!(ce < lanes[i][j][0] || cs > lanes[i][j][1])) { free = false; break; }
+        }
+        if (free) { lane = i; break; }
+      }
+      if (lane < 0) { lane = lanes.length; lanes.push([]); }
+      if (lane > 3) return; /* 4줄을 넘는 주는 아래 목록에서 */
+      lanes[lane].push([cs, ce]);
+      placed.push({ ev: ev, cs: cs, ce: ce, lane: lane });
+    });
+    return { placed: placed, rows: Math.min(4, lanes.length) };
+  }
+
+  function renderCalendar() {
+    var wrap = $('#officialCalView');
+    if (!wrap) return;
+    var now = new Date();
+    if (calState.year == null || calState.month == null) {
+      calState.year = now.getFullYear();
+      calState.month = now.getMonth();
+    }
+    if (!calState.sel) calState.sel = ymd(now);
+    var y = calState.year, m = calState.month;
+    var first = new Date(y, m, 1);
+    var monthEl = $('#calMonth');
+    if (monthEl) monthEl.textContent = window.I18N.monthLabel(first);
+    var dow = $('#calDow');
+    if (dow) {
+      dow.innerHTML = window.I18N.wdShort().map(function (w, i) {
+        return '<span' + (i === 0 ? ' class="is-sun"' : (i === 6 ? ' class="is-sat"' : '')) + '>' + esc(w) + '</span>';
+      }).join('');
+    }
+
+    var events = calEvents(y).filter(function (ev) {
+      return calInMonth(ev, y, m) && (calState.cat === 'all' || ev.cat === calState.cat);
+    });
+    var selDate = dateOf(calState.sel) || now;
+    var today = startOfDay(now);
+    var gridStart = new Date(y, m, 1 - first.getDay());
+    var grid = $('#calGrid');
+    var html = '';
+    for (var w = 0; w < 6; w++) {
+      var week = [];
+      for (var d = 0; d < 7; d++) week.push(new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + w * 7 + d));
+      if (w === 5 && week[0].getMonth() !== m) break;
+      var bars = calWeekBars(week, events);
+      var rows = 1 + bars.rows;
+      var cells = week.map(function (day, i) {
+        var out = day.getMonth() !== m;
+        var cls = 'cal-cell' + (out ? ' is-out' : '') + (sameDay(day, today) ? ' is-today' : '') + (ymd(day) === calState.sel ? ' is-sel' : '');
+        var ncls = 'cal-num' + (day.getDay() === 0 ? ' is-sun' : (day.getDay() === 6 ? ' is-sat' : '')) + (out ? ' is-out' : '') + (sameDay(day, today) ? ' is-today' : '');
+        return '<button type="button" class="' + cls + '" data-cal-day="' + ymd(day) + '"' +
+          ' style="grid-area:1 / ' + (i + 1) + ' / span ' + rows + ' / span 1;"' +
+          ' aria-label="' + esc(window.I18N.dayLabel(day)) + '">' +
+          '<span class="' + ncls + '">' + day.getDate() + '</span></button>';
+      }).join('');
+      var barHTML = bars.placed.map(function (b) {
+        var openL = b.ev.startDate < week[0];
+        var openR = b.ev.endDate > week[6];
+        var label = (openL ? '‹ ' : '') + b.ev.bar + (openR ? ' ~' + calMd(b.ev.endDate) : '');
+        return '<span class="cal-bar cat-' + b.ev.cat + '" style="grid-area:' + (2 + b.lane) + ' / ' + (b.cs + 1) + ' / span 1 / span ' + (b.ce - b.cs + 1) + ';">' + esc(label) + '</span>';
+      }).join('');
+      html += '<div class="cal-week">' + cells + barHTML + '</div>';
+    }
+    if (grid) grid.innerHTML = html;
+
+    var countEl = $('#calCount');
+    if (countEl) countEl.textContent = T('cal.foot', { today: window.I18N.dayLabel(now), n: events.length });
+
+    renderCalDay(selDate, events);
+    renderCalMonth(y, m, events);
+  }
+
+  var CAL_ORDER = { cast: 0, match: 1, vote: 2, anniv: 3 };
+  function renderCalDay(selDate, events) {
+    var titleEl = $('#calDayTitle'), listEl = $('#calDayList'), countEl = $('#calDayCount');
+    if (titleEl) titleEl.textContent = window.I18N.dayLabel(selDate);
+    var day = events.filter(function (ev) { return ev.startDate <= selDate && ev.endDate >= selDate; });
+    day.sort(function (a, b) { return (CAL_ORDER[a.cat] || 0) - (CAL_ORDER[b.cat] || 0); });
+    if (countEl) countEl.textContent = T('cal.dayCount', { n: day.length });
+    if (!listEl) return;
+    if (!day.length) { listEl.innerHTML = '<li class="cal-empty">' + esc(T('cal.emptyDay')) + '</li>'; return; }
+    listEl.innerHTML = day.map(function (ev) {
+      var tag = T('cal.' + ev.cat);
+      if (ev.cat === 'vote') tag = ev.closed ? T('cal.voteClosed') : (T('cal.voteOngoing') + (ev.dday != null ? ' ' + ddayText(ev.dday) : ''));
+      return '<li class="cal-day-item">' +
+        '<span class="cal-tag is-' + ev.cat + '">' + esc(tag) + '</span>' +
+        '<span class="cal-day-body"><b>' + esc(ev.title) + '</b><span>' + esc(ev.sub) + '</span></span>' +
+        (ev.url ? '<a class="cal-day-go" href="' + esc(ev.url) + '" target="_blank" rel="noopener">' +
+          esc(T(ev.action || (ev.cat === 'cast' ? 'cal.noticeLink' : 'vote.cta'))) + '</a>' : '') +
+      '</li>';
+    }).join('');
+  }
+
+  function renderCalMonth(y, m, events) {
+    var titleEl = $('#calMonthTitle'), listEl = $('#calMonthList');
+    if (titleEl) titleEl.textContent = T('cal.monthHead', { month: window.I18N.monthShort(new Date(y, m, 1)) });
+    if (!listEl) return;
+    if (!events.length) { listEl.innerHTML = '<li class="cal-empty">' + esc(T('cal.emptyMonth')) + '</li>'; return; }
+    listEl.innerHTML = events.map(function (ev) {
+      var dateText = sameDay(ev.startDate, ev.endDate)
+        ? calMd(ev.startDate)
+        : (calMd(ev.startDate) + ' ~ ' + calMd(ev.endDate));
+      return '<li><button class="cal-row cat-' + ev.cat + '" type="button" data-cal-day="' + ev.start + '">' +
+        '<span class="cal-row-date">' + esc(dateText) + '</span>' +
+        '<b class="cal-row-title">' + esc(ev.title) + '</b>' +
+        '<span class="cal-row-tag">' + esc(T('cal.' + ev.cat)) + '</span>' +
+      '</button></li>';
+    }).join('');
+  }
+
+  function renderOfficialView() {
+    var wrap = $('#officialCalView'), list = $('#officialListView');
+    var showCal = calState.view === 'calendar';
+    $$('[data-official-view]').forEach(function (btn) {
+      var on = btn.getAttribute('data-official-view') === calState.view;
+      btn.classList.toggle('is-on', on);
+      btn.setAttribute('aria-selected', String(on));
+    });
+    if (wrap) wrap.hidden = !showCal;
+    if (list) list.hidden = showCal;
+    if (showCal) renderCalendar();
   }
 
   /* ---------- 인게임 레이더 (Spectator-V5) ---------- */
@@ -1773,9 +2212,13 @@
       btn.setAttribute('aria-checked', String(liveAlerts));
       btn.setAttribute('aria-label', T(liveAlerts ? 'notify.liveToggleOn' : 'notify.liveToggleOff'));
     });
+    $$('[data-notice-toggle]').forEach(function (btn) {
+      btn.setAttribute('aria-checked', String(noticeAlerts));
+      btn.setAttribute('aria-label', T(noticeAlerts ? 'notify.noticeToggleOn' : 'notify.noticeToggleOff'));
+    });
     var sum = $('#notifySummary');
     if (sum) {
-      var n = PLAYERS.filter(function (p) { return isSoloOn(p.key); }).length + (officialOn ? 1 : 0) + (liveAlerts ? 1 : 0);
+      var n = PLAYERS.filter(function (p) { return isSoloOn(p.key); }).length + (officialOn ? 1 : 0) + (liveAlerts ? 1 : 0) + (noticeAlerts ? 1 : 0);
       sum.textContent = n ? T('notify.summaryOn', { n: n }) : T('notify.summaryOff');
     }
     setNote('');
@@ -1987,6 +2430,7 @@
     solo: null,
     live: null,
     dkYt: null,
+    notices: null,
     soloSource: 'snapshot',
     offline: false,
     lastSync: 0,
@@ -2319,18 +2763,20 @@
       apiGet('./api/official?lang=' + lang()),
       apiGet('./api/solo'),
       apiGet('./api/live'),
-      apiGet('./api/dk-youtube')
+      apiGet('./api/dk-youtube'),
+      apiGet('./api/notices')
     ]).then(function (res) {
-      var cfg = res[0], off = res[1], solo = res[2], live = res[3], dkYt = res[4];
+      var cfg = res[0], off = res[1], solo = res[2], live = res[3], dkYt = res[4], notes = res[5];
       if (cfg && cfg.ok) LIVE.config = cfg;
       if (!cfg && !off && !solo) {
         LIVE.offline = true;
         applyLiveStatus();
         return;
       }
-      if (off) LIVE.official = off;
+      if (off) { LIVE.official = off; invalidateCalendar(); }
       if (live && live.ok) LIVE.live = live;
       if (dkYt) LIVE.dkYt = dkYt;
+      if (notes && notes.ok && Array.isArray(notes.notices)) { LIVE.notices = notes.notices; invalidateCalendar(); }
       if (solo) { LIVE.solo = solo; if (solo.source) LIVE.soloSource = solo.source; mergeSolo(solo); }
       LIVE.lastSync = Date.now();
       renderAll();
@@ -2375,7 +2821,8 @@
     return {
       solo: PLAYERS.filter(function (p) { return isSoloOn(p.key); }).map(function (p) { return p.key; }),
       official: officialOn,
-      live: liveAlerts
+      live: liveAlerts,
+      notice: noticeAlerts
     };
   }
 
@@ -2400,7 +2847,7 @@
   function syncPush(interactive) {
     var cfg = LIVE.config;
     if (!LIVE.push.supported || !cfg || !cfg.push || !cfg.push.ready || !cfg.store || !cfg.store.durable) return Promise.resolve(false);
-    var any = prefsPayload().solo.length > 0 || officialOn;
+    var any = prefsPayload().solo.length > 0 || officialOn || liveAlerts || noticeAlerts;
     var perm = ('Notification' in window) ? Notification.permission : 'denied';
 
     return navigator.serviceWorker.ready.then(function (reg) {
@@ -2439,6 +2886,7 @@
   function renderAll() {
     renderPills();
     renderEvents();
+    renderVotes();
     renderPick();
     renderTiles();
     renderHighlight();
@@ -2447,6 +2895,7 @@
     renderSolo();
     renderRoster();
     renderOfficial();
+    renderOfficialView();
     renderRecords();
     renderNotify();
   }
@@ -2463,6 +2912,58 @@
     }
     var lgDone = e.target.closest('#lgClose, #lgVeil');
     if (lgDone) { closeLive(); return; }
+    /* 일정&투표: 리스트 | 캘린더 전환 · 필터 · 달 이동 · 날짜 선택 */
+    var viewBtn = e.target.closest('[data-official-view]');
+    if (viewBtn) {
+      calState.view = viewBtn.getAttribute('data-official-view') === 'calendar' ? 'calendar' : 'list';
+      store.set(OFFICIAL_VIEW_KEY, calState.view);
+      renderOfficialView();
+      return;
+    }
+    var calCat = e.target.closest('[data-cal-cat]');
+    if (calCat) {
+      calState.cat = calCat.getAttribute('data-cal-cat');
+      $$('#calFilters .cal-chip').forEach(function (c) {
+        c.classList.toggle('is-on', c === calCat);
+        c.setAttribute('aria-pressed', String(c === calCat));
+      });
+      renderCalendar();
+      return;
+    }
+    if (e.target.closest('#calPrev') || e.target.closest('#calNext')) {
+      var step = e.target.closest('#calNext') ? 1 : -1;
+      var stepDate = new Date(calState.year, calState.month + step, 1);
+      calState.year = stepDate.getFullYear();
+      calState.month = stepDate.getMonth();
+      renderCalendar();
+      return;
+    }
+    if (e.target.closest('#calToday')) {
+      var nowDay = new Date();
+      calState.year = nowDay.getFullYear();
+      calState.month = nowDay.getMonth();
+      calState.sel = ymd(nowDay);
+      renderCalendar();
+      return;
+    }
+    if (e.target.closest('#calToList')) {
+      calState.view = 'list';
+      store.set(OFFICIAL_VIEW_KEY, 'list');
+      renderOfficialView();
+      return;
+    }
+    var calDayBtn = e.target.closest('[data-cal-day]');
+    if (calDayBtn) {
+      var picked = dateOf(calDayBtn.getAttribute('data-cal-day'));
+      if (!picked) return;
+      calState.sel = ymd(picked);
+      if (picked.getFullYear() !== calState.year || picked.getMonth() !== calState.month) {
+        calState.year = picked.getFullYear();
+        calState.month = picked.getMonth();
+      }
+      renderCalendar();
+      return;
+    }
     var langBtn = e.target.closest('[data-lang]');
     if (langBtn) {
       var code = langBtn.getAttribute('data-lang');
@@ -2502,6 +3003,14 @@
     if (liveT) {
       liveAlerts = !liveAlerts;
       store.set(LIVE_KEY, liveAlerts ? '1' : '0');
+      renderNotify();
+      syncPush(true);
+      return;
+    }
+    var noticeT = e.target.closest('[data-notice-toggle]');
+    if (noticeT) {
+      noticeAlerts = !noticeAlerts;
+      store.set(NOTICE_KEY, noticeAlerts ? '1' : '0');
       renderNotify();
       syncPush(true);
       return;

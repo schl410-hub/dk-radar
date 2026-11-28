@@ -845,12 +845,35 @@ const SPELLS = {
   'Snowball': ['눈덩이', 'Snowball', 'スノーボール', '雪球']
 };
 
-/* 홈 상단 이벤트 · D-DAY (2026-11-27 확인)
+/* 홈 상단 이벤트 · D-DAY (2026-11-28 확인)
+ *  - 2026 하이원 e스포츠 대상: 본선 팬 투표 11.23 ~ 12.04 23:59 (마이원픽 1일 1회 무료) · 시상식 12.17(목) 15:00
  *  - 2026 LCK 어워드: 12월 16일(수) 치지직 롤파크 개최 · CHZZK/SOOP 생중계 (라이엇 게임즈 11-05 발표)
- *    팬 팀 투표(업비트 ALL-TIME HIGH)는 11-26 23:59 마감, 올해의 선수·포지션별 선수는 선정단 투표로 시상식 당일 공개.
+ *    정규 시즌 부문은 8월 발표(스매쉬 신인왕·김대호 감독상·카나비 1st·딜라이트 2nd·쇼메이커 3rd),
+ *    팬 팀 투표(업비트 ALL-TIME HIGH)는 11-26 23:59 마감, 올해의 선수·포지션별 선수는 시상식 당일 공개.
  *  - 2027 LCK 컵: 개막일 공식 발표 전(1월~2월 예정) — 2026 시즌 개막일(1/14)을 기준으로 '예상' 카운트다운만 표시합니다.
  *  날짜가 확정되거나 새 이벤트가 생기면 이 표만 고치면 됩니다. (지난 이벤트는 앱이 자동으로 숨깁니다) */
 const EVENTS = [
+  {
+    id: 'hiwon-awards-2026',
+    date: '2026-12-04',
+    kind: 'vote',
+    title: {
+      ko: '2026 하이원 e스포츠 대상 투표',
+      en: '2026 High1 Esports Awards vote',
+      ja: '2026 High1 eスポーツ大賞 投票',
+      zh: '2026 High1 电竞大奖投票', 'vi': 'Bình chọn Giải thưởng Esports High1 2026'},
+    sub: {
+      ko: '인기상 쇼메이커 · 신인상 스매쉬',
+      en: 'ShowMaker for Popularity · Smash for Rookie',
+      ja: '人気賞ショーメイカー・新人賞スマッシュ',
+      zh: '人气奖 秀梅克 · 新人奖 斯马什', 'vi': 'ShowMaker hạng Yêu thích · Smash Tân binh'},
+    note: {
+      ko: '12.04 마감 · 마이원픽 1일 1회 무료 투표',
+      en: 'Closes 12/4 · one free My1Pick vote a day',
+      ja: '12/4締切・マイワンピックで1日1回無料投票',
+      zh: '12/4 截止 · My1Pick 每日免费一票', 'vi': 'Hết hạn 4/12 · mỗi ngày 1 phiếu miễn phí trên My1Pick'},
+    url: 'https://fsn-app.my1pick.com/app/link'
+  },
   {
     id: 'lck-awards-2026',
     date: '2026-12-16',
@@ -862,10 +885,10 @@ const EVENTS = [
       ja: 'CHZZK LoL Park・CHZZK/SOOP 生中継',
       zh: 'CHZZK LoL Park · CHZZK/SOOP 直播', 'vi': 'CHZZK LoL Park, Seoul · phát trực tiếp trên CHZZK & SOOP'},
     note: {
-      ko: 'DK 스매쉬 신인왕 · 팬 팀 투표 11.26 마감',
-      en: 'DK Smash took Rookie of the Year · fan vote closed 11/26',
-      ja: 'DK スマッシュ新人王・ファン投票は11/26終了',
-      zh: 'DK Smash 最佳新人 · 粉丝投票 11/26 截止', 'vi': 'Smash (DK) đoạt Tân binh xuất sắc nhất · bình chọn fan kết thúc 26/11'},
+      ko: '스매쉬 신인왕 · 김대호 감독상 · 카나비 1st · 딜라이트 2nd · 쇼메이커 3rd',
+      en: 'Smash Rookie · Kim Dae-ho Coach · Kanavi 1st · Delight 2nd · ShowMaker 3rd',
+      ja: 'スマッシュ新人王・キム・デホ監督賞・カナビ1st・ディライト2nd・ショーメイカー3rd',
+      zh: '斯马什 最佳新人 · 金大浩 最佳教练 · Kanavi 一阵 · Delight 二阵 · 秀梅克 三阵', 'vi': 'Smash Tân binh · HLV Kim Dae-ho · Kanavi đội 1 · Delight đội 2 · ShowMaker đội 3'},
     url: 'https://lolesports.com/ko-KR/news/2026-lck-awards-voting-method-and-criteria'
   },
   {
@@ -885,6 +908,226 @@ const EVENTS = [
       ja: '2026シーズンは1月14日開幕・確定次第更新',
       zh: '2026 赛季 1月14日开幕 · 确定后更新', 'vi': 'Mùa 2026 khai mạc ngày 14/1 · sẽ báo khi có xác nhận'},
     url: 'https://lolesports.com/ko-KR/schedule'
+  }
+];
+
+/* 🗳️ 투표 모아보기 (2026-11-28 확인)
+ *  - 하이원 e스포츠 대상 본선 팬 투표: 11.23 ~ 12.04 23:59 · 마이원픽 1일 1회 무료 투표
+ *  - LCK 어워드 업비트 ALL-TIME HIGH 팀 상: 11.26 23:59 마감 (지난 투표는 앱이 '마감'으로 내려 보여줍니다)
+ *  deadline 은 마감 시각까지 적어 두고, 앱이 지금 시각과 비교해 진행 중/마감을 스스로 나눕니다. */
+const VOTES = [
+  {
+    id: 'hiwon-popularity-2026',
+    start: '2026-11-23',
+    deadline: '2026-12-04T23:59:00+09:00',
+    event: {
+      ko: '2026 하이원 e스포츠 대상',
+      en: '2026 High1 Esports Awards',
+      ja: '2026 High1 eスポーツ大賞',
+      zh: '2026 High1 电竞大奖', 'vi': 'Giải thưởng Esports High1 2026'},
+    dk: true,
+    title: {
+      ko: '인기상',
+      en: 'Popularity Award',
+      ja: '人気賞',
+      zh: '人气奖', 'vi': 'Giải thưởng Yêu thích'},
+    calLabel: {
+      ko: '하이원 어워즈 본선',
+      en: 'High1 Awards vote',
+      ja: 'High1大賞 本戦投票',
+      zh: 'High1 大奖投票', vi: 'Bình chọn High1'},
+    candidate: {
+      ko: '쇼메이커 (허수)',
+      en: 'ShowMaker (Heo Su)',
+      ja: 'ショーメイカー（ホ・ス）',
+      zh: '秀梅克（许秀）', 'vi': 'ShowMaker (Heo Su)'},
+    candidateNote: {
+      ko: '4개 종목 20명 중 1명',
+      en: 'one of 20 players across 4 titles',
+      ja: '4種目20名から1名',
+      zh: '4个项目 20名中选1名', 'vi': '1 trong 20 tuyển thủ của 4 bộ môn'},
+    method: {
+      ko: '팬 투표 100%',
+      en: '100% fan vote',
+      ja: 'ファン投票100%',
+      zh: '粉丝投票 100%', 'vi': '100% bình chọn của fan'},
+    rule: {
+      ko: '마이원픽 1일 1회 무료 투표',
+      en: 'one free vote a day on My1Pick',
+      ja: 'マイワンピックで1日1回無料投票',
+      zh: 'My1Pick 每日免费一票', 'vi': 'mỗi ngày 1 phiếu miễn phí trên My1Pick'},
+    url: 'https://fsn-app.my1pick.com/app/link'
+  },
+  {
+    id: 'hiwon-rookie-2026',
+    start: '2026-11-23',
+    deadline: '2026-12-04T23:59:00+09:00',
+    event: {
+      ko: '2026 하이원 e스포츠 대상',
+      en: '2026 High1 Esports Awards',
+      ja: '2026 High1 eスポーツ大賞',
+      zh: '2026 High1 电竞大奖', 'vi': 'Giải thưởng Esports High1 2026'},
+    dk: true,
+    title: {
+      ko: '하이원 신인상 (LoL)',
+      en: 'High1 Rookie of the Year (LoL)',
+      ja: 'High1 新人賞（LoL）',
+      zh: 'High1 最佳新人（LoL）', 'vi': 'Tân binh xuất sắc nhất (LoL)'},
+    calLabel: {
+      ko: '하이원 어워즈 본선',
+      en: 'High1 Awards vote',
+      ja: 'High1大賞 本戦投票',
+      zh: 'High1 大奖投票', vi: 'Bình chọn High1'},
+    candidate: {
+      ko: '스매쉬 (신금재)',
+      en: 'Smash (Shin Geum-jae)',
+      ja: 'スマッシュ（シン・クムジェ）',
+      zh: '斯马什（申锦宰）', 'vi': 'Smash (Shin Geum-jae)'},
+    candidateNote: {
+      ko: '오형석·커리어 등과 경합',
+      en: 'up against Oh Hyung-seok, Career and more',
+      ja: 'オ・ヒョンソク、キャリアらと競う',
+      zh: '与吴衡锡、Career 等竞争', 'vi': 'cạnh tranh cùng Oh Hyung-seok, Career…'},
+    method: {
+      ko: '팬 투표 50% + 위원회 50%',
+      en: '50% fan vote + 50% committee',
+      ja: 'ファン投票50%＋委員会50%',
+      zh: '粉丝投票 50% + 委员会 50%', 'vi': '50% fan + 50% hội đồng'},
+    rule: {
+      ko: '마이원픽 1일 1회 무료 투표',
+      en: 'one free vote a day on My1Pick',
+      ja: 'マイワンピックで1日1回無料投票',
+      zh: 'My1Pick 每日免费一票', 'vi': 'mỗi ngày 1 phiếu miễn phí trên My1Pick'},
+    url: 'https://fsn-app.my1pick.com/app/link'
+  },
+  {
+    id: 'lck-alltime-high-team-2026',
+    deadline: '2026-11-26T23:59:00+09:00',
+    event: {
+      ko: '2026 LCK 어워드',
+      en: '2026 LCK Awards',
+      ja: '2026 LCKアワード',
+      zh: '2026 LCK 颁奖礼', 'vi': 'Lễ trao giải LCK 2026'},
+    title: {
+      ko: '업비트 ALL-TIME HIGH 팀 상',
+      en: 'Upbit ALL-TIME HIGH Team Award',
+      ja: 'Upbit ALL-TIME HIGH チーム賞',
+      zh: 'Upbit ALL-TIME HIGH 战队奖', 'vi': 'Giải Đội tuyển Upbit ALL-TIME HIGH'},
+    calLabel: {
+      ko: '업비트 팀 투표 마감',
+      en: 'Upbit team vote closes',
+      ja: 'Upbitチーム投票 締切',
+      zh: 'Upbit 战队投票截止', vi: 'Hết hạn bình chọn Upbit'},
+    candidate: {
+      ko: '팬 팀 투표',
+      en: 'fan team vote',
+      ja: 'ファンチーム投票',
+      zh: '粉丝战队投票', 'vi': 'bình chọn đội của fan'},
+    candidateNote: {
+      ko: '시상식 12.16 치지직 롤파크',
+      en: 'ceremony 12/16 at CHZZK LoL Park',
+      ja: '授賞式12/16 CHZZK LoL Park',
+      zh: '颁奖礼 12/16 CHZZK LoL Park', 'vi': 'lễ trao giải 16/12 tại CHZZK LoL Park'},
+    method: {
+      ko: '팬 팀 투표',
+      en: 'fan team vote',
+      ja: 'ファンチーム投票',
+      zh: '粉丝战队投票', 'vi': 'bình chọn đội của fan'},
+    rule: {
+      ko: '',
+      en: '',
+      ja: '',
+      zh: '', 'vi': ''},
+    url: 'https://lolesports.com/ko-KR/news/2026-lck-awards-voting-method-and-criteria'
+  }
+];
+
+/* 📅 캘린더 · 경기 기록 (지난 DK 공식 경기)
+ *  DK_PATH 는 2026 월즈 여정을 화면용 문구로 들고 있고, 캘린더는 날짜로 계산해야 해서
+ *  같은 경기를 ISO 날짜로 한 번 더 적어 둡니다. 새 경기는 /api/official 이 준 recent·next 를
+ *  앱이 실행 중에 합칩니다. */
+const MATCH_LOG = [
+  {
+    date: '2026-10-24',
+    league: { ko: '2026 월즈', en: 'Worlds 2026', ja: '2026 ワールズ', zh: '2026 全球总决赛', vi: 'Worlds 2026' },
+    round: { ko: '1라운드', en: 'Round 1', ja: '第1ラウンド', zh: '第1轮', vi: 'Vòng 1' },
+    opp: 'G2', score: '1 : 0', win: true, url: 'https://lolesports.com/ko-KR/schedule'
+  },
+  {
+    date: '2026-10-25',
+    league: { ko: '2026 월즈', en: 'Worlds 2026', ja: '2026 ワールズ', zh: '2026 全球总决赛', vi: 'Worlds 2026' },
+    round: { ko: '2라운드', en: 'Round 2', ja: '第2ラウンド', zh: '第2轮', vi: 'Vòng 2' },
+    opp: 'T1', score: '1 : 0', win: true, url: 'https://lolesports.com/ko-KR/schedule'
+  },
+  {
+    date: '2026-10-26',
+    league: { ko: '2026 월즈', en: 'Worlds 2026', ja: '2026 ワールズ', zh: '2026 全球总决赛', vi: 'Worlds 2026' },
+    round: { ko: '3라운드', en: 'Round 3', ja: '第3ラウンド', zh: '第3轮', vi: 'Vòng 3' },
+    opp: 'MKOI', score: '2 : 0', win: true, url: 'https://lolesports.com/ko-KR/schedule'
+  },
+  {
+    date: '2026-11-06',
+    league: { ko: '2026 월즈', en: 'Worlds 2026', ja: '2026 ワールズ', zh: '2026 全球总决赛', vi: 'Worlds 2026' },
+    round: { ko: '8강', en: 'Quarterfinals', ja: 'ベスト8', zh: '八强', vi: 'Tứ kết' },
+    opp: 'BLG', score: '0 : 3', win: false, url: 'https://lolesports.com/ko-KR/schedule'
+  }
+];
+
+/* 📅 캘린더 전용 일정 (홈 D-DAY 스트립에는 넣지 않는 것들)
+ *  - 2026 하이원 e스포츠 대상 시상식: 12.17(목) 15:00 (본선 팬 투표 12.04 23:59 마감)
+ *  새 일정은 여기에 한 줄씩 추가하면 캘린더에 바로 나옵니다. */
+const CAL_EXTRA = [
+  {
+    id: 'hiwon-ceremony-2026',
+    date: '2026-12-17',
+    cat: 'cast',
+    title: {
+      ko: '2026 하이원 e스포츠 대상 시상식',
+      en: '2026 High1 Esports Awards ceremony',
+      ja: '2026 High1 eスポーツ大賞 授賞式',
+      zh: '2026 High1 电竞大奖 颁奖礼', vi: 'Lễ trao giải Esports High1 2026' },
+    sub: {
+      ko: '15:00 · 본선 투표 결과 발표',
+      en: '15:00 · fan vote results announced',
+      ja: '15:00 · 本戦投票の結果発表',
+      zh: '15:00 · 公布投票结果', vi: '15:00 · công bố kết quả bình chọn' },
+    url: 'https://fsn-app.my1pick.com/app/link'
+  }
+];
+
+/* 📢 선수 SOOP 방송국 최신 공지 (2026-11-28 15:08 공개 API 로 확인)
+ *  /api/notices 가 서버에 저장된 최신 공지를 주면 그것을 우선 쓰고, 없을 때 이 값으로 캘린더를 채웁니다.
+ *  date 는 공지가 말하는 방송 날짜, posted 는 공지가 올라온 날입니다. */
+const SOOP_NOTICES = [
+  {
+    player: 'showmaker', soop: 'showmakerr', titleNo: 213808933,
+    posted: '2026-11-28', date: '2026-11-29',
+    title: {
+      ko: '11월 29일 방송공지',
+      en: 'Nov 29 stream notice',
+      ja: '11月29日 配信告知',
+      zh: '11月29日 直播公告', vi: 'Thông báo phát sóng 29/11' },
+    url: 'https://ch.sooplive.co.kr/showmakerr/post/213808933'
+  },
+  {
+    player: 'doran', soop: 'choi15778', titleNo: 202801017,
+    posted: '2026-07-29', date: '2026-07-29',
+    title: {
+      ko: 'T1 LoL 선수단 방송국 구독&구독플러스 혜택 안내',
+      en: 'T1 LoL squad channel subscription benefits',
+      ja: 'T1 LoL 選手団チャンネル登録特典のご案内',
+      zh: 'T1 LoL 选手团频道订阅福利说明', vi: 'Quyền lợi đăng ký kênh T1 LoL' },
+    url: 'https://ch.sooplive.co.kr/choi15778/post/202801017'
+  },
+  {
+    player: 'smash', soop: 'tlsrmawo', titleNo: 199293067,
+    posted: '2026-06-21', date: '2026-06-21',
+    title: {
+      ko: '2026 Cross Regional - LoL DAY2 DK Smash 출전 안내',
+      en: '2026 Cross Regional LoL Day 2 · DK Smash',
+      ja: '2026 Cross Regional LoL DAY2 DK Smash 出場案内',
+      zh: '2026 Cross Regional LoL DAY2 DK Smash 出战公告', vi: 'Cross Regional 2026 LoL DAY2 · DK Smash' },
+    url: 'https://ch.sooplive.co.kr/tlsrmawo/post/199293067'
   }
 ];
 
