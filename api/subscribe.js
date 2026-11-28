@@ -157,6 +157,7 @@ module.exports = async function handler(req, res) {
   if (!sub) return fail(res, 400, '푸시 구독 정보(endpoint · keys)가 올바르지 않아요');
 
   const prefs = cleanPrefs(body.prefs);
+  const lang = TEST_LANGS.indexOf(body.lang) > -1 ? body.lang : '';
   const id = subId(sub.endpoint);
   const now = new Date().toISOString();
   const existing = subs.filter(function (s) { return s.id === id; })[0];
@@ -165,11 +166,15 @@ module.exports = async function handler(req, res) {
     existing.prefs = prefs;
     existing.updatedAt = now;
     existing.ua = String(body.ua || existing.ua || '').slice(0, 180);
+    /* 언어는 새로 왔을 때만 바꿉니다 (예전 클라이언트가 지우지 않게) */
+    if (lang) existing.lang = lang;
   } else {
     if (subs.length >= MAX_SUBS) return fail(res, 507, '구독이 너무 많아요');
-    subs.push({ id: id, endpoint: sub.endpoint, keys: sub.keys, prefs: prefs, ua: String(body.ua || '').slice(0, 180), createdAt: now, updatedAt: now });
+    const row = { id: id, endpoint: sub.endpoint, keys: sub.keys, prefs: prefs, ua: String(body.ua || '').slice(0, 180), createdAt: now, updatedAt: now };
+    if (lang) row.lang = lang;
+    subs.push(row);
   }
 
   try { await store.setJSON(SUBS_KEY, subs); } catch (e) { return json(res, 503, { ok: false, error: 'store_error' }); }
-  return json(res, 200, { ok: true, id: id, created: !existing, prefs: prefs, total: subs.length, durable: store.durable(), pushReady: !!(process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) });
+  return json(res, 200, { ok: true, id: id, created: !existing, prefs: prefs, lang: lang || (existing && existing.lang) || '', total: subs.length, durable: store.durable(), pushReady: !!(process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) });
 };

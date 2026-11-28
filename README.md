@@ -17,6 +17,7 @@
 - **웹 푸시 (VAPID)**: 선수별 솔랭 ON/OFF + DK 공식 경기 ON/OFF 설정이 서버 구독 정보와 함께 저장됩니다. 서버가 5분마다 새 랭크 게임(챔피언·KDA·승패)과 새 공식 일정·경기 시작 40분 전을 감지해 구독 기기로 보냅니다. 준비가 안 된 상태에서는 화면에 무엇이 빠졌는지 그대로 표시합니다.
 - **다국어 (KO · EN · JA · ZH · VI)**: 헤더 `KO · EN · JA · ZH · VI` 세그먼트로 즉시 전환. 탭·배지·선수명/실명/포지션/티어·공식 일정·경기표·영상 탭·알림 문구·테스트 알림·날짜 표기·챔피언 이름(Data Dragon zh_CN·vi_VN)까지 화면 전체와 `document.title`·`<html lang>`(zh-CN)·미리보기 문구가 함께 바뀝니다. `localStorage`(`dk.signal.lang`) 저장값 → 없으면 `navigator.language`(vi/zh 계열→vi·zh, ja/en/ko) → 기본 `ko`.
 - **실시간 테마 전환**: 헤더 우측 `다크 / 소프트` 버튼. 선택은 `localStorage`에 저장되고 첫 페인트 전에 적용됩니다.
+- **운영자 한 줄 공지**: 관리자 앱(`/admin`)에서 문구를 켜면 `/api/config` 의 `banner` 로 내려와 메인 상단에 한 줄 공지가 뜹니다(끄면 사라짐). 관리자 대시보드는 구독자·7일 추이·선수 인기·언어 비율·발송 기록·전체 알림까지 한 화면에서 다룹니다.
 - **탭 5개**: 홈 / **캘린더** / 영상 / 경기로그 / 기록실 (360~430px 모바일에서도 한 줄 유지), 캘린더 안은 **리스트 · 캘린더 · 투표** 3단 전환
 - **5인 상태 보드**: 도란 · 카나비 · 쇼메이커 · 스매쉬 · 딜라이트 타일을 누르면 최애 포커스 배너·하이라이트·전적표가 함께 바뀝니다. 인게임이면 `인게임` 배지가 붙습니다(키 설정 시).
 - **최애 포커스 배너 + MY PICK 고정**
@@ -53,8 +54,9 @@
 | `GET /api/live` | 5인 라이브 방송 상태 — 방제·썸네일·시청자 수·카테고리·시작 시각 포함(값이 없으면 키 생략) (SOOP station API · CHZZK live-status, 45초 캐시) |
 | `GET /api/dk-youtube` | 디플러스 기아 공식 유튜브(@DplusKia_LOL) 최신 영상 10편 (채널 RSS, 10분 캐시 · 실패 시 마지막 확인본 스냅샷) |
 | `GET /api/notices` | 선수 SOOP 방송국 최신 공지(`dk:state.notices` 캐시, `?refresh=1` 새로 조회) — 캘린더 방송 일정 |
-| `GET /api/config` | 프론트가 쓰는 공개 상태값(푸시 공개키·저장소·솔로 소스·마지막 점검) |
-| `POST /api/subscribe` | 기기 푸시 구독 + 알림 설정 저장 (`DELETE` 해지, `GET ?endpoint=` 확인) |
+| `GET /api/config` | 프론트 공개 상태값(푸시 공개키·저장소·솔로 소스·마지막 점검) + 관리자 집계(`playerStats` 선수별 알림 기기 수 · `langStats` 언어 분포 · `pushLog` 최근 발송 10건 · `daily`/`dailyDelta`/`dailyHistory` 오늘 증감·최근 7일 · `banner` 한 줄 공지) |
+| `POST /api/config` | 관리자 전용(`X-Admin-Pin` = PIN SHA-256) — `runCheck` 점검 1회 실행 · `setBanner` 한 줄 공지 저장 · `broadcast` 전체 구독자 알림 발송(`dry:true` 미리보기) |
+| `POST /api/subscribe` | 기기 푸시 구독 + 알림 설정 + 언어(`lang`) 저장 (`DELETE` 해지, `GET ?endpoint=` 확인) |
 | `GET /api/check` | 주기 점검 — 새 랭크 게임 / 새 일정 / 시작 임박 / **새 인게임**(`dk:state.ingame`) / **새 방송국 공지**(`dk:state.notices`, `?only=notices`) 감지 후 푸시 (`?dry=1` 미리보기, `?test=1` 구독 기기로 테스트 푸시) |
 
 ```bash
@@ -66,6 +68,14 @@ curl -s $BASE/api/dk-youtube | head -c 400
 curl -s "$BASE/api/check?dry=1&token=$CHECK_SECRET"
 curl -s "$BASE/api/check?test=1&token=$CHECK_SECRET"   # 잠금화면 알림 확인
 ```
+
+## v3.10 (2026-11-28) — 관리자 대시보드 (민트 테마 · 인기 순위 · 7일 추이 · 언어 비율 · 발송 기록 · 공지 · 전체 알림)
+
+- 관리자 앱을 메인 앱과 같은 **검정 + 민트** 테마로 통일하고, 설치 안내를 화면 하단(본문 맨 아래)으로 옮겼습니다.
+- 새 카드 7종: 선수별 알림 인기 순위 · 최근 7일 구독자 그래프 · 오늘 구독자 증감 배지 · 언어별(KO/EN/JA/ZH/VI/미기록) 비율 · 최근 알림 발송 기록 · 한 줄 공지 켜고 끄기 · 전체 알림 보내기(확인 팝업).
+- `/api/config` 하나로 집계를 내려주고(새 Vercel 함수 없음), `POST /api/config` 로 점검 실행·공지 저장·전체 발송을 PIN 검증 뒤에 처리합니다.
+- `POST /api/subscribe` 가 앱 언어(`lang`)를 함께 저장해 언어 분포를 셀 수 있습니다.
+- `dk:pushlog`(실제 발송만, 최대 15건) · `dk:stats:daily`(오늘 기준값 + 최근 7일) · `dk:banner`(한 줄 공지) 키 추가.
 
 ## v3.9.2 (2026-11-28) — 아이폰·갤럭시 공통 서버 경유 테스트 알림
 
@@ -155,6 +165,32 @@ curl -s "$BASE/api/check?test=1&token=$CHECK_SECRET"   # 잠금화면 알림 확
 
 `curl -s https://dk-signal.vercel.app/api/config` 로 언제든 현재 상태를 확인할 수 있습니다.
 
+## 관리자 앱 (`/admin`) — 별도 PWA
+
+운영 상태를 보고 알림·공지를 직접 다루는 **관리자 전용 앱**입니다. 메인 앱(딮기 시그널)과 완전히 분리된 설치형 PWA 이고,
+색은 메인 앱과 같은 **검정 + 민트**입니다(아이콘은 방패·열쇠 구멍·`ADMIN` 표기로 구분).
+
+- **주소**: `/admin` (= `admin.html`, `vercel.json` rewrite) · 메인 화면 어디에도 링크를 두지 않습니다.
+- **잠금**: 4자리 PIN(숫자 키패드) → SHA-256 해시 비교. 해제 상태는 `localStorage`(`dk.admin.auth.v1`)에 저장돼 다음 실행에는 바로 대시보드가 열리고,
+  우측 상단 **잠금** 버튼으로 다시 잠급니다(6회 실패 시 30초 대기).
+- **대시보드** (`/api/config` 하나를 60초마다 자동 갱신 + 새로고침 버튼)
+  - **구독자 현황**: 총 구독 기기 + `오늘 +N명` 배지(오늘 처음 관측한 수 기준) · 공식경기/라이브/방송공지/솔랭 선택 합계
+  - **최근 7일 구독자**: KST 날짜별 막대 그래프(기록이 없는 날은 `–`, 오늘은 민트로 강조)
+  - **선수별 알림 인기**: 5인 솔랭 알림 기기 수 순위 + 비율 막대(개인정보 없이 숫자만)
+  - **언어별 구독자**: KO·EN·JA·ZH·VI + `미기록`(언어를 아직 안 보낸 기기) 비율 막대·목록
+  - **시스템 · 크론 상태**: 마지막 점검 시각(KST)·소요 시간·직전 발송·저장소·Riot API·앱 버전 + **지금 바로 점검** 버튼
+  - **최근 알림 발송 기록**: 실제로 나간 알림 10건(시간·종류·제목·발송 건수). 없으면 "오늘 이후 나가는 알림부터 여기에 기록돼요"
+  - **전체 알림 보내기**: 제목·내용 입력 → **확인 창**("정말 전체 구독자 N명에게 알림을 보낼까요?") → 확인해야만 발송
+  - **메인 화면 한 줄 공지**: 문구 + 켜기/끄기 → 메인 앱 상단에 그대로 표시
+  - **선수별 최신 수집 현황**: 5인 라이브/인게임/최신 솔랭 매치 ID/방송공지 제목
+- **저장 키**: `dk:subs`(구독) · `dk:pushlog`(최근 15건, GET 은 10건) · `dk:stats:daily`(오늘 기준값 + 최근 7일) · `dk:banner`(한 줄 공지)
+- **관리자 동작 보호**: `runCheck`·`setBanner`·`broadcast` 는 모두 `X-Admin-Pin`(관리자 PIN SHA-256) 헤더가 맞아야 실행됩니다.
+  배포 때 `ADMIN_PIN_HASH` 환경변수를 넣으면 그 값이 우선합니다(넣지 않으면 앱에 들어 있는 기본 해시).
+  ※ 공개 주소 + 4자리 PIN 이라 화면 잠금은 강한 인증이 아닙니다. 개인 운영용 전제이고, 더 조이려면 `ADMIN_PIN_HASH` 로 더 긴 PIN 해시를 쓰세요.
+- **별도 앱 설치**: `manifest-admin.json` — 이름 `딮기 관리자`, `id`/`start_url`/`scope` 모두 `/admin`, 민트 방패 아이콘(`icons/admin-192.png`·`admin-512.png`·`admin-maskable-512.png`).
+  브라우저 탭으로 열면 **본문 맨 아래**에 설치 안내가 보입니다(화면을 가리지 않음).
+- **분리**: `admin-sw.js` 는 범위가 `/admin` 뿐이고, 메인 `sw.js` 는 `/admin`·`admin.js`·`admin.css`·`admin-sw.js`·`manifest-admin.json` 을 가로채지 않습니다.
+
 ## 환경변수 (Vercel → Settings → Environment Variables)
 
 | 이름 | 필수 | 설명 |
@@ -163,6 +199,7 @@ curl -s "$BASE/api/check?test=1&token=$CHECK_SECRET"   # 잠금화면 알림 확
 | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | 웹 푸시 | `node tools/make_vapid.js` 로 생성. 공개키는 프론트가 `/api/config` 로 받습니다. |
 | `VAPID_SUBJECT` | 선택 | 기본 `https://dk-signal.vercel.app` (mailto: 또는 https URL) |
 | `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | 웹 푸시 | Vercel Marketplace 에서 Upstash Redis(무료) 연결하면 자동 주입. 구독·마지막 상태 저장용. |
+| `ADMIN_PIN_HASH` | 선택 | 관리자 액션(`POST /api/config`) 검증용 PIN SHA-256. 넣지 않으면 앱에 들어 있는 기본 해시(4자리 PIN) 사용 |
 | `CHECK_SECRET` (또는 `CRON_SECRET`) | 권장 | `/api/check` 보호 토큰. Vercel Cron 은 `CRON_SECRET` 을 자동으로 Bearer 로 보냅니다. |
 | `LOLESPORTS_API_KEY` | 선택 | LoL Esports 공개 키가 바뀌었을 때 덮어쓰기 |
 | `PUSH_DRY_RUN=1` | 선택 | 실제 발송 없이 로그만(로컬 검증) |
@@ -195,6 +232,11 @@ api/_lib/pros.js      타 팀 프로 계정 표(21명) + PUUID 미리 받기(30�
 api/_lib/matchups.js  끝난 경기 참가자 비교로 듀오/내전/프로 매치업 판정
 api/_lib/champions.js Riot 숫자 id → 챔피언·스펠 영어 이름 (tools/make_riot_names.js 로 생성)
 manifest.json         PWA 설정 (manifest.webmanifest 와 동일 내용)
+admin.html            관리자 앱 화면 (잠금 화면 + 대시보드)
+admin.css             관리자 앱 전용 스타일 (앰버 · 딥 네이비)
+admin.js              잠금(PIN 해시·localStorage) · 실시간 대시보드 · 설치 안내
+manifest-admin.json   관리자 앱 PWA 설정 (id/start_url/scope = /admin)
+admin-sw.js           관리자 앱 전용 서비스 워커 (범위 /admin)
 api/official.js       DK 공식 일정
 api/solo.js           솔로랭크
 api/config.js         프론트용 공개 설정
@@ -217,6 +259,9 @@ tools/make_vapid.js   VAPID 키 생성
 tools/make_dk_youtube_snapshot.js  /api/dk-youtube 폴백 스냅샷 생성
 tools/make_preview.py 단일 파일 프리뷰 빌드
 tools/make_icons.py   아이콘 생성
+tools/make_admin_icons.py  관리자 앱 아이콘(앰버 방패) 생성
+tools/verify_admin.py 관리자 앱 검증(잠금·PIN·대시보드·설치 조건 39항목)
+tools/mockup_admin.py 관리자 앱 시안 캡처(390×844) → downloads/dk-signal-v3
 tools/make_font.py    Pretendard 서브셋 생성
 ```
 
@@ -224,11 +269,12 @@ tools/make_font.py    Pretendard 서브셋 생성
 
 ```bash
 python3 tools/verify_highlights.py          # 아카이브 116편 + 재생목록 6종 oEmbed · 5개 국어 포인트 확인
-node tools/api_smoke.js                    # 서버 함수 119항목 (실제 LoL Esports API·YouTube RSS 1회 + 가짜 SOOP/CHZZK)
+node tools/api_smoke.js                    # 서버 함수 164항목 (실제 LoL Esports API·YouTube RSS 1회 + 가짜 SOOP/CHZZK)
 
 LD_LIBRARY_PATH=... PLAYWRIGHT_BROWSERS_PATH=... python3 tools/verify.py       # 104/104
 LD_LIBRARY_PATH=... PLAYWRIGHT_BROWSERS_PATH=... python3 tools/verify_api.py   # 31/31
-LD_LIBRARY_PATH=... python3 tools/verify_v3.py                                 # 394/394 (다국어 5종·재생목록·아카이브·인앱 플레이어·라이브·설치 가이드)
+LD_LIBRARY_PATH=... python3 tools/verify_v3.py                                 # 512/512 (다국어 5종·재생목록·아카이브·인앱 플레이어·라이브·설치 가이드)
+LD_LIBRARY_PATH=... python3 tools/verify_admin.py                              # 133/133 (관리자 잠금·PIN·7개 카드·관리자 동작·메인 공지)
 ```
 
 - `verify_highlights.py` 는 `data.js` 의 영상 45편과 재생목록 6종을 YouTube oEmbed 로 하나씩 확인하고, 챔피언 태그 정합성·한 줄 포인트·경기명·대회명 5개 국어(ko/en/ja/zh/vi)·중복 ID 까지 봅니다(영상이 내려가면 여기서 먼저 걸립니다).

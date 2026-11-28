@@ -90,6 +90,13 @@
   </header>
 
   <main>
+    <!-- 운영자 한 줄 공지: /api/config 의 banner 가 켜져 있을 때만 보입니다 -->
+    <div class="line-notice" id="lineNotice" role="status" aria-live="polite" hidden>
+      <span class="ln-ico" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="13" height="13" fill="none"><path d="M4.5 9.8v4.4a1 1 0 0 0 1 1h2.2l5.4 3.4a.8.8 0 0 0 1.2-.7V5.1a.8.8 0 0 0-1.2-.7L7.7 7.8H5.5a1 1 0 0 0-1 1Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M17.4 8.6a4.6 4.6 0 0 1 0 6.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      </span>
+      <p class="ln-text" id="lineNoticeText"></p>
+    </div>
     <!-- ================= 홈 ================= -->
     <section class="panel is-active" id="panel-feed" role="tabpanel" data-i18n-attr="aria-label:tab.feed" aria-label="홈">
       <div class="feed-meta">

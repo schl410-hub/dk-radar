@@ -2854,7 +2854,7 @@
     return fetch('./api/subscribe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ subscription: LIVE.push.sub.toJSON(), prefs: prefsPayload(), ua: navigator.userAgent })
+      body: JSON.stringify({ subscription: LIVE.push.sub.toJSON(), prefs: prefsPayload(), lang: lang(), ua: navigator.userAgent })
     }).then(function (r) { return r.ok; }).catch(function () { return false; });
   }
 
@@ -2906,7 +2906,25 @@
   }
 
   /* ---------- 전체 렌더 ---------- */
+  /* ---------- 운영자 한 줄 공지 (/api/config → banner) ---------- */
+  function renderLineNotice() {
+    var host = $('#lineNotice');
+    var textEl = $('#lineNoticeText');
+    if (!host || !textEl) return;
+    var b = LIVE.config && LIVE.config.banner;
+    var text = b && b.enabled && b.text ? String(b.text).trim() : '';
+    if (!text) {
+      host.hidden = true;
+      textEl.textContent = '';
+      return;
+    }
+    textEl.textContent = text;
+    host.title = text;
+    host.hidden = false;
+  }
+
   function renderAll() {
+    renderLineNotice();
     renderPills();
     renderEvents();
     renderVotes();

@@ -10,10 +10,16 @@
  * 보호      : CHECK_SECRET(또는 CRON_SECRET) 이 있으면 Bearer 토큰 또는 ?token= 이 필요합니다.
  * 검증      : ?dry=1 이면 실제 발송 없이 보낼 내용만 돌려줍니다.
  *            ?only=official|solo|live 로 일부 점검만 돌릴 수 있습니다.
+ *
+ * 관리자 화면의 '지금 바로 점검'은 api/config.js 가 이 파일의 runCheck() 를 직접 부릅니다.
+ * 실제 발송이 있으면 dk:pushlog 에 { at, type, title, sent, targets } 를 남기고(최근 15건),
+ * dk:stats:daily 에 오늘 구독자 수와 최근 7일 기록을 갱신합니다.
  */
 const { json, fail, header } = require('./_lib/http');
 const store = require('./_lib/store');
 const push = require('./_lib/push');
+const pushlog = require('./_lib/pushlog');
+const stats = require('./_lib/stats');
 const riot = require('./_lib/riot');
 const { PLAYERS } = require('./_lib/players');
 const { getDkOfficial } = require('./_lib/official');
@@ -67,6 +73,18 @@ async function broadcast(subs, matchPref, payload, dry) {
     if (r.status === 'sent') sent.push(sub.id);
     else if (r.status === 'gone') gone.push(sub.id);
     else errors.push({ id: sub.id, status: r.status, code: r.code || 0 });
+  }
+  /* 실제로 나간 알림만 기록합니다 (테스트·미리보기 제외). */
+  if (sent.length) {
+    try {
+      await pushlog.record({
+        at: new Date().toISOString(),
+        type: payload.kind || 'etc',
+        title: payload.title || '',
+        sent: sent.length,
+        targets: targets.length
+      });
+    } catch (e) { /* 기록 실패가 발송 결과를 바꾸지 않게 */ }
   }
   return { targets: targets.length, sent: sent.length, dryRun: false, pushReady: true, gone: gone, errors: errors, preview: payload };
 }
@@ -426,9 +444,20 @@ module.exports = async function handler(req, res) {
   const auth = authorize(req, url);
   if (!auth.ok) return fail(res, 401, '토큰이 올바르지 않아요', { auth: auth.mode });
 
-  const dry = url.searchParams.get('dry') === '1';
-  const only = url.searchParams.get('only') || '';
-  const test = url.searchParams.get('test') || '';
+  const summary = await runCheck({
+    dry: url.searchParams.get('dry') === '1',
+    only: url.searchParams.get('only') || '',
+    test: url.searchParams.get('test') || ''
+  });
+
+  return json(res, 200, Object.assign({ ok: true }, summary));
+};
+
+/* 점검 1회 실행 — 핸들러와 관리자 화면(api/config.js)이 같이 씁니다. */
+async function runCheck(opts) {
+  const dry = !!(opts && opts.dry);
+  const only = (opts && opts.only) || '';
+  const test = (opts && opts.test) || '';
   const started = Date.now();
 
   let state = null;
@@ -443,6 +472,10 @@ module.exports = async function handler(req, res) {
     live: subs.filter(function (s) { return s.prefs && s.prefs.live !== false; }).length,
     notice: subs.filter(function (s) { return !s.prefs || s.prefs.notice !== false; }).length
   };
+
+  /* 오늘 구독자 증감·최근 7일 기록 */
+  let daily = null;
+  try { daily = await stats.observe(targets.total); } catch (e) { daily = null; }
 
   /* 구독 기기로 테스트 푸시 보내기 (?test=1) — 잠금화면 알림이 실제로 도착하는지 확인용 */
   let testResult = null;
@@ -496,6 +529,8 @@ module.exports = async function handler(req, res) {
     pushed: (official.pushes || []).length + (solo.pushes || []).length + (live.pushes || []).length + (ingame.pushes || []).length + (notices.pushes || []).length,
     pruned: pruned,
     targets: targets,
+    daily: daily,
+    dailyDelta: daily ? daily.delta : 0,
     pushReady: push.ready(),
     test: testResult,
     official: { status: official.status, next: official.next || null, pushes: official.pushes || [] },
@@ -512,5 +547,7 @@ module.exports = async function handler(req, res) {
     await store.setJSON(STATE_KEY, state);
   } catch (e) { summary.storeError = String(e && e.message ? e.message : e); }
 
-  return json(res, 200, Object.assign({ ok: true }, summary));
-};
+  return summary;
+}
+
+module.exports.runCheck = runCheck;

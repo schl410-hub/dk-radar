@@ -73,6 +73,22 @@ async function getJSON(key) {
   return memGet(key);
 }
 
+/* 여러 키를 한 번에 읽습니다 (Redis 는 MGET 1회 — 대시보드 폴링에서 명령 수를 아낍니다). */
+async function getJSONMany(keys) {
+  const list = Array.isArray(keys) ? keys : [];
+  if (!list.length) return [];
+  if (backend() === 'redis') {
+    const raw = await redisCmd(['MGET'].concat(list));
+    const arr = Array.isArray(raw) ? raw : [];
+    return list.map(function (_, i) {
+      const v = arr[i];
+      if (!v) return null;
+      try { return JSON.parse(v); } catch (e) { return null; }
+    });
+  }
+  return list.map(memGet);
+}
+
 async function setJSON(key, value, ttlSec) {
   const raw = JSON.stringify(value);
   if (backend() === 'redis') {
@@ -101,4 +117,4 @@ async function incr(key, ttlSec) {
   return n;
 }
 
-module.exports = { backend, durable, getJSON, setJSON, del, incr };
+module.exports = { backend, durable, getJSON, getJSONMany, setJSON, del, incr };

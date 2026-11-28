@@ -1,5 +1,5 @@
 /* 딮기 시그널 서비스 워커 · 오프라인 캐시 + 웹 푸시 */
-const CACHE = 'dk-signal-v16';
+const CACHE = 'dk-signal-v18';
 const ASSETS = [
   './',
   './index.html',
@@ -45,6 +45,13 @@ self.addEventListener('fetch', (event) => {
 
   /* 서버 API 는 항상 실시간 값을 씁니다(캐시 금지) */
   if (url.pathname.indexOf('/api/') > -1) return;
+
+  /* 관리자 전용 앱(/admin · manifest-admin.json · admin-sw.js)은 별도 PWA 라서
+   * 메인 서비스 워커가 가로채지 않습니다(오프라인 폴백이 index.html 로 새면 안 됨). */
+  if (url.pathname === '/admin' || url.pathname === '/admin/' ||
+      url.pathname === '/admin.html' || url.pathname === '/admin.js' ||
+      url.pathname === '/admin.css' || url.pathname === '/admin-sw.js' ||
+      url.pathname === '/manifest-admin.json') return;
 
   if (req.mode === 'navigate') {
     event.respondWith(

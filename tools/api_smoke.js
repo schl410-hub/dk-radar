@@ -48,6 +48,14 @@ function kvCmd(args) {
     return n;
   }
   if (op === 'EXPIRE') { const hit = kv.get(key); if (hit) hit.exp = Date.now() + Number(args[2]) * 1000; return 1; }
+  if (op === 'MGET') {
+    return args.slice(1).map(function (k) {
+      const hit = kv.get(k);
+      if (!hit) return null;
+      if (hit.exp && hit.exp < Date.now()) { kv.delete(k); return null; }
+      return hit.value;
+    });
+  }
   if (op === 'KEYS') return Array.from(kv.keys());
   return null;
 }
@@ -651,6 +659,62 @@ async function main() {
   check('config exposes public key only', cfg.json && cfg.json.push.publicKey === vapid.publicKey && assertNoSecrets(cfg.json), null);
   check('config riot source', cfg.json && cfg.json.solo.source === 'riot', cfg.json && cfg.json.solo.source);
   check('config store backend redis', cfg.json && cfg.json.store.backend === 'redis', cfg.json && cfg.json.store.backend);
+
+  /* --- 7-0. 관리자 집계·공지·전체 알림 (POST /api/config, PIN 해시 필수) --- */
+  const PIN_HASH = '98cbd8bfd02876a7aabefc23e9cf760528b125688f06290512bef47d40c1fc45';
+  const noPin = await call(config, { method: 'POST', url: '/api/config', body: { action: 'setBanner', text: 'x', enabled: true } });
+  check('config POST needs admin pin', noPin.status === 401 && noPin.json.error === 'pin_required', noPin.status);
+  const badPin = await call(config, { method: 'POST', url: '/api/config', headers: { 'x-admin-pin': 'a'.repeat(64) }, body: { action: 'setBanner', text: 'x', enabled: true } });
+  check('config POST rejects wrong pin', badPin.status === 401, badPin.status);
+
+  check('config player stats aggregate', cfg.json && cfg.json.playerStats.filter(function (p) { return p.key === 'doran'; })[0].solo === 1,
+    cfg.json && JSON.stringify(cfg.json.playerStats.map(function (p) { return [p.key, p.solo]; })));
+  check('config lang unknown when not sent', cfg.json && cfg.json.langStats.counts.unknown === 1,
+    cfg.json && JSON.stringify(cfg.json.langStats.counts));
+  check('config daily baseline = total', cfg.json && cfg.json.daily.baseline === 1 && cfg.json.dailyDelta === 0,
+    cfg.json && JSON.stringify(cfg.json.daily));
+  check('config daily history 7 days', cfg.json && cfg.json.dailyHistory.length === 7 && cfg.json.dailyHistory[6].total === 1,
+    cfg.json && JSON.stringify(cfg.json.dailyHistory));
+  check('config push log empty', cfg.json && Array.isArray(cfg.json.pushLog) && cfg.json.pushLog.length === 0);
+  check('config banner off by default', cfg.json && cfg.json.banner.enabled === false);
+  check('config never exposes endpoints or keys', !/fcm\.googleapis|p256dh|endpoint/i.test(cfg.raw), (cfg.raw || '').slice(0, 120));
+
+  const setB = await call(config, {
+    method: 'POST', url: '/api/config', headers: { 'x-admin-pin': PIN_HASH },
+    body: { action: 'setBanner', text: '오늘 22시 DK vs T1', enabled: true }
+  });
+  check('setBanner with pin', setB.status === 200 && setB.json.banner.enabled === true && setB.json.banner.text.indexOf('DK vs T1') > -1,
+    setB.status + ' ' + JSON.stringify(setB.json && setB.json.banner));
+  const cfgB = await call(config, { url: '/api/config' });
+  check('config GET exposes banner', cfgB.json && cfgB.json.banner.enabled === true && cfgB.json.banner.text.indexOf('DK vs T1') > -1);
+
+  const bcDry = await call(config, {
+    method: 'POST', url: '/api/config', headers: { 'x-admin-pin': PIN_HASH },
+    body: { action: 'broadcast', title: '스모크 전체 알림', body: '이것은 미리보기입니다', dry: true }
+  });
+  check('broadcast dry run sends nothing', bcDry.status === 200 && bcDry.json.dryRun === true && bcDry.json.sent === 0 && bcDry.json.targets === 1,
+    bcDry.status + ' ' + JSON.stringify(bcDry.json));
+  check('dry broadcast not logged', !kv.get('dk:pushlog'), Array.from(kv.keys()).join(','));
+  const bcNoTitle = await call(config, {
+    method: 'POST', url: '/api/config', headers: { 'x-admin-pin': PIN_HASH },
+    body: { action: 'broadcast', title: '', body: 'x', dry: true }
+  });
+  check('broadcast needs title', bcNoTitle.status === 400, bcNoTitle.status);
+
+  const runNoPin = await call(config, { method: 'POST', url: '/api/config', body: { action: 'runCheck' } });
+  check('admin runCheck needs pin', runNoPin.status === 401, runNoPin.status);
+
+  const pushlogLib = require('../api/_lib/pushlog');
+  for (let i = 0; i < 20; i++) {
+    await pushlogLib.record({ at: new Date(Date.now() - i * 1000).toISOString(), type: 'solo', title: 'log ' + i, sent: 1, targets: 2 });
+  }
+  const kept = JSON.parse((kv.get('dk:pushlog') || {}).value || '[]');
+  check('push log keeps 15', kept.length === 15, kept.length);
+  check('push log newest first', kept[0].title === 'log 19' && kept[14].title === 'log 5', kept[0] && kept[0].title);
+  check('push log skips zero sends', (await pushlogLib.record({ type: 'test', title: 'none', sent: 0, targets: 0 })) === null);
+  const recentLog = await pushlogLib.recent(10);
+  check('push log recent 10', recentLog.length === 10 && recentLog[0].title === 'log 19' && recentLog[9].title === 'log 10', recentLog.length);
+
 
   /* --- 7-1. 기기 1대 전용 테스트 알림 (POST /api/subscribe {action:'test'}) --- */
   const testSub = {
