@@ -141,6 +141,20 @@
     margin-top: 2px;
   }
   .dv-top .live-hero { margin-top: 0; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+  /* 전원 오프라인일 때: 빈 공간 대신 LIVE NOW 자리를 카드로 채워 둡니다 */
+  .dv-top .live-hero.is-off {
+    justify-content: center;
+    padding: 16px 18px;
+    border-radius: 18px;
+    background: linear-gradient(160deg, rgba(0, 245, 196, .05) 0%, rgba(13, 22, 33, .55) 60%, rgba(9, 15, 23, .72) 100%);
+    border: 1px solid var(--card-border);
+    box-shadow: var(--card-inset);
+  }
+  .dv-top .live-hero.is-off .lh-head { padding: 0 0 12px; }
+  .dv-top .live-hero.is-off .lh-chips { margin-top: 12px; }
+  html[data-theme="mint"] .dv-top .live-hero.is-off {
+    background: linear-gradient(160deg, rgba(0, 196, 154, .07) 0%, rgba(255, 255, 255, .55) 60%, rgba(255, 255, 255, .40) 100%);
+  }
   .dv-top .lh-card { flex: 1; display: flex; flex-direction: column; }
   .dv-top .lh-thumb { aspect-ratio: auto; flex: 1; min-height: 186px; }
   .dv-top .lh-thumb img { object-position: 50% 62%; }

@@ -1526,6 +1526,8 @@
     var onAir = rows.filter(function (r) { return r.lv; })
       .sort(function (a, b) { return (Number(b.lv.viewers) || 0) - (Number(a.lv.viewers) || 0); });
     if (timer) timer.textContent = T(onAir.length ? 'video.liveCheckLive' : 'video.liveCheckOff');
+    var hero = $('#liveHero');
+    if (hero) hero.classList.toggle('is-off', !onAir.length);
 
     if (!onAir.length) {
       host.innerHTML =
