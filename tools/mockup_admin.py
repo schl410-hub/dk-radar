@@ -81,6 +81,20 @@ async def main():
         summary["errors"] = errors[:5]
         print("SUMMARY " + repr(summary))
 
+        # 3) 전체 알림 확인 팝업 (확인 버튼은 절대 누르지 않습니다 — Esc 로 닫음)
+        if os.environ.get("SHOT_MODAL", "1") == "1":
+            await page.fill("#pushTitle", "DK vs T1 · 오늘 22시")
+            await page.fill("#pushBody", "경기 30분 전이에요. 놓치지 마세요!")
+            await page.click("#broadcastBtn")
+            await page.wait_for_selector("#confirmModal:not([hidden])", timeout=5000)
+            await page.wait_for_timeout(350)
+            await page.screenshot(path=str(OUT / (PREFIX + "broadcast-confirm.png")))
+            print("modal:", OUT / (PREFIX + "broadcast-confirm.png"))
+            print("modal text:", (await page.text_content("#confirmText") or "").strip())
+            await page.keyboard.press("Escape")
+            await page.wait_for_timeout(300)
+            print("modal closed without sending:", await page.is_hidden("#confirmModal"))
+
         await browser.close()
 
 
