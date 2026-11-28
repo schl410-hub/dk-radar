@@ -133,8 +133,14 @@ html[data-theme="mint"] {
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; padding: 0; }
 
+/* 태국어는 띄어쓰기 없이 이어 쓰므로 단어 안에서도 줄이 바뀌게 합니다(가로 넘침 방지).
+ * locl 을 끄는 이유: Noto Sans Thai 기본 설정이면 연도·날짜의 숫자가 태국 숫자(๒๐๒๖)로 바뀌어
+ * 경기·전적 숫자를 읽기 어려워집니다. 숫자는 아라비아 숫자로 통일합니다. */
+html[lang="th"] body { word-break: normal; line-break: auto; font-feature-settings: "locl" 0; }
+
 body {
-  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo',
+  /* Pretendard 다음에 태국어(Noto Sans Thai)를 두어, 태국 글리프만 이 글꼴로 대체합니다. */
+  font-family: 'Pretendard', 'Noto Sans Thai', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo',
     'Noto Sans KR', 'Malgun Gothic', 'Segoe UI', sans-serif;
   color: var(--ink);
   background-color: var(--bg);

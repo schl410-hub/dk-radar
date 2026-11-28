@@ -9,6 +9,15 @@
 
 ## 지금 동작하는 것
 
+### v3.13 (2026-11-28) 새로 추가 — 10개국어 언어 메뉴
+- **상단 언어 메뉴 `[🌐 KO ▾]`**: 헤더에 흩어져 있던 5개 국어 버튼을 **알약 버튼 하나 + 2열 × 5줄 팝오버**로 바꿨습니다(`langmenu.css` · `app.js` `renderLangSwitch()`). 좁은 화면(≤520px)에서는 헤더 바로 아래 시트로, 넓은 화면에서는 버튼에 꼬리가 붙은 팝오버로 펼쳐지고 화면 아래로 넘치면 위로 뜹니다. Esc·바깥 클릭·스크롤로 닫히고 ↑↓·Home·End 로 이동, 선택한 줄만 민트 카드 + 체크입니다. 다크·소프트 두 테마 모두 대응.
+- **10개국어 전체 번역**: 기존 5개국어(KO/EN/JA/ZH/VI)에 **대만 번체(TW) · 스페인어(ES) · 포르투갈어(PT) · 태국어(TH) · 인도네시아어(ID)** 를 더해 `i18n.js` 사전 545개 문구를 10개 언어로 채웠습니다(데스크톱 레이아웃·재생목록·내 링크·오늘 요약 카드·투표 팝업 포함). 날짜·요일·달 이름 표기도 언어별로 나눴습니다(es `27 nov 2026 (vie)`, pt `27 nov 2026 (sex)`, th `27 พ.ย. 2026 (ศ.)`, id `27 Nov 2026 (Jum)`, tw `2026年11月27日 (週五)`).
+- **챔피언 이름 173종 × 10개 언어**: `tools/make_champions.py` 가 Riot Data Dragon 10개 로캘(ko_KR·en_US·ja_JP·zh_CN·zh_TW·vi_VN·es_ES·pt_BR·th_TH·id_ID)을 받아 `CHAMPIONS` 표를 10칸으로 다시 만들고, `app.js` `CHAMP_COL` 이 현재 언어 칸을 고릅니다(번체는 厄薩斯·阿璃·卡桑帝 처럼 대만 표기).
+- **태국어 폰트**: Pretendard 서브셋에 태국 글리프가 없어 **Noto Sans Thai 서브셋**(`fonts/notosansthai.woff2`, 26KB · `fonts/notothai.css`)을 넣고 `body` 글꼴 스택에서 태국 글자만 대체합니다. 태국어는 띄어쓰기가 없어 `word-break: normal` 로 단어 중간 줄바꿈을 허용하고, `font-feature-settings: "locl" 0` 으로 연도·날짜 숫자가 태국 숫자(๒๐๒๖)로 바뀌지 않게 했습니다.
+- **data.js 문장도 번체로**: 영상 제목·경기명·대회명처럼 `data.js` 안에 간체(zh)만 있던 문구 518개에 **tw 문구를 나란히 추가**했습니다(`tools/make_tw_data.py`, OpenCC s2twp + 대만 용어 보정 — 世界大賽·LCK 盃·例行賽·季後賽·負於). 스페인어·포르투갈어·태국어·인도네시아어는 그런 문장형 데이터가 아직 없어 영어로 대체합니다(`app.js` `pickLang()`).
+- 서버 언어 목록(`api/config.js`·`api/subscribe.js`)도 10개로 늘려 관리자 대시보드 언어 비율·테스트 알림이 새 언어를 받습니다. `sw.js` 캐시 **v21**(`langmenu.css`·태국어 폰트 포함), `package.json` 3.13.0.
+- 새 검증 `tools/verify_lang10.py`: **10개 언어 × 5탭 × 360/390/430 + 데스크톱(1440)** 에서 가로 넘침 0건, 번역 키 노출 0건, 메뉴 열기/닫기·키보드 이동·저장값·`<html lang>`·언어별 홈 탭 문구·챔피언 표기를 331항목으로 확인합니다.
+
 ### v3.12 (2026-11-28) 새로 추가
 - **PC 데스크톱 레이아웃** (`desktop.css`, 1024px 이상): 헤더 한 줄(로고·5탭·언어·테마·`PC 앱 설치`), 홈은 **좌 MY PICK·설치·하이라이트·응원 / 우 5인 보드(최애 타일 2칸)·최근 솔랭** 2단, 영상 탭은 **LIVE NOW + 생중계·공식 채널 2단 → 공식 재생목록 6열 → 아카이브(왼쪽 필터 레일 + 4열 카드 그리드)**. 모바일(390×844) 화면과 캘린더·경기로그·기록실 탭은 그대로입니다.
 - **★ 나만의 재생목록**: 아카이브 카드의 `＋ 담기 / ✓ 담김` 으로 폴더에 담고, 레일의 `전체 / 내 폴더 / ＋ 새 폴더` 칩으로 모아 봅니다. `▶ 연속 재생` 은 담은 순서대로 인앱 플레이어 대기열을 만듭니다. `localStorage` `dk.signal.mine` 에만 저장(로그인 없음).
@@ -23,7 +32,7 @@
   - **솔로랭크**: `RIOT_API_KEY` 가 있으면 5인 티어·LP·시즌 전적·인게임 여부·최근 5경기를 실시간으로 받아 화면(타일·배너·전적표)에 반영하고, 없으면 `data.js` 스냅샷(2026-11-26)으로 안전하게 대체하며 상태 문구를 표시합니다.
   - 앱을 열어 둔 동안 90초마다 자동 확인하고, 상단에 `실시간` / `자동 갱신` 칩과 마지막 확인 시각을 보여 줍니다.
 - **웹 푸시 (VAPID)**: 선수별 솔랭 ON/OFF + DK 공식 경기 ON/OFF 설정이 서버 구독 정보와 함께 저장됩니다. 서버가 5분마다 새 랭크 게임(챔피언·KDA·승패)과 새 공식 일정·경기 시작 40분 전을 감지해 구독 기기로 보냅니다. 준비가 안 된 상태에서는 화면에 무엇이 빠졌는지 그대로 표시합니다.
-- **다국어 (KO · EN · JA · ZH · VI)**: 헤더 `KO · EN · JA · ZH · VI` 세그먼트로 즉시 전환. 탭·배지·선수명/실명/포지션/티어·공식 일정·경기표·영상 탭·알림 문구·테스트 알림·날짜 표기·챔피언 이름(Data Dragon zh_CN·vi_VN)까지 화면 전체와 `document.title`·`<html lang>`(zh-CN)·미리보기 문구가 함께 바뀝니다. `localStorage`(`dk.signal.lang`) 저장값 → 없으면 `navigator.language`(vi/zh 계열→vi·zh, ja/en/ko) → 기본 `ko`.
+- **다국어 10개국어 (KO · EN · JA · ZH · TW · VI · ES · PT · TH · ID)**: 헤더 `[🌐 KO ▾]` 메뉴(v3.13)로 즉시 전환. 탭·배지·선수명/실명/포지션/티어·공식 일정·경기표·영상 탭·알림 문구·테스트 알림·날짜 표기·챔피언 이름(Data Dragon 10개 로캘)까지 화면 전체와 `document.title`·`<html lang>`(zh-CN·zh-TW)·미리보기 문구가 함께 바뀝니다. `localStorage`(`dk.signal.lang`) 저장값 → 없으면 `navigator.language`(zh-TW·zh-Hant→TW, th/id/es/pt/vi/ja/zh/en), 기본 `ko`.
 - **실시간 테마 전환**: 헤더 우측 `다크 / 소프트` 버튼. 선택은 `localStorage`에 저장되고 첫 페인트 전에 적용됩니다.
 - **운영자 한 줄 공지**: 관리자 앱(`dk-signal-admin.vercel.app`)에서 문구를 켜면 `/api/config` 의 `banner` 로 내려와 메인 상단에 한 줄 공지가 뜹니다(끄면 사라짐). 관리자 대시보드는 구독자·7일 추이·선수 인기·언어 비율·발송 기록·전체 알림까지 한 화면에서 다룹니다.
 - **탭 5개**: 홈 / **캘린더** / 영상 / 경기로그 / 기록실 (360~430px 모바일에서도 한 줄 유지), 캘린더 안은 **리스트 · 캘린더 · 투표** 3단 전환
@@ -235,11 +244,14 @@ curl -s "$BASE/api/check?test=1&token=$CHECK_SECRET"   # 잠금화면 알림 확
 
 ```
 index.html            화면 뼈대 (테마·언어 부트스트랩 포함, data-i18n 마커)
-styles.css            듀얼 테마 토큰 + 컴포넌트 스타일 (+ 언어·영상·링크 UI)
-i18n.js               KO·EN·JA·ZH 사전 + 날짜/요일 표기 + 언어 저장·전환
-data.js               선수·경기·대회 기록 (2026-11-26) · 방송국 · 영상 아카이브 45편 + DK 공식 재생목록 6종(태그·챔피언 사전 포함) · 챔피언 이름 4개 언어
+styles.css            듀얼 테마 토큰 + 컴포넌트 스타일 (+ 언어·영상·링크 UI · 태국어 줄바꿈/숫자 처리)
+langmenu.css          헤더 언어 버튼(🌐 KO ▾) + 10개국어 2열 팝오버·시트 스타일 (v3.13)
+fonts/notothai.css    태국어 폰트(Noto Sans Thai 서브셋) @font-face
+fonts/notosansthai.woff2  태국 글리프 서브셋 26KB
+i18n.js               10개국어 사전(KO·EN·JA·ZH·TW·VI·ES·PT·TH·ID) + 날짜/요일/달 이름 + 언어 저장·전환
+data.js               선수·경기·대회 기록 (2026-11-26) · 방송국 · 영상 아카이브 45편 + DK 공식 재생목록 6종(태그·챔피언 사전 포함) · 챔피언 이름 10개 언어 · 문장형 문구 ko/en/ja/zh/tw/vi
 app.js                탭/선수·MY PICK·테마·알림·언어, 서버 실시간 연동·푸시 구독
-sw.js                 서비스 워커 (캐시 v18 + 웹 푸시 + 구독 갱신)
+sw.js                 서비스 워커 (캐시 v21 · 언어 메뉴·태국어 폰트 포함 + 웹 푸시 + 구독 갱신)
 api/_lib/ingame.js    Spectator-V5 → 양 팀 챔피언·스펠·DK/프로 참가자·배지 계산
 api/_lib/pros.js      타 팀 프로 계정 표(21명) + PUUID 미리 받기(30일 캐시 · 못 찾으면 24시간 건너뜀)
 api/_lib/matchups.js  끝난 경기 참가자 비교로 듀오/내전/프로 매치업 판정
@@ -263,7 +275,9 @@ tools/api_smoke.js    /api 함수 동작 검증(실 API·YouTube RSS 1회 + 가�
 tools/verify.py       390×844 브라우저 회귀 검증 87항목 + 스크린샷
 tools/verify_v3.py    다국어·재생목록·영상 아카이브·인앱 플레이어·라이브 배지 검증 233항목 + 스크린샷(downloads/dk-signal-v3)
 tools/smoke_v3.py     빠른 화면 점검(스크린샷 없음)
-tools/make_champions.py  Riot Data Dragon → data.js 챔피언 이름 표 재생성
+tools/make_champions.py  Riot Data Dragon 10개 로캘 → data.js 챔피언 이름 표(10칸) 재생성
+tools/make_tw_data.py  data.js 의 간체(zh) 문구 → 대만 번체(tw) 생성(OpenCC s2twp + 용어 보정)
+tools/verify_lang10.py  10개국어 언어 메뉴·번역·가로 넘침 검증 331항목 + 스크린샷
 tools/verify_api.py   자동 갱신·실시간 반영·오프라인 검증 + 스크린샷
 tools/make_snapshot.js data.js → api/_lib/snapshot.js
 tools/make_vapid.js   VAPID 키 생성
@@ -282,7 +296,9 @@ node tools/api_smoke.js                    # 서버 함수 164항목 (실제 LoL
 
 LD_LIBRARY_PATH=... PLAYWRIGHT_BROWSERS_PATH=... python3 tools/verify.py       # 104/104
 LD_LIBRARY_PATH=... PLAYWRIGHT_BROWSERS_PATH=... python3 tools/verify_api.py   # 31/31
-LD_LIBRARY_PATH=... python3 tools/verify_v3.py                                 # 512/512 (다국어 5종·재생목록·아카이브·인앱 플레이어·라이브·설치 가이드)
+LD_LIBRARY_PATH=... python3 tools/verify_v3.py                                 # 614/614 (다국어 10종·재생목록·아카이브·인앱 플레이어·라이브·설치 가이드)
+LD_LIBRARY_PATH=... python3 tools/verify_lang10.py                             # 331/331 (10개 언어 × 5탭 × 360/390/430·데스크톱 가로 넘침 0)
+LD_LIBRARY_PATH=... PLAYWRIGHT_BROWSERS_PATH=... python3 tools/verify_v4.py    # 63/63 (PC 레이아웃·재생목록·요약 카드·투표 팝업)
 # 관리자 앱(독립 사이트) 검증은 별도 저장소에서:
 #   python3 tools/verify_standalone.py   # 라이브 헤더·manifest·SW·CORS·잠금/대시보드
 #   python3 tools/local_check.py         # 로컬 서버 + 실제 API 로 잠금→대시보드 확인
@@ -291,5 +307,6 @@ LD_LIBRARY_PATH=... python3 tools/verify_v3.py                                 #
 - `verify_highlights.py` 는 `data.js` 의 영상 45편과 재생목록 6종을 YouTube oEmbed 로 하나씩 확인하고, 챔피언 태그 정합성·한 줄 포인트·경기명·대회명 5개 국어(ko/en/ja/zh/vi)·중복 ID 까지 봅니다(영상이 내려가면 여기서 먼저 걸립니다).
 - `verify.py` 는 `tools/dev_server.js`(픽스처 `none`)를 직접 띄워 5탭, 5인 전환, 테마 저장, MY PICK, 알림 동기화, 테스트 푸시, 응원 저장, 콘솔 에러를 확인하고 `downloads/dk-radar/signal-*.png` 를 갱신합니다.
 - `verify_api.py` 는 다음 경기가 공개된 픽스처로 NEXT 카드 자동 갱신, 미공개 시 2027 LCK 컵 fallback, 실시간 솔로랭크 응답의 티어·인게임·전적 반영, 서버 미연결 시 화면 유지를 확인합니다.
-- `verify_v3.py` 는 KO/EN/JA/ZH/VI 전환(탭·배너·타일·하이라이트·표·일정·기록·알림·응원·영상 탭), 새로고침 후 언어 유지, 브라우저 언어 자동 감지(en-US→EN, ja-JP→JA, zh-CN/zh-TW→ZH, vi-VN→VI, 그 외→KO), 헤더 한 줄(360/390/430)·설치 버튼·설치 안내(아이폰/카톡/안드로이드/스탠드얼론), 영상 탭 공식 채널 4곳·방송국 5인·재생목록 6종(카운트·썸네일·재생)·아카이브 45편(선수/종류/챔피언 필터·검색·해시태그·한국어 IME·썸네일·길이·연도)·인앱 플레이어(임베드 URL·닫기·소리 정지·배경 클릭)·디플러스 기아 공식 유튜브 10편(/api/dk-youtube)·VOD 링크, 라이브 배지(타일·MY PICK·영상 탭·방송국 카드·토글), 네 언어권에서의 가로 넘침, 콘솔 에러를 확인하고 `downloads/dk-signal-v3/*.png` 를 갱신합니다.
+- `verify_lang10.py` 는 헤더 언어 메뉴(🌐) 자체(항목 10개·2열·체크 표시·Esc/바깥 클릭/↑↓ 이동·시트/팝오버)와 **10개 언어 전체**를 돌며 `<html lang>`·저장값·트리거 코드·홈 탭 문구·챔피언 표기(ko 한글 / tw 번체 / en 라틴)를 확인하고, 10개 언어 × 5탭 × 360·390·430px + 데스크톱 1440px 에서 **가로 넘침 0건·번역 키 노출 0건**을 검사합니다(스크린샷 `downloads/dk-signal-v3/lang10-*.png`).
+- `verify_v3.py` 는 KO/EN/JA/ZH/TW/VI/ES/PT/TH/ID 전환(탭·배너·타일·하이라이트·표·일정·기록·알림·응원·영상 탭), 새로고침 후 언어 유지, 브라우저 언어 자동 감지(en-US→EN, ja-JP→JA, zh-CN→ZH, zh-TW→TW, vi-VN→VI, es-ES→ES, pt-BR→PT, th-TH→TH, id-ID→ID, 그 외→KO), 헤더 한 줄(360/390/430)·설치 버튼·설치 안내(아이폰/카톡/안드로이드/스탠드얼론), 영상 탭 공식 채널 4곳·방송국 5인·재생목록 6종(카운트·썸네일·재생)·아카이브 45편(선수/종류/챔피언 필터·검색·해시태그·한국어 IME·썸네일·길이·연도)·인앱 플레이어(임베드 URL·닫기·소리 정지·배경 클릭)·디플러스 기아 공식 유튜브 10편(/api/dk-youtube)·VOD 링크, 라이브 배지(타일·MY PICK·영상 탭·방송국 카드·토글), 네 언어권에서의 가로 넘침, 콘솔 에러를 확인하고 `downloads/dk-signal-v3/*.png` 를 갱신합니다.
 - 로컬에서 눈으로 보기: `node tools/dev_server.js` → http://127.0.0.1:8765

@@ -63,6 +63,14 @@ def start_server():
     raise SystemExit("dev server did not start: " + out.decode(errors="replace"))
 
 
+async def pick_lang(page, code):
+    """헤더의 [🌐 KO ▾] 를 열어 언어를 고릅니다 (v3.13 10개국어 팝오버)."""
+    if not await page.is_visible("#langPop"):
+        await page.click("#langBtn")
+        await page.wait_for_timeout(220)
+    await page.click(f'#langPop [data-lang="{code}"]')
+
+
 async def dk_hide_vote_pop(ctx):
     """v3.12 첫 화면 '진행 중인 투표' 팝업이 다른 검증을 가리지 않게 오늘 하루 보지 않기 상태로 시작합니다.
     (팝업 자체는 tools/verify_v4.py 가 따로 검증합니다.)"""
@@ -458,7 +466,7 @@ async def main():
         await page.screenshot(path=str(OUT / "signal-home-dark-full.png"), full_page=True)
 
         # ---------- v3.6: 베트남어(VI) · 5번째 언어 ----------
-        await page.click('[data-lang="vi"]')
+        await pick_lang(page, "vi")
         await page.wait_for_timeout(800)
         check("vi html lang", await page.get_attribute("html", "lang") == "vi")
         check("vi home tab", "Trang chủ" in await page.inner_text(".tab"))

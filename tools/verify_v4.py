@@ -62,6 +62,14 @@ def check(name, ok, detail=""):
     print(("PASS " if ok else "FAIL ") + name + ((" :: " + str(detail)) if detail else ""))
 
 
+async def pick_lang(page, code):
+    """헤더의 [🌐 KO ▾] 를 열어 언어를 고릅니다 (v3.13 10개국어 팝오버)."""
+    if not await page.is_visible("#langPop"):
+        await page.click("#langBtn")
+        await page.wait_for_timeout(220)
+    await page.click(f'#langPop [data-lang="{code}"]')
+
+
 async def close_vote_pop(page):
     """첫 화면 투표 팝업은 실제 동작이지만, 다른 검증을 가리지 않게 닫고 시작합니다."""
     try:
@@ -247,14 +255,14 @@ async def test_mobile(browser):
     check("no console errors (mobile)", not page._dk_errs, page._dk_errs[:3])
 
     # 언어 전환(VI) 에서도 안 깨짐
-    await page.click('[data-lang="vi"]')
+    await pick_lang(page, "vi")
     await page.wait_for_timeout(500)
     await page.click('[data-tab="video"]')
     await page.wait_for_timeout(400)
     check("vi mine row translated", "Danh sách" in (await page.text_content("#mineChips") or ""),
           await page.text_content("#mineChips"))
     check("no overflow mobile vi", await no_overflow(page))
-    await page.click('[data-lang="ko"]')
+    await pick_lang(page, "ko")
     await ctx.close()
 
 

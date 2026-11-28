@@ -1,10 +1,11 @@
 /* 딮기 시그널 서비스 워커 · 오프라인 캐시 + 웹 푸시 */
-const CACHE = 'dk-signal-v20';
+const CACHE = 'dk-signal-v21';
 const ASSETS = [
   './',
   './index.html',
   './styles.css',
   './desktop.css',
+  './langmenu.css',
   './i18n.js',
   './data.js',
   './app.js',
@@ -16,7 +17,9 @@ const ASSETS = [
   './icons/icon-maskable-512.png',
   './icons/badge-96.png',
   './icons/favicon-32.png',
-  './fonts/pretendard-subset.woff2'
+  './fonts/pretendard-subset.woff2',
+  './fonts/notothai.css',
+  './fonts/notosansthai.woff2'
 ];
 
 self.addEventListener('install', (event) => {

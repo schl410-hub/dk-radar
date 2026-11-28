@@ -17,6 +17,8 @@
 <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
 <link rel="stylesheet" href="./styles.css">
 <link rel="stylesheet" href="./desktop.css">
+<link rel="stylesheet" href="./fonts/notothai.css">
+<link rel="stylesheet" href="./langmenu.css">
 <script>
 /* 저장된 테마·언어를 첫 페인트 전에 적용해 깜빡임을 막습니다. */
 (function () {
@@ -24,7 +26,9 @@
     var t = localStorage.getItem('dk.signal.theme');
     if (t === 'mint' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
     var l = localStorage.getItem('dk.signal.lang');
-    if (l === 'ko' || l === 'en' || l === 'ja' || l === 'zh' || l === 'vi') document.documentElement.setAttribute('lang', l === 'zh' ? 'zh-CN' : l);
+    /* 저장된 언어 코드 → html lang (10개국어 · 대만 번체는 zh-TW) */
+    var LANG_HTML = { ko: 'ko', en: 'en', ja: 'ja', zh: 'zh-CN', tw: 'zh-TW', vi: 'vi', es: 'es', pt: 'pt', th: 'th', id: 'id' };
+    if (LANG_HTML[l]) document.documentElement.setAttribute('lang', LANG_HTML[l]);
   } catch (e) {}
 })();
 </script>
@@ -55,7 +59,7 @@
         </span>
       </a>
       <div class="head-actions">
-        <div class="lang-switch" id="langSwitch" role="group" data-i18n-attr="aria-label:lang.label" aria-label="언어"></div>
+        <div class="langsel" id="langSwitch" role="group" data-i18n-attr="aria-label:lang.label" aria-label="언어"></div>
         <button class="theme-btn" id="themeBtn" type="button" aria-pressed="false" aria-label="소프트 민트 테마로 전환" title="다크 / 소프트 테마 전환">
           <svg class="ic ic-moon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20.4 14.7A8.6 8.6 0 0 1 9.3 3.6a8.7 8.7 0 1 0 11.1 11.1Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
           <svg class="ic ic-sun" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.8"/><path d="M12 2.6v2.2M12 19.2v2.2M2.6 12h2.2M19.2 12h2.2M5.4 5.4l1.6 1.6M17 17l1.6 1.6M18.6 5.4 17 7M7 17l-1.6 1.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
@@ -742,6 +746,9 @@
     <p class="vp-note" data-i18n="votePop.note">투표는 공식 페이지에서 진행돼요.</p>
   </div>
 </div>
+
+<!-- 언어 선택 팝오버 (헤더 밖 · body 끝에 두어 backdrop-filter 영향 없이 fixed 배치) -->
+<div class="lang-pop" id="langPop" role="listbox" aria-label="언어 선택" hidden></div>
 
 <script src="./i18n.js"></script>
 <script src="./data.js"></script>

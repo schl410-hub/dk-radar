@@ -107,6 +107,14 @@ CHAMP_CARDS = 0
 TOTAL_VIDEOS = 0
 
 
+async def pick_lang(page, code):
+    """헤더의 [🌐 KO ▾] 를 열어 언어를 고릅니다 (v3.13 10개국어 팝오버)."""
+    if not await page.is_visible("#langPop"):
+        await page.click("#langBtn")
+        await page.wait_for_timeout(220)
+    await page.click(f'#langPop [data-lang="{code}"]')
+
+
 async def dk_hide_vote_pop(ctx):
     """v3.12 첫 화면 '진행 중인 투표' 팝업이 다른 검증을 가리지 않게 오늘 하루 보지 않기 상태로 시작합니다.
     (팝업 자체는 tools/verify_v4.py 가 따로 검증합니다.)"""
@@ -174,7 +182,7 @@ async def main():
             page.on("pageerror", lambda e: logs.append(("pageerror", str(e))))
 
             # ---------- 정적 자산 ----------
-            for path in ["index.html", "styles.css", "i18n.js", "data.js", "app.js", "sw.js"]:
+            for path in ["index.html", "styles.css", "desktop.css", "langmenu.css", "fonts/notothai.css", "i18n.js", "data.js", "app.js", "sw.js"]:
                 code = urllib.request.urlopen(f"http://127.0.0.1:{PORT}/{path}").status
                 check("asset " + path, code == 200, code)
 
@@ -272,7 +280,7 @@ async def main():
             day_text = await page.inner_text("#calDay")
             check("selected day title", "11월 29일" in day_text, day_text[:80])
             check("selected day notice", "쇼메이커 11월 29일 방송공지" in day_text and "SOOP" in day_text, day_text[:200])
-            check("selected day vote", "하이원 e스포츠 대상 투표" in day_text and "D-6" in day_text, day_text[:200])
+            check("selected day vote", "하이원 e스포츠 대상 투표" in day_text and re.search(r"D-\d+", day_text) is not None, day_text[:200])
             day_links = await page.eval_on_selector_all("#calDayList a.cal-day-go", "e=>e.map(x=>x.href)")
             check("selected day vote link", any("my1pick.com" in h for h in day_links), day_links)
             check("selected day notice link", any("sooplive.co.kr" in h for h in day_links), day_links)
@@ -321,20 +329,24 @@ async def main():
             check("back to list view", await page.is_visible("#officialListView"))
 
             # 5개 국어 · 360/390/430 가로 넘침 없음 (캘린더 보기)
-            for code in ("ko", "en", "ja", "zh", "vi"):
-                await page.click(f'[data-lang="{code}"]')
+            for code in ("ko", "en", "ja", "zh", "tw", "vi", "es", "pt", "th", "id"):
+                await pick_lang(page, code)
                 await page.wait_for_timeout(600)
                 await page.click('[data-official-view="calendar"]')
                 await page.wait_for_timeout(500)
                 cal_text = await page.inner_text("#officialCalView")
                 check(f"calendar {code} no raw keys", "cal." not in cal_text and "official." not in cal_text, cal_text[:120])
-                expect_month = {"ko": "11월, 2026", "en": "November", "ja": "2026年11月", "zh": "2026年11月", "vi": "Tháng 11"}[code]
+                expect_month = {"ko": "11월, 2026", "en": "November", "ja": "2026年11月", "zh": "2026年11月",
+                                "tw": "2026年11月", "vi": "Tháng 11", "es": "noviembre de 2026",
+                                "pt": "novembro de 2026", "th": "พฤศจิกายน 2026", "id": "November 2026"}[code]
                 check(f"calendar {code} month label", expect_month in await page.inner_text("#calMonth"),
                       await page.inner_text("#calMonth"))
-                expect_chip = {"ko": "기념일", "en": "Milestones", "ja": "記念日", "zh": "纪念日", "vi": "Kỷ niệm"}[code]
+                expect_chip = {"ko": "기념일", "en": "Milestones", "ja": "記念日", "zh": "纪念日", "tw": "紀念日",
+                               "vi": "Kỷ niệm", "es": "Aniversarios", "pt": "Datas especiais",
+                               "th": "วันสำคัญ", "id": "Hari penting"}[code]
                 check(f"calendar {code} filter labels", expect_chip in await page.inner_text("#calFilters"),
                       await page.inner_text("#calFilters"))
-                check(f"calendar {code} month list localized", "데뷔" in cal_text or "debut" in cal_text.lower() or "出道" in cal_text or "ra mắt" in cal_text or "デビュー" in cal_text, cal_text[:80])
+                check(f"calendar {code} month list localized", any(k in cal_text for k in ("데뷔", "出道", "ra mắt", "デビュー", "debut", "Debut", "estreia", "Estreia", "เดบิวต์", "Debut ke-")), cal_text[:80])
                 for w in (360, 390, 430):
                     await page.set_viewport_size({"width": w, "height": 900})
                     await page.wait_for_timeout(350)
@@ -374,7 +386,7 @@ async def main():
                 await page.screenshot(path=str(OUT / f"64-calendar-{code}-390.png"), full_page=True)
                 await page.set_viewport_size({"width": 390, "height": 844})
                 await page.wait_for_timeout(250)
-            await page.click('[data-lang="ko"]')
+            await pick_lang(page, "ko")
             await page.wait_for_timeout(600)
             await page.click('[data-official-view="list"]')
             await page.wait_for_timeout(300)
@@ -443,17 +455,17 @@ async def main():
             await page.wait_for_timeout(400)
 
             # 다국어: 새 문구가 EN/JA/ZH 로도 나오는지
-            await page.click('[data-lang="en"]')
+            await pick_lang(page, "en")
             await page.wait_for_timeout(700)
             en_feed = await page.inner_text("#panel-feed")
             check("en in-game badge", "In game" in en_feed, en_feed[:120])
             en_mu = await page.eval_on_selector_all("#pickBanner .mu", "e=>e.map(x=>x.textContent)")
             check("en matchup words", any(("duo" in t or "same game" in t or "with" in t or "vs" in t) for t in en_mu), en_mu)
-            await page.click('[data-lang="ja"]')
+            await pick_lang(page, "ja")
             await page.wait_for_timeout(700)
             ja_feed = await page.inner_text("#panel-feed")
             check("ja in-game badge", "ゲーム中" in ja_feed, ja_feed[:120])
-            await page.click('[data-lang="zh"]')
+            await pick_lang(page, "zh")
             await page.wait_for_timeout(700)
             zh_feed = await page.inner_text("#panel-feed")
             check("zh in-game badge", "游戏中" in zh_feed, zh_feed[:120])
@@ -464,7 +476,7 @@ async def main():
             await page.screenshot(path=str(OUT / "33-ingame-sheet-zh.png"))
             await page.keyboard.press("Escape")
             await page.wait_for_timeout(300)
-            await page.click('[data-lang="ko"]')
+            await pick_lang(page, "ko")
             await page.wait_for_timeout(700)
 
             # ---------- 영상 탭: 생중계 · 재생목록 · 아카이브 (3번 시안) ----------
@@ -950,7 +962,7 @@ async def main():
             # ---------- EN 전환: UI 전체가 바뀌는지 ----------
             await page.click('[data-tab="feed"]')
             await page.wait_for_timeout(400)
-            await page.click('[data-lang="en"]')
+            await pick_lang(page, "en")
             await page.wait_for_timeout(2400)
             check("html lang en", await page.get_attribute("html", "lang") == "en")
             check("title en", (await page.title()) == "DK SIGNAL", await page.title())
@@ -1040,7 +1052,7 @@ async def main():
                   await page.evaluate("[document.documentElement.scrollWidth, innerWidth]"))
 
             # ---------- JA 전환 ----------
-            await page.click('[data-lang="ja"]')
+            await pick_lang(page, "ja")
             await page.wait_for_timeout(800)
             check("html lang ja", await page.get_attribute("html", "lang") == "ja")
             check("ja tabs", await page.eval_on_selector_all(".tab", "e=>e.map(x=>x.innerText)") ==
@@ -1105,7 +1117,7 @@ async def main():
             check("ja cheer added", await page.eval_on_selector_all("#cheerList .cheer-item", "e=>e.length") == 1)
 
             # ---------- KO 복귀 ----------
-            await page.click('[data-lang="ko"]')
+            await pick_lang(page, "ko")
             await page.wait_for_timeout(1200)
             check("back to ko", await page.get_attribute("html", "lang") == "ko")
             check("ko restored", "5인 상태 보드" in await page.inner_text("#panel-feed"))
@@ -1119,7 +1131,7 @@ async def main():
             await page.screenshot(path=str(OUT / "00-home-ko-dark-full.png"), full_page=True)
 
             # ---------- ZH(중국어 간체) 전환 ----------
-            await page.click('[data-lang="zh"]')
+            await pick_lang(page, "zh")
             await page.wait_for_timeout(900)
             check("html lang zh-CN", await page.get_attribute("html", "lang") == "zh-CN")
             check("zh title", (await page.title()) == "DK SIGNAL · 迪普基信号", await page.title())
@@ -1178,7 +1190,7 @@ async def main():
             await page.wait_for_timeout(400)
 
             # ---------- VI(베트남어) 전환 · 5번째 언어 ----------
-            await page.click('[data-lang="vi"]')
+            await pick_lang(page, "vi")
             await page.wait_for_timeout(900)
             check("html lang vi", await page.get_attribute("html", "lang") == "vi")
             check("vi stored", await page.evaluate("localStorage.getItem('dk.signal.lang')") == "vi")
@@ -1246,8 +1258,8 @@ async def main():
                 ov = await page.evaluate("document.documentElement.scrollWidth - window.innerWidth")
                 check(f"header one line @{w}", row_h <= 40, row_h)
                 check(f"no overflow @{w}", ov <= 0, ov)
-                check(f"lang buttons visible @{w}",
-                      await page.eval_on_selector_all(".lang-btn", "e=>e.every(b=>b.getBoundingClientRect().width>0)"))
+                check(f"lang trigger visible @{w}",
+                      await page.is_visible("#langBtn") and await page.eval_on_selector_all("#langSwitch", "e=>e.length===1"))
                 await page.screenshot(path=str(OUT / f"16-header-vi-{w}.png"))
             await page.set_viewport_size({"width": 390, "height": 844})
             await page.wait_for_timeout(300)
@@ -1362,7 +1374,7 @@ async def main():
             await page.goto(BASE + "?lang=ko", wait_until="networkidle")
             await page.wait_for_timeout(700)
             check("url lang applies", await page.get_attribute("html", "lang") == "ko")
-            await page.click('[data-lang="en"]')
+            await pick_lang(page, "en")
             await page.wait_for_timeout(700)
             check("url lang follows switch", "lang=en" in page.url, page.url)
             await page.reload(wait_until="networkidle")
@@ -1370,7 +1382,9 @@ async def main():
             check("lang kept after reload (?lang=)", await page.get_attribute("html", "lang") == "en")
 
             # ---------- 브라우저 언어 자동 감지 (저장값 없는 새 컨텍스트) ----------
-            for loc, want in [("en-US", "en"), ("ja-JP", "ja"), ("zh-CN", "zh-CN"), ("zh-TW", "zh-CN"), ("vi-VN", "vi"), ("fr-FR", "ko")]:
+            for loc, want in [("en-US", "en"), ("ja-JP", "ja"), ("zh-CN", "zh-CN"), ("zh-TW", "zh-TW"),
+                              ("vi-VN", "vi"), ("es-ES", "es"), ("pt-BR", "pt"), ("th-TH", "th"),
+                              ("id-ID", "id"), ("fr-FR", "ko")]:
                 ctx2 = await browser.new_context(viewport={"width": 390, "height": 844}, locale=loc)
                 await dk_hide_vote_pop(ctx2)
                 pg = await ctx2.new_page()

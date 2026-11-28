@@ -1,0 +1,210 @@
+/* ==========================================================================
+   딮기 시그널 · 시안: 언어 선택 (10개국어)
+   - 헤더에는 [🌐 KO ▾] 트리거 하나만 두고, 목록은 body 끝의 팝오버(#langPop)로 펼칩니다.
+   - styles.css / desktop.css 뒤에 붙습니다. 기존 .lang-switch 규칙은 쓰지 않습니다.
+   ========================================================================== */
+
+/* ---------- 팝오버 테마 토큰 ---------- */
+html[data-theme="dark"] {
+  --pop-bg: linear-gradient(168deg, rgba(19, 31, 44, .985) 0%, rgba(9, 16, 25, .985) 100%);
+  --pop-arrow: #131F2C;
+  --pop-line: rgba(255, 255, 255, .10);
+  --pop-shadow: 0 26px 60px -22px rgba(0, 0, 0, .88), 0 2px 8px rgba(0, 0, 0, .5),
+                0 0 0 1px rgba(0, 245, 196, .07), inset 0 1px 0 rgba(255, 255, 255, .07);
+  --pop-item-hover: rgba(255, 255, 255, .055);
+}
+html[data-theme="mint"] {
+  --pop-bg: linear-gradient(168deg, rgba(255, 255, 255, .985) 0%, rgba(240, 255, 250, .98) 100%);
+  --pop-arrow: #FFFFFF;
+  --pop-line: rgba(18, 60, 52, .10);
+  --pop-shadow: 0 24px 54px -26px rgba(9, 74, 58, .32), 0 2px 6px rgba(9, 74, 58, .10),
+                0 0 0 1px rgba(18, 185, 140, .10), inset 0 1px 0 rgba(255, 255, 255, .95);
+  --pop-item-hover: rgba(18, 185, 140, .09);
+}
+
+/* ---------- 접힌 상태: 헤더 트리거 ---------- */
+.langsel { display: inline-flex; align-items: center; }
+
+.lang-trigger {
+  display: inline-flex; align-items: center; gap: 5px;
+  height: 30px; padding: 0 7px 0 9px;
+  border-radius: 999px;
+  background: var(--chip-bg);
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+  transition: background .2s ease, border-color .2s ease, box-shadow .2s ease, transform .12s ease;
+}
+.lang-trigger:active { transform: scale(.96); }
+.lang-trigger .gl { width: 13px; height: 13px; color: var(--accent); flex: none; }
+.lang-trigger .ls-code {
+  font-size: 9.5px; font-weight: 800; letter-spacing: .07em;
+  color: var(--ink); line-height: 1; min-width: 17px; text-align: center;
+}
+.lang-trigger .chev {
+  width: 11px; height: 11px; color: var(--muted); flex: none;
+  transition: transform .22s ease, color .2s ease;
+}
+.lang-trigger:hover { border-color: var(--accent-line); color: var(--ink); }
+.lang-trigger[aria-expanded="true"] {
+  background: linear-gradient(140deg, var(--accent-soft), var(--chip-bg) 78%);
+  border-color: var(--accent-line);
+  box-shadow: 0 0 0 3px rgba(0, 245, 196, .10), 0 6px 16px -12px var(--accent);
+}
+html[data-theme="mint"] .lang-trigger[aria-expanded="true"] {
+  box-shadow: 0 0 0 3px rgba(18, 185, 140, .12), 0 6px 16px -14px rgba(10, 143, 108, .9);
+}
+.lang-trigger[aria-expanded="true"] .chev { transform: rotate(180deg); color: var(--accent); }
+
+/* ---------- 펼친 상태: 팝오버 ---------- */
+.lang-pop {
+  position: fixed; z-index: 200;
+  width: 344px;
+  padding: 10px 10px 9px;
+  border-radius: 18px;
+  background: var(--pop-bg);
+  border: 1px solid var(--pop-line);
+  box-shadow: var(--pop-shadow);
+  -webkit-backdrop-filter: blur(24px) saturate(1.5);
+  backdrop-filter: blur(24px) saturate(1.5);
+  animation: lpIn .17s cubic-bezier(.2, .8, .3, 1);
+  transform-origin: var(--pop-origin, top right);
+}
+.lang-pop[hidden] { display: none; }
+
+/* 트리거를 가리키는 꼬리 */
+.lang-pop::before {
+  content: ''; position: absolute; top: -5.5px;
+  left: calc(var(--caret-x, 50%) - 5.5px);
+  width: 11px; height: 11px; border-radius: 2px;
+  background: var(--pop-arrow);
+  border-left: 1px solid var(--pop-line);
+  border-top: 1px solid var(--pop-line);
+  transform: rotate(45deg);
+}
+.lang-pop.is-below { transform-origin: top right; }
+.lang-pop.is-sheet::before { display: none; }
+.lang-pop.is-up::before {
+  top: auto; bottom: -5.5px;
+  border-left: 0; border-top: 0;
+  border-right: 1px solid var(--pop-line);
+  border-bottom: 1px solid var(--pop-line);
+}
+
+/* 민트 광원 한 줄 — 다크 테마에서 팝오버 상단을 살짝 띄워 줍니다. */
+.lang-pop::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(130% 70% at 82% -24%, rgba(0, 245, 196, .10), transparent 62%);
+}
+html[data-theme="mint"] .lang-pop::after {
+  background: radial-gradient(130% 70% at 82% -24%, rgba(18, 185, 140, .10), transparent 62%);
+}
+.lang-pop > * { position: relative; z-index: 1; }
+
+@keyframes lpIn {
+  from { opacity: 0; transform: translateY(-6px) scale(.985); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* 머리글 */
+.lp-head { display: flex; align-items: center; gap: 6px; padding: 2px 7px 8px; }
+.lp-head .gl { width: 13px; height: 13px; color: var(--accent); flex: none; }
+.lp-head b {
+  font-size: 10px; font-weight: 800; letter-spacing: .1em;
+  color: var(--ink); text-transform: uppercase;
+}
+.lp-count {
+  margin-left: auto; font-size: 8.5px; font-weight: 700; letter-spacing: .01em;
+  color: var(--muted-2); white-space: nowrap;
+}
+
+/* 2열 × 5줄 목록 */
+.lp-grid { position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: 2px 11px; }
+.lp-grid::before {
+  content: ''; position: absolute; left: 50%; top: 7px; bottom: 7px; width: 1px;
+  background: linear-gradient(180deg, transparent, var(--pop-line) 12%, var(--pop-line) 88%, transparent);
+  pointer-events: none;
+}
+
+.lp-item {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto 13px;
+  align-items: center; gap: 6px;
+  height: 36px; padding: 0 7px 0 9px;
+  border-radius: 11px;
+  border: 1px solid transparent;
+  background: transparent;
+  text-align: left;
+  color: var(--ink-2);
+  transition: background .16s ease, border-color .16s ease, color .16s ease;
+}
+@media (hover: hover) {
+  .lp-item:hover { background: var(--pop-item-hover); color: var(--ink); }
+}
+.lp-item:active { transform: scale(.985); }
+.lp-item:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+.lp-name {
+  font-family: 'Pretendard', 'Noto Sans Viet', 'Noto Sans TC', 'Noto Sans SC', 'Noto Sans JP', 'Noto Sans Thai', system-ui, sans-serif;
+  font-size: 11px; font-weight: 700; letter-spacing: -.01em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.lp-item[lang="th"] .lp-name { font-size: 12.5px; font-weight: 600; letter-spacing: 0; }
+.lp-item[lang="ja"] .lp-name,
+.lp-item[lang="zh-CN"] .lp-name,
+.lp-item[lang="zh-TW"] .lp-name { font-weight: 600; letter-spacing: .01em; }
+.lp-code {
+  font-size: 7.5px; font-weight: 800; letter-spacing: .09em;
+  color: var(--muted-2); line-height: 1;
+  transition: color .16s ease;
+}
+.lp-ok { width: 12px; height: 12px; color: var(--accent); opacity: 0; transition: opacity .16s ease; }
+
+.lp-item.is-on {
+  background: linear-gradient(140deg, var(--accent-soft), rgba(0, 245, 196, .04) 70%, transparent);
+  border-color: var(--accent-line);
+  color: var(--ink);
+}
+html[data-theme="mint"] .lp-item.is-on {
+  background: linear-gradient(140deg, rgba(18, 185, 140, .14), rgba(18, 185, 140, .04) 70%, transparent);
+}
+.lp-item.is-on .lp-name { font-weight: 800; color: var(--ink); }
+.lp-item.is-on .lp-code { color: var(--accent); }
+.lp-item.is-on .lp-ok { opacity: 1; }
+
+/* 발밑 안내 */
+.lp-foot {
+  display: flex; align-items: center; gap: 5px;
+  margin-top: 7px; padding: 7px 7px 1px;
+  border-top: 1px solid var(--line-soft);
+  font-size: 8.5px; font-weight: 600; letter-spacing: -.01em;
+  color: var(--muted-2);
+}
+.lp-foot svg { width: 10px; height: 10px; color: var(--muted-2); flex: none; }
+
+/* ---------- 넓은 화면 ---------- */
+@media (min-width: 521px) {
+  .lang-trigger { height: 34px; padding: 0 9px 0 11px; gap: 6px; }
+  .lang-trigger .gl { width: 14px; height: 14px; }
+  .lang-trigger .ls-code { font-size: 10.5px; min-width: 19px; }
+  .lang-trigger .chev { width: 12px; height: 12px; }
+  .lang-pop { width: 356px; padding: 11px 11px 10px; border-radius: 19px; }
+  .lp-head { padding: 2px 8px 9px; }
+  .lp-head b { font-size: 10.5px; }
+  .lp-item { height: 38px; }
+  .lp-name { font-size: 11.5px; }
+  .lp-code { font-size: 8px; }
+}
+
+/* ---------- 좁은 화면: 헤더 바로 아래 시트 ---------- */
+@media (max-width: 520px) {
+  .lang-pop {
+    padding: 10px 9px 8px;
+    border-radius: 16px;
+  }
+  .lp-item { height: 38px; padding: 0 6px 0 8px; }
+  .lp-name { font-size: 10.5px; }
+  .lp-code { font-size: 7px; }
+  .lp-head { padding: 2px 6px 7px; }
+  .lp-count { font-size: 8px; }
+  .lp-foot { font-size: 8px; padding: 6px 6px 1px; }
+}

@@ -21,11 +21,11 @@ const pushlog = require('./_lib/pushlog');
 const stats = require('./_lib/stats');
 const { PLAYERS } = require('./_lib/players');
 
-const VERSION = '3.11.0';
+const VERSION = '3.13.0';
 const SUBS_KEY = 'dk:subs';
 const BANNER_KEY = 'dk:banner';
 const DAILY_KEY = stats.KEY;
-const LANGS = ['ko', 'en', 'ja', 'zh', 'vi'];
+const LANGS = ['ko', 'en', 'ja', 'zh', 'tw', 'vi', 'es', 'pt', 'th', 'id'];
 const KEEP_LOG = 10;
 const BANNER_MAX = 120;
 const PUSH_TITLE_MAX = 60;

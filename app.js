@@ -10,12 +10,21 @@
   var T = function (key, vars) { return window.I18N.t(key, vars); };
   var lang = function () { return window.I18N.lang; };
 
-  /* { ko, en, ja } 묶음에서 현재 언어 값을 꺼냅니다. */
-  function L(value) {
-    if (value == null) return '';
-    if (typeof value === 'string') return value;
-    return value[lang()] != null ? value[lang()] : (value.ko || '');
+  /* { ko, en, ja, zh, tw, vi, es … } 묶음에서 현재 언어 값을 꺼냅니다.
+   * data.js 의 문장형 내용은 5개 언어(ko·en·ja·zh·vi)만 있고, 나머지는 아래 순서로 대쳬합니다:
+   * tw → zh(간체) → en / es·pt·th·id → en → ko */
+  var LANG_FALLBACK = { tw: ['zh'], es: ['en'], pt: ['en'], th: ['en'], id: ['en'] };
+  function pickLang(map) {
+    if (map == null) return '';
+    if (typeof map === 'string') return map;
+    var l = lang();
+    if (map[l] != null) return map[l];
+    var fb = LANG_FALLBACK[l] || [];
+    for (var i = 0; i < fb.length; i++) if (map[fb[i]] != null) return map[fb[i]];
+    if (map.en != null) return map.en;
+    return map.ko != null ? map.ko : '';
   }
+  function L(value) { return pickLang(value); }
 
   var THEME_KEY = 'dk.signal.theme';
   var CHEER_KEY = 'dk.signal.cheer.';
@@ -236,12 +245,13 @@
     if (lang() === 'ko') return p.nameKo;
     if (lang() === 'ja') return p.nameJa || p.nameIntl || p.nameKo;
     if (lang() === 'zh') return p.nameZh || p.nameIntl || p.nameKo;
+    if (lang() === 'tw') return p.nameTw || p.nameZh || p.nameIntl || p.nameKo;
     return p.nameIntl || p.nameEn || p.nameKo;
   }
   /* 캘린더 셀 배지용 이름: 한 칸이 45px 남짓이라 일본어는 카타카나 대신 라틴 표기를 씁니다. */
   function pBarName(p) {
     return lang() === 'ko' ? p.nameKo
-      : (lang() === 'zh' ? (p.nameZh || p.nameIntl || p.nameKo)
+      : ((lang() === 'zh' || lang() === 'tw') ? (pName(p) || p.nameIntl || p.nameKo)
         : (p.nameIntl || p.nameEn || p.nameKo));
   }
   /* ShowMaker 처럼 긴 라틴 이름은 낱말 경계(대문자 앞)에서 줄이 바뀔 수 있게 <wbr> 를 넣습니다. */
@@ -258,6 +268,7 @@
     if (lang() === 'ko') return p.real;
     if (lang() === 'ja') return p.realJa || p.realEn || p.real;
     if (lang() === 'zh') return p.realZh || p.realEn || p.real;
+    if (lang() === 'tw') return p.realTw || p.realZh || p.realEn || p.real;
     return p.realEn || p.real;
   }
   function pAvatar(p) {
@@ -350,33 +361,37 @@
     return (p.record || '').split('·')[1] ? (p.record.split('·')[1] || '').trim() : '';
   }
 
-  /* 챔피언 이름: 데이터는 한국어, Riot API 는 영어로 줍니다. 표에서 세 언어를 찾아 바꿉니다. */
+  /* 챔피언 이름: 데이터는 한국어, Riot API 는 영어로 줍니다. 표에서 각 언어 칸을 찾아 바꿉니다. */
   var CHAMP_INDEX = null;
   function normChamp(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
   function champIndex() {
     if (CHAMP_INDEX) return CHAMP_INDEX;
-    CHAMP_INDEX = { ko: {}, en: {}, ja: {}, zh: {}, vi: {} };
+    CHAMP_INDEX = { ko: {}, en: {}, ja: {}, zh: {}, tw: {}, vi: {}, es: {}, pt: {}, th: {}, id: {} };
     Object.keys(CHAMPIONS || {}).forEach(function (id) {
       var row = CHAMPIONS[id];
       if (!row || !row.length) return;
       CHAMP_INDEX.ko[row[0]] = row;
       CHAMP_INDEX.en[normChamp(row[1])] = row;
       CHAMP_INDEX.ja[row[2]] = row;
-      if (row[3]) CHAMP_INDEX.zh[row[3]] = row;
-      if (row[4]) CHAMP_INDEX.vi[row[4]] = row;
+      ['zh', 'tw', 'vi', 'es', 'pt', 'th', 'id'].forEach(function (code, i) {
+        var name = row[3 + i];
+        if (name) CHAMP_INDEX[code][name] = row;
+      });
     });
     return CHAMP_INDEX;
   }
+  /* 언어별 챔피언 이름이 들어 있는 표 칸 (ko·en·ja 다음 7개 언어는 같은 순서) */
+  var CHAMP_COL = { ko: 0, en: 1, ja: 2, zh: 3, tw: 4, vi: 5, es: 6, pt: 7, th: 8, id: 9 };
   function champText(name) {
     if (name == null) return '';
     var idx = champIndex();
-    var row = idx.ko[name] || idx.en[normChamp(name)] || idx.ja[name] || idx.zh[name] || idx.vi[name];
+    var row = idx.ko[name] || idx.en[normChamp(name)] || idx.ja[name] || idx.zh[name];
+    if (!row) {
+      for (var k in idx) { if (idx[k][name]) { row = idx[k][name]; break; } }
+    }
     if (!row) return name;
-    if (lang() === 'ko') return row[0];
-    if (lang() === 'ja') return row[2];
-    if (lang() === 'zh') return row[3] || row[0];
-    if (lang() === 'vi') return row[4] || row[1];
-    return row[1];
+    var col = CHAMP_COL[lang()];
+    return row[col] || row[1] || row[0];
   }
 
   function avatar(p) { return '<span class="pav">' + pAvatar(p) + '<span class="badge-pos">' + pPos(p) + '</span></span>'; }
@@ -426,15 +441,158 @@
     if (lolesports) lolesports.href = L(CHANNELS.lolesportsSchedule);
   }
 
-  /* ---------- 언어 전환 컨트롤 ---------- */
+  /* ---------- 언어 전환 컨트롤 (10개국어 · 헤더 버튼 + 팝오버) ---------- */
+  var GLOBE_IC = '<svg class="gl" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.4" stroke="currentColor" stroke-width="1.6"/><path d="M3.6 12h16.8M12 3.6c2.25 2.3 3.4 5.3 3.4 8.4s-1.15 6.1-3.4 8.4c-2.25-2.3-3.4-5.3-3.4-8.4S9.75 5.9 12 3.6Z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>';
+  var CHEV_IC = '<svg class="chev" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m7.5 10 4.5 4.5L16.5 10" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var OK_IC = '<svg class="lp-ok" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="m5 12.7 4.4 4.4L19 7.3" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var INFO_IC = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="8.6" stroke="currentColor" stroke-width="1.7"/><path d="M12 10.6v6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><circle cx="12" cy="7.6" r="1.05" fill="currentColor"/></svg>';
+  var langPopOpen = false;
+
+  function langMetaOf(code) {
+    var list = window.I18N.LANGS;
+    for (var i = 0; i < list.length; i++) if (list[i].code === code) return list[i];
+    return list[0];
+  }
+
+  /* 버튼 위치에 맞춰 팝오버를 붙입니다. 좁은 화면에서는 헤더 바로 아래 시트로. */
+  function placeLangPop() {
+    var btn = $('#langBtn'), pop = $('#langPop'), bar = document.querySelector('.appbar');
+    if (!btn || !pop) return;
+    var r = btn.getBoundingClientRect();
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var narrow = vw <= 520;
+    var w = narrow ? Math.min(vw - 20, 400) : 356;
+    pop.style.width = w + 'px';
+    var left = r.right - w;
+    if (left < 10) left = 10;
+    if (left + w > vw - 10) left = vw - w - 10;
+    var top = narrow && bar ? Math.round(bar.getBoundingClientRect().bottom + 8) : Math.round(r.bottom + 10);
+    pop.classList.toggle('is-sheet', narrow);
+    pop.style.left = Math.round(left) + 'px';
+    pop.style.top = top + 'px';
+    var cx = Math.round(r.left + r.width / 2 - left);
+    cx = Math.max(18, Math.min(w - 18, cx));
+    pop.style.setProperty('--caret-x', cx + 'px');
+    if (!narrow) {
+      var h = pop.getBoundingClientRect().height;
+      if (top + h > vh - 12) {
+        pop.classList.add('is-up');
+        pop.style.top = Math.max(12, Math.round(r.top - h - 12)) + 'px';
+        pop.style.setProperty('--pop-origin', 'bottom right');
+      } else {
+        pop.classList.remove('is-up');
+        pop.style.setProperty('--pop-origin', 'top right');
+      }
+    }
+  }
+
+  function openLangPop(focusIt) {
+    var pop = $('#langPop'), btn = $('#langBtn');
+    if (!pop || !btn) return;
+    langPopOpen = true;
+    pop.hidden = false;
+    btn.setAttribute('aria-expanded', 'true');
+    placeLangPop();
+    if (focusIt) {
+      var on = pop.querySelector('.lp-item.is-on') || pop.querySelector('.lp-item');
+      if (on) on.focus();
+    }
+  }
+
+  function closeLangPop(refocus) {
+    var pop = $('#langPop'), btn = $('#langBtn');
+    if (!pop || !langPopOpen) return;
+    langPopOpen = false;
+    pop.hidden = true;
+    if (btn) {
+      btn.setAttribute('aria-expanded', 'false');
+      if (refocus) btn.focus();
+    }
+  }
+
   function renderLangSwitch() {
-    var host = $('#langSwitch');
-    if (!host) return;
-    host.innerHTML = window.I18N.LANGS.map(function (l) {
-      var on = l.code === lang();
-      return '<button class="lang-btn' + (on ? ' is-active' : '') + '" type="button" data-lang="' + l.code + '"' +
-        ' aria-pressed="' + on + '" lang="' + l.htmlLang + '" title="' + l.name + '">' + l.label + '</button>';
-    }).join('');
+    var host = $('#langSwitch'), pop = $('#langPop');
+    if (!host || !pop) return;
+    var cur = lang();
+    var meta = langMetaOf(cur);
+
+    if (!host.firstElementChild) {
+      host.innerHTML =
+        '<button class="lang-trigger" id="langBtn" type="button" aria-haspopup="listbox" aria-expanded="false">' +
+          GLOBE_IC +
+          '<span class="ls-code">' + meta.label + '</span>' +
+          CHEV_IC +
+        '</button>';
+      pop.innerHTML =
+        '<div class="lp-head">' + GLOBE_IC + '<b class="lp-title"></b><span class="lp-count"></span></div>' +
+        '<div class="lp-grid">' +
+          window.I18N.LANGS.map(function (l) {
+            return '<button class="lp-item" type="button" role="option" aria-selected="false"' +
+              ' data-lang="' + l.code + '" lang="' + l.htmlLang + '" title="' + l.name + '">' +
+                '<span class="lp-name">' + l.name + '</span>' +
+                '<span class="lp-code">' + l.label + '</span>' +
+                OK_IC +
+              '</button>';
+          }).join('') +
+        '</div>' +
+        '<div class="lp-foot">' + INFO_IC + '<span class="lp-foot-txt"></span></div>';
+
+      $('#langBtn').addEventListener('click', function (e) {
+        e.preventDefault(); e.stopPropagation();
+        if (langPopOpen) closeLangPop(false); else openLangPop(false);
+      });
+      $('#langBtn').addEventListener('keydown', function (e) {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          /* 문서 쪽 ↑↓ 핸들러까지 올라가면 한 번에 두 칸씩 움직여, 여기서 멈춥니다. */
+          e.preventDefault(); e.stopPropagation();
+          openLangPop(true);
+        }
+      });
+      pop.addEventListener('click', function (e) {
+        var item = e.target.closest('[data-lang]');
+        if (!item) return;
+        var code = item.getAttribute('data-lang');
+        closeLangPop(false);
+        if (code !== lang()) window.I18N.setLang(code);
+      });
+      document.addEventListener('click', function (e) {
+        if (!langPopOpen) return;
+        if (e.target.closest('#langPop') || e.target.closest('#langSwitch')) return;
+        closeLangPop(false);
+      });
+      document.addEventListener('keydown', function (e) {
+        if (!langPopOpen) return;
+        if (e.key === 'Escape') { e.preventDefault(); closeLangPop(true); return; }
+        if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'Home' && e.key !== 'End') return;
+        var items = [].slice.call(pop.querySelectorAll('.lp-item'));
+        var i = items.indexOf(document.activeElement);
+        e.preventDefault();
+        if (e.key === 'Home') i = 0;
+        else if (e.key === 'End') i = items.length - 1;
+        else i = i < 0 ? 0 : (i + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+        items[i].focus();
+      });
+      window.addEventListener('resize', function () { if (langPopOpen) placeLangPop(); });
+      window.addEventListener('scroll', function () { if (langPopOpen) closeLangPop(false); }, { passive: true });
+    }
+
+    var btn = $('#langBtn');
+    if (btn) {
+      btn.querySelector('.ls-code').textContent = meta.label;
+      btn.setAttribute('aria-label', T('lang.label') + ' · ' + meta.name);
+    }
+    var title = pop.querySelector('.lp-title');
+    if (title) title.textContent = T('lang.label');
+    var count = pop.querySelector('.lp-count');
+    if (count) count.textContent = T('lang.count');
+    var foot = pop.querySelector('.lp-foot-txt');
+    if (foot) foot.textContent = T('lang.saved');
+    pop.setAttribute('aria-label', T('lang.menuAria'));
+    [].slice.call(pop.querySelectorAll('.lp-item')).forEach(function (item) {
+      var on = item.getAttribute('data-lang') === cur;
+      item.classList.toggle('is-on', on);
+      item.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
   }
 
   /* ---------- 테마 ---------- */
@@ -833,7 +991,7 @@
     var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(v.deadline || ''));
     if (!m) return '';
     var l = lang();
-    if (l === 'vi') return m[3] + '/' + m[2];
+    if (l === 'vi' || l === 'th' || l === 'id' || l === 'es' || l === 'pt') return m[3] + '/' + m[2];
     if (l === 'en') return m[2] + '/' + m[3];
     return m[2] + '.' + m[3];
   }
@@ -917,7 +1075,7 @@
     if (!d) return '';
     var y = d.getFullYear(), mo = d.getMonth() + 1, da = d.getDate();
     if (lang() === 'ko') return y + '년 ' + mo + '월 ' + da + '일';
-    if (lang() === 'ja' || lang() === 'zh') return y + '年' + mo + '月' + da + '日';
+    if (lang() === 'ja' || lang() === 'zh' || lang() === 'tw') return y + '年' + mo + '月' + da + '日';
     if (lang() === 'vi') return da + '/' + mo + '/' + y;
     return window.I18N.shortDate(d) + ', ' + y;
   }
@@ -1278,7 +1436,7 @@
   function spellImg(name) {
     if (!name) return '';
     var file = (typeof SPELL_IMG !== 'undefined' && SPELL_IMG[name]) ? SPELL_IMG[name] : name;
-    var label = (typeof SPELLS !== 'undefined' && SPELLS[name]) ? (SPELLS[name][lang() === 'ko' ? 0 : (lang() === 'ja' ? 2 : (lang() === 'zh' ? 3 : 1))] || name) : name;
+    var label = (typeof SPELLS !== 'undefined' && SPELLS[name]) ? (SPELLS[name][lang() === 'ko' ? 0 : (lang() === 'ja' ? 2 : ((lang() === 'zh' || lang() === 'tw') ? 3 : 1))] || name) : name;
     return '<img class="lg-spell-ico" src="' + (typeof DD_CDN !== 'undefined' ? DD_CDN : '') + '/img/spell/' + encodeURIComponent(file) + '.png" alt="' + esc(label) + '" title="' + esc(label) + '" loading="lazy">';
   }
   function playerNameByKey(key) {
@@ -1474,7 +1632,7 @@
    * 전원 오프라인이면 같은 자리에 컴팩트한 오프라인 바를 둡니다. */
   function fmtCount(n) {
     var v = Number(n) || 0;
-    var loc = lang() === 'ko' ? 'ko-KR' : (lang() === 'ja' ? 'ja-JP' : (lang() === 'zh' ? 'zh-CN' : 'en-US'));
+    var loc = lang() === 'ko' ? 'ko-KR' : (lang() === 'ja' ? 'ja-JP' : (lang() === 'zh' ? 'zh-CN' : (lang() === 'tw' ? 'zh-TW' : (lang() === 'es' ? 'es-ES' : (lang() === 'pt' ? 'pt-BR' : (lang() === 'th' ? 'th-TH' : (lang() === 'id' ? 'id-ID' : 'en-US')))))));
     try { return v.toLocaleString(loc); } catch (e) { return String(v); }
   }
 
@@ -1641,12 +1799,12 @@
   function tagText(key) {
     var t = typeof HL_TAGS !== 'undefined' ? HL_TAGS[key] : null;
     if (!t) return key;
-    return t[lang()] || t.ko || key;
+    return pickLang(t) || key;
   }
   function catText(key) {
     var c = typeof HL_CATS !== 'undefined' ? HL_CATS[key] : null;
     if (!c) return key;
-    return c[lang()] || c.ko || key;
+    return pickLang(c) || key;
   }
   function whoText(entry) {
     if (entry.p) return pName(entry.p);
@@ -2533,7 +2691,7 @@
     var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ''));
     if (!m) return '';
     var l = lang();
-    if (l === 'vi') return m[3] + '/' + m[2];
+    if (l === 'vi' || l === 'th' || l === 'id' || l === 'es' || l === 'pt') return m[3] + '/' + m[2];
     if (l === 'en') return m[2] + '/' + m[3];
     return m[2] + '.' + m[3];
   }
@@ -2817,7 +2975,7 @@
     if (!iso || isNaN(d.getTime())) return '';
     var y = d.getFullYear(), mo = d.getMonth() + 1, da = d.getDate();
     if (lang() === 'en') return window.I18N.shortDate(d) + ', ' + y;
-    if (lang() === 'ja' || lang() === 'zh') return y + '年' + mo + '月' + da + '日';
+    if (lang() === 'ja' || lang() === 'zh' || lang() === 'tw') return y + '年' + mo + '月' + da + '日';
     return y + '. ' + mo + '. ' + da + '.';
   }
 
@@ -3271,6 +3429,16 @@
 
   function clockOf(d) { return window.I18N.clock(d); }
 
+  /* 라운드 표기: 1라운드 / 第1ラウンド / 第1轮 / 第 1 輪 / Round 1 */
+  function roundText(n) {
+    var l = lang();
+    if (l === 'ko') return n + '라운드';
+    if (l === 'ja') return '第' + n + 'ラウンド';
+    if (l === 'zh') return '第' + n + '轮';
+    if (l === 'tw') return '第 ' + n + ' 輪';
+    return 'Round ' + n;
+  }
+
   /* 리그 이름: 서버가 준 언어와 무관하게 슬러그로 다시 표기 */
   var LEAGUE_NAME = {
     worlds: { ko: '월드 챔피언십', en: 'Worlds', ja: 'Worlds' },
@@ -3304,9 +3472,9 @@
       if (BLOCKS[i].ko === s || BLOCKS[i].ja === s || normBlock(BLOCKS[i].en) === n || normBlock(BLOCKS[i].ko) === n) return L(BLOCKS[i]);
     }
     var m = /^(\d+)라운드$/.exec(s);
-    if (m) return lang() === 'ko' ? s : (lang() === 'ja' ? '第' + m[1] + 'ラウンド' : (lang() === 'zh' ? '第' + m[1] + '轮' : 'Round ' + m[1]));
+    if (m) return roundText(m[1]);
     m = /^Round\s*(\d+)$/i.exec(s);
-    if (m) return lang() === 'ko' ? m[1] + '라운드' : (lang() === 'ja' ? '第' + m[1] + 'ラウンド' : (lang() === 'zh' ? '第' + m[1] + '轮' : 'Round ' + m[1]));
+    if (m) return roundText(m[1]);
     return s;
   }
 
@@ -3364,13 +3532,13 @@
     var opp = (row.opponent && (row.opponent.code || row.opponent.name)) || '';
     var league = leagueName(row.league) || '';
     var date = eventDate(row);
-    var tail = lang() === 'ko' ? '하이라이트' : (lang() === 'ja' ? 'ハイライト' : (lang() === 'zh' ? '集锦' : 'highlights'));
+    var tail = lang() === 'ko' ? '하이라이트' : (lang() === 'ja' ? 'ハイライト' : (lang() === 'zh' ? '集锦' : (lang() === 'tw' ? '精華' : 'highlights')));
     return [league, 'DK vs ' + opp, date, tail].filter(Boolean).join(' ');
   }
 
   function vodFor(row) {
     if (!row || !row.vod) return null;
-    return row.vod[lang()] || row.vod.ko || row.vod.en || null;
+    return pickLang(row.vod) || null;
   }
 
   function matchVideosHTML(row) {
@@ -4509,7 +4677,7 @@
       }
     }
     var langParam = params.get('lang');
-    if (langParam && ['ko', 'en', 'ja', 'zh', 'vi'].indexOf(langParam) > -1 && langParam !== lang()) {
+    if (langParam && window.I18N.LANGS.some(function (l) { return l.code === langParam; }) && langParam !== lang()) {
       window.I18N.setLang(langParam);
     }
   } catch (e) {}

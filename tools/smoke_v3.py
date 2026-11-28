@@ -42,6 +42,14 @@ def start_server():
     raise RuntimeError("server failed: " + out.decode("utf-8", "replace")[:2000])
 
 
+async def pick_lang(page, code):
+    """헤더의 [🌐 KO ▾] 를 열어 언어를 고릅니다 (v3.13 10개국어 팝오버)."""
+    if not await page.is_visible("#langPop"):
+        await page.click("#langBtn")
+        await page.wait_for_timeout(220)
+    await page.click(f'#langPop [data-lang="{code}"]')
+
+
 async def main():
     server = start_server()
     try:
@@ -52,6 +60,14 @@ async def main():
                 launch["executable_path"] = str(chrome)
             browser = await p.chromium.launch(**launch)
             ctx = await browser.new_context(viewport={"width": 390, "height": 844}, locale="ko-KR")
+            # v3.12 투표 팝업이 탭 클릭을 가리지 않게 '오늘 하루 보지 않기' 상태로 시작합니다.
+            await ctx.add_init_script("""
+              try {
+                var d = new Date();
+                var t = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+                localStorage.setItem('dk.signal.votePop.hide', t);
+              } catch (e) {}
+            """)
             page = await ctx.new_page()
             errors = []
             page.on("pageerror", lambda e: errors.append(str(e)))
@@ -59,7 +75,7 @@ async def main():
             await page.goto(BASE, wait_until="networkidle")
             await page.wait_for_timeout(700)
             print("title:", await page.title())
-            print("lang buttons:", await page.eval_on_selector_all(".lang-btn", "e=>e.map(x=>x.textContent)"))
+            print("lang items:", await page.eval_on_selector_all("#langPop .lp-item", "e=>e.map(x=>x.textContent)"))
             print("pick:", (await page.inner_text("#pickBanner"))[:200].replace("\n", " | "))
             print("links:", await page.eval_on_selector_all("#pickBanner .link-chip", "e=>e.map(x=>x.textContent+'→'+x.href)"))
             await page.click('[data-tab="video"]')
@@ -78,7 +94,7 @@ async def main():
             print("recent rows:", await page.eval_on_selector_all("#officialRecent .path-row", "e=>e.length"))
             print("vid chips:", await page.eval_on_selector_all("#officialRecent .vid-chip", "e=>e.map(x=>x.textContent+'→'+x.href).slice(0,4)"))
 
-            await page.click('[data-lang="en"]')
+            await pick_lang(page, "en")
             await page.wait_for_timeout(700)
             print("EN title:", await page.title())
             print("EN tabs:", await page.eval_on_selector_all(".tab", "e=>e.map(x=>x.innerText)"))
@@ -93,7 +109,7 @@ async def main():
             await page.click('[data-tab="feed"]')
             await page.wait_for_timeout(300)
 
-            await page.click('[data-lang="ja"]')
+            await pick_lang(page, "ja")
             await page.wait_for_timeout(600)
             print("JA tabs:", await page.eval_on_selector_all(".tab", "e=>e.map(x=>x.innerText)"))
             print("JA pick:", (await page.inner_text("#pickBanner"))[:200].replace("\n", " | "))

@@ -8,17 +8,23 @@ import re
 root = pathlib.Path(__file__).resolve().parent.parent
 html = (root / 'index.html').read_text(encoding='utf-8')
 css = (root / 'styles.css').read_text(encoding='utf-8')
+desktop = (root / 'desktop.css').read_text(encoding='utf-8')
+langmenu = (root / 'langmenu.css').read_text(encoding='utf-8')
+thai_css = (root / 'fonts/notothai.css').read_text(encoding='utf-8')
 i18n = (root / 'i18n.js').read_text(encoding='utf-8')
 data = (root / 'data.js').read_text(encoding='utf-8')
 app = (root / 'app.js').read_text(encoding='utf-8')
 
 font = base64.b64encode((root / 'fonts/pretendard-subset.woff2').read_bytes()).decode()
+thai_font = base64.b64encode((root / 'fonts/notosansthai.woff2').read_bytes()).decode()
 logo = base64.b64encode((root / 'logo/dpluskia.svg').read_bytes()).decode()
 icon = base64.b64encode((root / 'icons/icon-192.png').read_bytes()).decode()
 badge = base64.b64encode((root / 'icons/badge-96.png').read_bytes()).decode()
 
 css = css.replace("url('./fonts/pretendard-subset.woff2')",
                   "url('data:font/woff2;base64,%s')" % font)
+thai_css = thai_css.replace("url('./notosansthai.woff2')",
+                            "url('data:font/woff2;base64,%s')" % thai_font)
 data = data.replace("'./icons/icon-192.png'", "'data:image/png;base64,%s'" % icon)
 data = data.replace("'./icons/badge-96.png'", "'data:image/png;base64,%s'" % badge)
 app = app.replace("'./icons/icon-192.png'", "'data:image/png;base64,%s'" % icon)
@@ -26,6 +32,12 @@ app = app.replace("'./icons/badge-96.png'", "'data:image/png;base64,%s'" % badge
 
 html = html.replace('<link rel="stylesheet" href="./styles.css">',
                     '<style>\n' + css + '\n</style>')
+html = html.replace('<link rel="stylesheet" href="./desktop.css">',
+                    '<style>\n' + desktop + '\n</style>')
+html = html.replace('<link rel="stylesheet" href="./fonts/notothai.css">',
+                    '<style>\n' + thai_css + '\n</style>')
+html = html.replace('<link rel="stylesheet" href="./langmenu.css">',
+                    '<style>\n' + langmenu + '\n</style>')
 html = re.sub(r'<!-- GitHub Pages[^\n]*\n', '', html)
 html = re.sub(r'<link rel="manifest"[^>]*>', '', html)
 html = html.replace('<link rel="icon" href="./icons/favicon-32.png" sizes="32x32">', '')

@@ -19,7 +19,7 @@ const TEST_DELAY_MS = 3000;
 const TEST_DELAY_MAX = 5000;
 const TEST_GAP_SEC = 15;
 const TEST_TEXT_MAX = 120;
-const TEST_LANGS = ['ko', 'en', 'ja', 'zh', 'vi'];
+const TEST_LANGS = ['ko', 'en', 'ja', 'zh', 'tw', 'vi', 'es', 'pt', 'th', 'id'];
 
 function cleanText(value, fallback) {
   const text = String(value == null ? '' : value).replace(/\s+/g, ' ').trim();
