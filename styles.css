@@ -2522,3 +2522,230 @@ html[data-theme="mint"] .cal-row.cat-cast .cal-row-tag { color: #25619E; }
 }
 .cal-vote-link[hidden] { display: none; }
 .cal-note { margin: 10px 18px 0; font-size: 8px; line-height: 1.6; color: var(--muted-2); }
+
+/* =====================================================================
+   v3.12 · 오늘 요약 카드 · 나만의 재생목록/내 링크 · 진행 중인 투표 팝업
+   (모바일 공통 규칙 — 데스크톱 배치는 desktop.css 가 맡습니다)
+   ===================================================================== */
+.only-d { display: none; }
+
+/* ---------- 5인 상태 보드 머리: 오늘 요약 카드 버튼 ---------- */
+.sec-l { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; min-width: 0; flex: 1 1 auto; flex-wrap: wrap; }
+.sum-btn {
+  flex: none; display: inline-flex; align-items: center; gap: 5px;
+  height: 27px; padding: 0 11px; border-radius: 999px;
+  font-family: inherit; font-size: 9px; font-weight: 800; letter-spacing: -.01em;
+  color: var(--accent-ink); background: linear-gradient(140deg, var(--accent), var(--accent-2));
+  border: 0; box-shadow: 0 8px 18px -12px var(--accent); cursor: pointer;
+  transition: transform .15s ease, box-shadow .2s ease;
+}
+.sum-btn svg { width: 12px; height: 12px; }
+.sum-btn:active { transform: scale(.96); }
+.sum-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ---------- 나만의 재생목록 · 내 링크 ---------- */
+.mine-add-link {
+  flex: none; display: inline-flex; align-items: center; justify-content: center;
+  height: 27px; padding: 0 11px; border-radius: 999px;
+  font-family: inherit; font-size: 8.5px; font-weight: 800; letter-spacing: -.01em;
+  color: var(--accent-ink); background: linear-gradient(140deg, var(--accent), var(--accent-2));
+  border: 0; box-shadow: 0 8px 18px -12px var(--accent); cursor: pointer; white-space: nowrap;
+}
+.mine-add-link:active { transform: scale(.96); }
+.hl-tools { flex-wrap: wrap; }
+
+.mine-row {
+  display: flex; flex-direction: column; gap: 6px;
+  margin-top: 9px; padding: 9px 10px 10px; border-radius: 14px;
+  background: var(--chip-bg); border: 1px solid var(--line);
+}
+.mine-label {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 8.5px; font-weight: 800; letter-spacing: -.01em; color: var(--accent);
+}
+.mine-label i { font-style: normal; font-size: 10px; }
+.mine-chips { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.mine-chip {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-family: inherit; font-size: 8.5px; font-weight: 700; color: var(--ink-2);
+  background: var(--card); border: 1px solid var(--line);
+  border-radius: 999px; padding: 5px 9px; white-space: nowrap; cursor: pointer;
+}
+.mine-chip b { font-size: 7.5px; font-weight: 800; color: var(--muted-2); }
+.mine-chip.is-on { color: var(--accent); background: var(--accent-soft); border-color: var(--accent-line); }
+.mine-chip.is-on b { color: var(--accent); }
+.mine-chip.is-new { color: var(--accent); background: transparent; border-style: dashed; border-color: var(--accent-line); }
+.mine-chip .mx { font-style: normal; margin-left: 2px; font-size: 9px; color: var(--muted-2); }
+.mine-chip .mx:hover { color: var(--lose); }
+.mine-tools { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+.mine-play, .mine-new {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-family: inherit; font-size: 8px; font-weight: 800;
+  padding: 5px 9px; border-radius: 999px; cursor: pointer;
+  color: var(--ink-2); background: var(--card); border: 1px solid var(--line); white-space: nowrap;
+}
+.mine-play { color: var(--accent); border-color: var(--accent-line); background: var(--accent-soft); }
+.mine-new.is-link { display: none; }
+.mine-play[hidden], .mine-chip[hidden] { display: none; }
+
+/* 카드 위 '+ 담기 / ✓ 담김' */
+.vc-add {
+  position: absolute; left: 8px; top: 8px; z-index: 3;
+  display: inline-flex; align-items: center; gap: 3px;
+  font-family: inherit; font-size: 7.5px; font-weight: 800; letter-spacing: -.01em;
+  color: #fff; background: rgba(4, 10, 14, .6);
+  border: 1px solid rgba(255, 255, 255, .3); border-radius: 999px; padding: 2px 7px;
+  backdrop-filter: blur(4px); cursor: pointer; white-space: nowrap;
+}
+.vc-add i { font-style: normal; font-size: 8.5px; color: var(--accent); }
+.vc-add.is-on { color: var(--accent-ink); background: linear-gradient(140deg, var(--accent), var(--accent-2)); border-color: transparent; }
+.vc-add.is-on i { color: var(--accent-ink); }
+.vc-add:active { transform: scale(.94); }
+
+/* ---------- 내 링크 추가 모달 ---------- */
+.al-form { display: flex; flex-direction: column; gap: 4px; }
+.al-label { font-size: 8.5px; font-weight: 800; color: var(--muted); margin-top: 4px; }
+.al-input {
+  width: 100%; box-sizing: border-box; height: 34px; padding: 0 11px;
+  font-family: inherit; font-size: 10.5px; color: var(--ink);
+  background: var(--input-bg); border: 1px solid var(--input-line); border-radius: 11px;
+}
+.al-input:focus { outline: none; border-color: var(--accent-line); box-shadow: 0 0 0 3px var(--accent-soft); }
+.al-input::placeholder { color: var(--muted-2); font-size: 9.5px; }
+.al-err { margin: 2px 1px 0; font-size: 8px; line-height: 1.4; color: var(--lose); }
+.al-err:empty { display: none; }
+.al-preview {
+  display: flex; align-items: center; gap: 8px; margin-top: 6px; padding: 6px;
+  border-radius: 11px; background: var(--chip-bg); border: 1px solid var(--line);
+}
+.al-preview[hidden] { display: none; }
+.al-thumb { flex: none; width: 74px; aspect-ratio: 16 / 9; border-radius: 7px; overflow: hidden; background: var(--bar-bg); }
+.al-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.al-pv-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.al-pv-body b { font-size: 9.5px; font-weight: 800; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.al-pv-body span { font-size: 7.5px; line-height: 1.4; color: var(--muted); }
+.al-actions { display: flex; gap: 6px; margin-top: 10px; }
+.al-actions .sc-btn { flex: 1 1 0; }
+.al-note { margin: 8px 0 0; font-size: 7.5px; line-height: 1.5; color: var(--muted-2); }
+
+/* ---------- 오늘 요약 카드 미리보기 ---------- */
+.sc-sheet { width: min(100%, 560px); }
+.sc-stage {
+  display: flex; align-items: center; justify-content: center; min-height: 160px;
+  border-radius: 14px; background: rgba(0, 0, 0, .22); border: 1px solid var(--line);
+  padding: 8px; overflow: auto;
+}
+html[data-theme="mint"] .sc-stage { background: rgba(18, 60, 52, .05); }
+.sc-img { width: auto; max-width: 100%; max-height: 56vh; border-radius: 10px; display: block; }
+.sc-img[hidden] { display: none; }
+.sc-loading { margin: 0; font-size: 9px; font-weight: 700; color: var(--muted); }
+.sc-loading[hidden] { display: none; }
+.sc-note { margin: 8px 1px 0; font-size: 7.5px; line-height: 1.5; color: var(--muted-2); }
+.sc-actions { display: flex; gap: 6px; margin-top: 9px; }
+.sc-btn {
+  flex: 1 1 0; display: inline-flex; align-items: center; justify-content: center;
+  height: 34px; padding: 0 12px; border-radius: 11px;
+  font-family: inherit; font-size: 9.5px; font-weight: 800; text-decoration: none;
+  color: var(--ink); background: var(--chip-bg); border: 1px solid var(--line); cursor: pointer;
+}
+.sc-btn.is-primary { color: var(--accent-ink); background: linear-gradient(140deg, var(--accent), var(--accent-2)); border-color: transparent; }
+.sc-btn[hidden] { display: none; }
+.sc-btn:active { transform: scale(.98); }
+
+/* ---------- 진행 중인 투표 팝업 ---------- */
+.vote-pop { align-items: flex-end; }
+.vp-sheet { width: min(100%, 460px); padding-top: 14px; }
+.vp-head-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 auto; }
+.vp-kicker { font-size: 7px; font-weight: 800; letter-spacing: .12em; color: var(--accent); }
+.vp-sheet .lg-title { font-size: 14px; letter-spacing: -.02em; }
+.vp-sub { margin: 0 0 9px; font-size: 8.5px; line-height: 1.5; color: var(--muted); }
+.vp-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+.vp-item {
+  display: flex; flex-direction: column; gap: 5px; padding: 9px 10px 8px; border-radius: 13px;
+  background: linear-gradient(150deg, var(--accent-soft) 0%, var(--card) 78%);
+  border: 1px solid var(--accent-line);
+}
+.vp-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.vp-event { font-size: 8px; font-weight: 800; color: var(--ink-2); }
+.vp-dday {
+  margin-left: auto; flex: none; font-size: 7.5px; font-weight: 800;
+  color: var(--accent); background: var(--accent-soft); border: 1px solid var(--accent-line);
+  border-radius: 999px; padding: 2px 7px; white-space: nowrap;
+}
+.vp-name { font-size: 12px; font-weight: 900; letter-spacing: -.02em; color: var(--ink); }
+.vp-cand { display: flex; align-items: center; gap: 4px; font-size: 8.5px; font-weight: 700; color: var(--ink-2); }
+.vp-cand .vote-dk { font-style: normal; font-size: 6.5px; font-weight: 900; color: var(--accent-ink); background: var(--accent); border-radius: 4px; padding: 1px 4px; }
+.vp-cand i { font-style: normal; font-size: 7.5px; color: var(--muted-2); }
+.vp-when { font-size: 7.5px; color: var(--muted); }
+.vp-go {
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+  height: 28px; margin-top: 2px; border-radius: 9px;
+  font-size: 8.5px; font-weight: 800; text-decoration: none;
+  color: var(--accent-ink); background: linear-gradient(140deg, var(--accent), var(--accent-2));
+}
+.vp-go:active { transform: scale(.99); }
+.vp-actions { display: flex; align-items: center; gap: 6px; margin-top: 11px; }
+.vp-hide, .vp-done {
+  flex: 1 1 0; height: 34px; border-radius: 11px; cursor: pointer;
+  font-family: inherit; font-size: 9px; font-weight: 800;
+  background: var(--chip-bg); border: 1px solid var(--line); color: var(--muted);
+}
+.vp-done { color: var(--accent); border-color: var(--accent-line); background: var(--accent-soft); }
+.vp-note { margin: 8px 0 0; font-size: 7.5px; color: var(--muted-2); }
+@media (min-width: 560px) {
+  .vote-pop { align-items: center; }
+  .vp-sheet { border-radius: 20px; }
+}
+
+/* 새 폴더 인라인 폼 */
+.mine-form { display: flex; align-items: center; gap: 4px; }
+.mine-form[hidden] { display: none; }
+.mine-input {
+  flex: 1 1 auto; min-width: 0; height: 28px; padding: 0 9px;
+  font-family: inherit; font-size: 9px; color: var(--ink);
+  background: var(--input-bg); border: 1px solid var(--input-line); border-radius: 9px;
+}
+.mine-input:focus { outline: none; border-color: var(--accent-line); box-shadow: 0 0 0 2px var(--accent-soft); }
+.mine-input::placeholder { color: var(--muted-2); }
+.mine-ok, .mine-cancel {
+  flex: none; height: 28px; padding: 0 9px; border-radius: 9px; cursor: pointer;
+  font-family: inherit; font-size: 8.5px; font-weight: 800;
+  color: var(--accent-ink); background: linear-gradient(140deg, var(--accent), var(--accent-2));
+  border: 0;
+}
+.mine-cancel { color: var(--muted); background: var(--card); border: 1px solid var(--line); }
+.mine-hint { margin: 0; font-size: 7.5px; font-weight: 600; color: var(--muted); }
+.mine-hint[hidden] { display: none; }
+
+/* 시트 자체에 포커스가 갈 때(모달 첫 포커스) 테두리 링을 그리지 않습니다 */
+.lg-sheet:focus { outline: none; }
+
+/* 데스크톱에서는 모달 글씨를 한 단계 키워 읽기 편하게 */
+@media (min-width: 560px) {
+  .vp-sheet { width: min(100%, 520px); padding: 18px 20px 20px; }
+  .vp-sheet .lg-title { font-size: 18px; }
+  .vp-kicker { font-size: 9px; }
+  .vp-sheet .lg-close { width: 30px; height: 30px; font-size: 12px; }
+  .vp-sub { font-size: 11px; margin-bottom: 12px; }
+  .vp-item { padding: 12px 13px 11px; border-radius: 15px; gap: 7px; }
+  .vp-event { font-size: 10px; }
+  .vp-dday { font-size: 9px; padding: 3px 9px; }
+  .vp-name { font-size: 16px; }
+  .vp-cand { font-size: 11px; }
+  .vp-when { font-size: 9.5px; }
+  .vp-go { height: 34px; font-size: 10.5px; border-radius: 10px; }
+  .vp-actions { margin-top: 14px; }
+  .vp-hide, .vp-done { height: 38px; font-size: 10.5px; }
+  .vp-note { font-size: 9px; margin-top: 10px; }
+
+  .al-label { font-size: 10px; margin-top: 8px; }
+  .al-input { height: 38px; font-size: 12px; }
+  .al-input::placeholder { font-size: 11px; }
+  .al-pv-body b { font-size: 11px; }
+  .al-pv-body span { font-size: 9px; }
+  .al-note { font-size: 9px; }
+  .al-actions .sc-btn { height: 38px; font-size: 10.5px; }
+
+  .sc-note { font-size: 9px; }
+  .sc-btn { height: 38px; font-size: 10.5px; }
+}

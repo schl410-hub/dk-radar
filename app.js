@@ -74,6 +74,128 @@
     return i < 0;
   }
 
+  /* ---------- 나만의 재생목록 · 내 링크 (localStorage · 로그인 없음) ----------
+   *  mine.folders: [{ id, name, ids: [videoId] }] — name 이 비면 '나만의 재생목록'(기본 폴더)
+   *  mine.active : 'all' 이면 아카이브 전체 보기 + 기본 폴더에 담기, 폴더 id 면 그 폴더만 보기/담기
+   *  links       : [{ id, title, added }] — 사용자가 붙여넣은 유튜브 링크 */
+  var MINE_KEY = 'dk.signal.mine';
+  var LINKS_KEY = 'dk.signal.links';
+  var DEFAULT_FOLDER = 'f-default';
+
+  function uid(prefix) {
+    return prefix + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  }
+
+  var links = (function () {
+    try {
+      var raw = JSON.parse(store.get(LINKS_KEY, '[]'));
+      if (!Array.isArray(raw)) return [];
+      var out = [];
+      raw.forEach(function (row) {
+        if (!row || typeof row.id !== 'string' || !row.id) return;
+        if (out.some(function (x) { return x.id === row.id; })) return;
+        out.push({ id: row.id, title: String(row.title || ''), added: Number(row.added) || Date.now() });
+      });
+      return out;
+    } catch (e) { return []; }
+  })();
+
+  var mine = (function () {
+    var raw = null;
+    try { raw = JSON.parse(store.get(MINE_KEY, 'null')); } catch (e) { raw = null; }
+    if (!raw || !Array.isArray(raw.folders)) raw = { folders: [], active: 'all' };
+    var folders = [];
+    raw.folders.forEach(function (f) {
+      if (!f || typeof f.id !== 'string' || !f.id) return;
+      if (folders.some(function (x) { return x.id === f.id; })) return;
+      folders.push({
+        id: f.id,
+        name: String(f.name || ''),
+        ids: Array.isArray(f.ids) ? f.ids.filter(function (id, i, arr) {
+          return typeof id === 'string' && id && arr.indexOf(id) === i;
+        }) : []
+      });
+    });
+    if (!folders.length) folders.push({ id: DEFAULT_FOLDER, name: '', ids: [] });
+    var active = typeof raw.active === 'string' ? raw.active : 'all';
+    if (active !== 'all' && !folders.some(function (f) { return f.id === active; })) active = 'all';
+    var target = typeof raw.target === 'string' ? raw.target : '';
+    if (!folders.some(function (f) { return f.id === target; })) target = folders[0].id;
+    return { folders: folders, active: active, target: target };
+  })();
+
+  function saveMine() { store.set(MINE_KEY, JSON.stringify(mine)); }
+  function saveLinks() { store.set(LINKS_KEY, JSON.stringify(links)); }
+  function folderName(f) { return (f && f.name) || T('mine.default'); }
+  function folderById(id) {
+    for (var i = 0; i < mine.folders.length; i++) if (mine.folders[i].id === id) return mine.folders[i];
+    return null;
+  }
+  /* 담기 대상 폴더: 마지막에 고른 폴더(없으면 기본 폴더) */
+  function targetFolder() {
+    return folderById(mine.target) || mine.folders[0];
+  }
+  function inTargetFolder(id) {
+    var f = targetFolder();
+    return !!f && f.ids.indexOf(id) > -1;
+  }
+  function inAnyFolder(id) {
+    return mine.folders.some(function (f) { return f.ids.indexOf(id) > -1; });
+  }
+  function playlistIds() {
+    if (mine.active !== 'all') {
+      var f = folderById(mine.active);
+      return f ? f.ids.slice() : [];
+    }
+    var out = [];
+    mine.folders.forEach(function (f) {
+      f.ids.forEach(function (id) { if (out.indexOf(id) < 0) out.push(id); });
+    });
+    return out;
+  }
+  /* 내 링크 영상 → 아카이브 카드와 같은 모양의 entry 로 */
+  function linkEntries() {
+    return links.map(function (l) {
+      var title = l.title || ('YouTube · ' + l.id);
+      var d = new Date(l.added || Date.now());
+      return {
+        p: null,
+        v: {
+          id: l.id, len: '', channel: '', team: '', cat: 'mine', mine: true,
+          year: isNaN(d.getTime()) ? new Date().getFullYear() : d.getFullYear(),
+          match: { ko: title, en: title, ja: title, zh: title, vi: title },
+          event: { ko: T('mine.srcLabel'), en: T('mine.srcLabel'), ja: T('mine.srcLabel'), zh: T('mine.srcLabel'), vi: T('mine.srcLabel') }
+        }
+      };
+    });
+  }
+  function archiveById(id) {
+    var all = archiveItems();
+    for (var i = 0; i < all.length; i++) if (all[i].v.id === id) return all[i];
+    return null;
+  }
+  /* 담기/빼기 — 담기는 곳(마지막으로 고른 폴더)에 넣고 뺍니다. */
+  function toggleMineVideo(id) {
+    if (!id) return false;
+    var f = targetFolder();
+    if (!f) return false;
+    var at = f.ids.indexOf(id);
+    var added;
+    if (at > -1) {
+      f.ids.splice(at, 1);
+      added = false;
+      toast(T('mine.removeOk', { name: folderName(f) }));
+    } else {
+      f.ids.push(id);
+      added = true;
+      toast(T('mine.addOk', { name: folderName(f) }));
+    }
+    saveMine();
+    renderMineRow();
+    renderVideoList();
+    return added;
+  }
+
   /* 알림 설정: 선수별 솔랭 알림 + DK 공식 경기 알림 (각각 localStorage 저장) */
   var OFFICIAL_KEY = 'dk.signal.official';
   var SOLO_KEY = 'dk.signal.solo.';
@@ -1501,6 +1623,8 @@
     (typeof DK_VIDEOS !== 'undefined' ? DK_VIDEOS : []).forEach(function (v) {
       out.push({ p: null, v: v });
     });
+    /* 내가 붙여넣은 링크는 맨 앞에 (최근 추가 순) */
+    linkEntries().forEach(function (e) { out.unshift(e); });
     return out;
   }
 
@@ -1524,6 +1648,7 @@
   }
   function whoText(entry) {
     if (entry.p) return pName(entry.p);
+    if (entry.v.mine) return T('mine.srcLabel');
     if (entry.v.player) {
       for (var i = 0; i < PLAYERS.length; i++) if (PLAYERS[i].key === entry.v.player) return pName(PLAYERS[i]);
     }
@@ -1577,7 +1702,12 @@
     var favOn = state.videoCat === 'fav';
     var fav = '<button class="chip is-fav' + (favOn ? ' is-active' : '') + '" type="button" role="tab" aria-selected="' + favOn +
       '" data-video-cat="fav">' + esc(T('video.favChip', { n: favs.length })) + '</button>';
-    host.innerHTML = all + fav + cats.map(function (key) {
+    /* 내 링크가 있을 때만 '내 링크' 칩 (기본 상태의 칩 목록·검증을 건드리지 않도록) */
+    var mineChip = links.length
+      ? '<button class="chip' + (state.videoCat === 'mine' ? ' is-active' : '') + '" type="button" role="tab" aria-selected="' +
+        (state.videoCat === 'mine') + '" data-video-cat="mine">' + esc(T('mine.srcLabel')) + ' ' + links.length + '</button>'
+      : '';
+    host.innerHTML = all + fav + mineChip + cats.map(function (key) {
       var on = key === state.videoCat;
       return '<button class="chip' + (on ? ' is-active' : '') + '" type="button" role="tab" aria-selected="' + on + '"' +
         ' data-video-cat="' + key + '">' + esc(catText(key)) + '</button>';
@@ -1644,10 +1774,11 @@
     var champLine = champs.map(tagText).join(' · ');
     var title = L(v.point) || L(v.match);
     var on = isFav(v.id);
+    var inMine = inTargetFolder(v.id);
     return '<li class="vc-row">' +
       '<button class="vc-item" type="button" data-play="' + esc(v.id) + '" data-title="' + esc(title) + '">' +
         '<span class="vc-thumb"><img loading="lazy" src="' + ytThumb(v.id) + '" alt="" width="168" height="94">' +
-          '<i class="vc-play" aria-hidden="true">▶</i><i class="vc-len">' + esc(v.len) + '</i></span>' +
+          '<i class="vc-play" aria-hidden="true">▶</i>' + (v.len ? '<i class="vc-len">' + esc(v.len) + '</i>' : '') + '</span>' +
         '<span class="vc-body">' +
           '<span class="vc-who' + (entry.p ? '' : ' is-team') + '">' + esc(who) +
             (entry.p ? '<i>' + esc(entry.p.pos) + '</i>' : '<i>OFFICIAL</i>') +
@@ -1658,6 +1789,9 @@
             champTags + team + '<span class="vc-yr">' + esc(v.year) + '</span></span>' +
         '</span>' +
       '</button>' +
+      '<button class="vc-add' + (inMine ? ' is-on' : '') + '" type="button" data-add="' + esc(v.id) + '"' +
+        ' aria-pressed="' + inMine + '" aria-label="' + esc(T(inMine ? 'mine.added' : 'mine.add')) + '">' +
+        '<i aria-hidden="true">' + (inMine ? '✓' : '＋') + '</i>' + esc(T(inMine ? 'mine.added' : 'mine.add')) + '</button>' +
       '<button class="vc-fav' + (on ? ' is-on' : '') + '" type="button" data-fav="' + esc(v.id) + '"' +
         ' aria-pressed="' + on + '" aria-label="' + esc(T(on ? 'video.favRemove' : 'video.favAdd')) + '"' +
         ' title="' + esc(T(on ? 'video.favRemove' : 'video.favAdd')) + '">' + (on ? '★' : '☆') + '</button>' +
@@ -1686,6 +1820,14 @@
     '</li>';
   }
 
+  function mineGroupHead(n) {
+    return '<li class="hl-group">' +
+      '<span class="hl-g-name">' + esc(T('mine.srcLabel')) + '<i>MY LINK</i></span>' +
+      '<span class="hl-g-arc">' + esc(T('mine.title')) + '</span>' +
+      '<span class="hl-g-n">' + esc(T('video.count', { n: n })) + '</span>' +
+    '</li>';
+  }
+
   function byYearSort(a, b) { return b.v.year - a.v.year; }
   function playerRank(e) {
     var order = PLAYERS.map(function (p) { return p.key; }).concat(['dk']);
@@ -1696,6 +1838,15 @@
   /* 지금 고른 필터·검색을 그대로 적용한 목록 — 화면과 연속 재생 대기열이 같은 순서를 씁니다. */
   function videoListEntries() {
     var list = archiveItems();
+    /* 나만의 재생목록 폴더를 보고 있으면 그 폴더 순서대로 */
+    var folderView = mine.active !== 'all';
+    if (folderView) {
+      var ids = playlistIds();
+      var rank = {};
+      ids.forEach(function (id, i) { rank[id] = i; });
+      list = list.filter(function (e) { return ids.indexOf(e.v.id) > -1; })
+        .sort(function (a, b) { return rank[a.v.id] - rank[b.v.id]; });
+    }
     if (state.videoPlayer !== 'all') {
       list = list.filter(function (e) { return videoWhoKey(e) === state.videoPlayer; });
     }
@@ -1726,6 +1877,9 @@
     if (state.videoCat === 'fav') {
       /* 찜 목록은 묶음 없이 찜한 순서대로 */
       html = list.map(videoItemHTML).join('');
+    } else if (mine.active !== 'all') {
+      /* 나만의 재생목록 폴더: 담은 순서 그대로 한 줄기로 */
+      html = list.map(videoItemHTML).join('');
     } else if (state.videoSort === 'recent') {
       list = list.slice().sort(function (a, b) {
         if (b.v.year !== a.v.year) return b.v.year - a.v.year;
@@ -1743,12 +1897,16 @@
         if (!rows.length) return;
         html += hlGroupHead(p, rows.length) + rows.map(videoItemHTML).join('');
       });
-      var dkRows = list.filter(function (e) { return !e.p; }).sort(byYearSort);
+      var mineRows = list.filter(function (e) { return e.v.mine; });
+      if (mineRows.length) html += mineGroupHead(mineRows.length) + mineRows.map(videoItemHTML).join('');
+      var dkRows = list.filter(function (e) { return !e.p && !e.v.mine; }).sort(byYearSort);
       if (dkRows.length) html += dkGroupHead(dkRows.length) + dkRows.map(videoItemHTML).join('');
     }
 
     if (!list.length) {
-      var empty = state.videoCat === 'fav' ? T('video.favEmpty') : (q ? T('video.searchEmpty', { q: q }) : T('video.empty'));
+      var empty = state.videoCat === 'fav' ? T('video.favEmpty')
+        : (mine.active !== 'all' ? T('mine.emptyTitle') + ' ' + T('mine.emptyBody')
+        : (q ? T('video.searchEmpty', { q: q }) : T('video.empty')));
       html = '<li class="vc-empty">' + esc(empty) + '</li>';
     }
     host.innerHTML = html;
@@ -1805,6 +1963,634 @@
         '<b class="pl-title">' + esc(name) + '</b>' +
       '</button>';
     }).join('');
+  }
+
+  /* =====================================================================
+     v3.12 · 나만의 재생목록 레일 · 내 링크 추가 · 오늘 요약 카드 · 투표 팝업
+     ===================================================================== */
+
+  /* ---------- 나만의 재생목록 레일 ---------- */
+  function renderMineRow() {
+    var host = $('#mineChips');
+    if (!host) return;
+    var seen = {};
+    var total = 0;
+    mine.folders.forEach(function (f) {
+      f.ids.forEach(function (id) { if (!seen[id]) { seen[id] = 1; total++; } });
+    });
+    var html = '<button class="mine-chip' + (mine.active === 'all' ? ' is-on' : '') + '" type="button"' +
+      ' data-mine="all" aria-pressed="' + (mine.active === 'all') + '">' +
+      esc(T('mine.all')) + ' <b>' + total + '</b></button>';
+    mine.folders.forEach(function (f) {
+      var on = mine.active === f.id;
+      html += '<button class="mine-chip' + (on ? ' is-on' : '') + '" type="button" data-mine="' + esc(f.id) + '"' +
+        ' aria-pressed="' + on + '">' + esc(folderName(f)) + ' <b>' + f.ids.length + '</b>' +
+        (f.name ? '<i class="mx" data-mine-del="' + esc(f.id) + '" aria-hidden="true">✕</i>' : '') +
+        '</button>';
+    });
+    if (mine.folders.length < 6) {
+      html += '<button class="mine-chip is-new" type="button" data-mine-new="1">' + esc(T('mine.newFolder')) + '</button>';
+    }
+    host.innerHTML = html;
+    var play = $('#minePlay');
+    if (play) play.hidden = playlistIds().length === 0;
+    var newBtn = $('#mineNew');
+    if (newBtn) newBtn.hidden = mine.folders.length >= 6;
+    var hint = $('#mineHint');
+    if (hint) {
+      if (mine.active === 'all') {
+        hint.hidden = false;
+        hint.textContent = T('mine.hint', { name: folderName(targetFolder()) });
+      } else {
+        hint.hidden = true;
+      }
+    }
+  }
+
+  function openFolderForm() {
+    var form = $('#mineForm');
+    if (!form) return;
+    form.hidden = false;
+    var input = $('#mineFolderName');
+    if (input) { input.value = ''; try { input.focus(); } catch (e) {} }
+  }
+  function closeFolderForm() {
+    var form = $('#mineForm');
+    if (form) form.hidden = true;
+  }
+
+  function addFolder(name) {
+    var nm = String(name || '').trim().slice(0, 20);
+    if (!nm) return null;
+    var f = { id: uid('f-'), name: nm, ids: [] };
+    mine.folders.push(f);
+    /* 새 폴더는 '담기는 곳'이 되고, 화면은 전체 영상 보기로 돌아가 바로 담을 수 있게 합니다. */
+    mine.active = 'all';
+    mine.target = f.id;
+    saveMine();
+    renderMineRow();
+    renderVideoList();
+    toast(T('mine.folderMade', { name: nm }));
+    return f;
+  }
+
+  function removeFolder(id) {
+    var f = folderById(id);
+    if (!f) return;
+    mine.folders = mine.folders.filter(function (x) { return x.id !== id; });
+    if (!mine.folders.length) mine.folders.push({ id: DEFAULT_FOLDER, name: '', ids: [] });
+    if (mine.active === id) mine.active = 'all';
+    if (mine.target === id) mine.target = mine.folders[0].id;
+    saveMine();
+    renderMineRow();
+    renderVideoList();
+    toast(T('mine.folderGone', { name: folderName(f) }));
+  }
+
+  function playMine() {
+    var ids = playlistIds();
+    var queue = [];
+    ids.forEach(function (id) {
+      var e = archiveById(id);
+      if (e) queue.push(e);
+    });
+    if (!queue.length) { toast(T('mine.emptyTitle')); return; }
+    openPlayer('video', queue[0].v.id, '', queue, 0);
+  }
+
+  /* ---------- 내 링크 추가 ---------- */
+  var linkLookupTimer = null;
+
+  /* 유튜브 주소에서 videoId 추출 (watch·youtu.be·shorts·embed·live) */
+  function parseVideoId(raw) {
+    var s = String(raw || '').trim();
+    if (!s) return '';
+    if (/^[A-Za-z0-9_-]{11}$/.test(s)) return s;
+    var m = /(?:youtu\.be\/|[?&]v=|\/embed\/|\/shorts\/|\/live\/|\/v\/)([A-Za-z0-9_-]{11})/.exec(s);
+    return m ? m[1] : '';
+  }
+
+  function fetchLinkTitle(id) {
+    var watch = ytWatch(id);
+    var primary = 'https://www.youtube.com/oembed?url=' + encodeURIComponent(watch) + '&format=json';
+    var backup = 'https://noembed.com/embed?url=' + encodeURIComponent(watch);
+    function grab(url) {
+      return fetch(url, { cache: 'no-store' }).then(function (r) {
+        return r.ok ? r.json() : Promise.reject(new Error('http'));
+      }).then(function (j) {
+        return (j && (j.title || j.title_name)) || '';
+      });
+    }
+    return grab(primary).catch(function () { return grab(backup); }).catch(function () { return ''; });
+  }
+
+  function openAddLink() {
+    var modal = $('#addLinkModal');
+    if (!modal) return;
+    var url = $('#addLinkUrl'), title = $('#addLinkTitle'), err = $('#addLinkErr'), pv = $('#addLinkPreview');
+    if (url) url.value = '';
+    if (title) title.value = '';
+    if (err) err.textContent = '';
+    if (pv) pv.hidden = true;
+    modal.hidden = false;
+    try { if (url) url.focus(); } catch (e) {}
+  }
+  function closeAddLink() {
+    var modal = $('#addLinkModal');
+    if (modal) modal.hidden = true;
+  }
+
+  function updateLinkPreview() {
+    var url = $('#addLinkUrl'), pv = $('#addLinkPreview'), thumb = $('#addLinkThumb');
+    var idBox = $('#addLinkId'), err = $('#addLinkErr'), title = $('#addLinkTitle');
+    if (!url) return '';
+    var raw = url.value;
+    var id = parseVideoId(raw);
+    if (!raw.trim()) {
+      if (pv) pv.hidden = true;
+      if (err) err.textContent = '';
+      return '';
+    }
+    if (!id) {
+      if (pv) pv.hidden = true;
+      if (err) err.textContent = T('addLink.bad');
+      return '';
+    }
+    if (err) err.textContent = '';
+    if (pv) pv.hidden = false;
+    if (thumb) thumb.src = ytThumb(id);
+    if (idBox) idBox.textContent = 'youtu.be/' + id;
+    /* 제목이 비어 있으면 oEmbed 로 채워 봅니다 (0.6초 멈춤 뒤 한 번만) */
+    if (title && !title.value.trim()) {
+      clearTimeout(linkLookupTimer);
+      var note = $('#addLinkPvNote');
+      if (note) note.textContent = T('addLink.titleLoading');
+      linkLookupTimer = setTimeout(function () {
+        if (parseVideoId(url.value) !== id) return;
+        fetchLinkTitle(id).then(function (name) {
+          if (parseVideoId(url.value) !== id) return;
+          if (name && title && !title.value.trim()) title.value = name.slice(0, 120);
+          var n2 = $('#addLinkPvNote');
+          if (n2) n2.textContent = name ? T('addLink.found') : T('addLink.titleFail');
+        });
+      }, 600);
+    }
+    return id;
+  }
+
+  function submitAddLink() {
+    var url = $('#addLinkUrl'), title = $('#addLinkTitle'), err = $('#addLinkErr');
+    if (!url) return;
+    var id = parseVideoId(url.value);
+    if (!id) { if (err) err.textContent = T('addLink.bad'); return; }
+    if (links.some(function (l) { return l.id === id; })) {
+      if (err) err.textContent = T('addLink.dup');
+      return;
+    }
+    var name = (title && title.value.trim()) || '';
+    function finish(finalTitle) {
+      links.unshift({ id: id, title: finalTitle, added: Date.now() });
+      saveLinks();
+      renderVideoCats();
+      renderVideoList();
+      closeAddLink();
+      var e = archiveById(id);
+      toast(T('addLink.ok'));
+      if (e && mine.active !== 'all') toggleMineVideo(id);
+    }
+    if (name) { finish(name.slice(0, 120)); return; }
+    var saveBtn = $('#addLinkSave');
+    if (saveBtn) saveBtn.disabled = true;
+    fetchLinkTitle(id).then(function (t) {
+      if (saveBtn) saveBtn.disabled = false;
+      finish((t || ('YouTube · ' + id)).slice(0, 120));
+    });
+  }
+
+  /* ---------- 오늘의 DK 요약 카드 (1080×1350 PNG) ---------- */
+  var scImage = null;
+
+  function loadImage(src) {
+    return new Promise(function (resolve) {
+      var im = new Image();
+      im.onload = function () { resolve(im); };
+      im.onerror = function () { resolve(null); };
+      im.src = src;
+    });
+  }
+
+  function ensureFont() {
+    if (!document.fonts || !document.fonts.load) return Promise.resolve();
+    return document.fonts.load('800 40px Pretendard')
+      .then(function () { return document.fonts.ready; })
+      .catch(function () {});
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    var rr = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + rr, y);
+    ctx.arcTo(x + w, y, x + w, y + h, rr);
+    ctx.arcTo(x + w, y + h, x, y + h, rr);
+    ctx.arcTo(x, y + h, x, y, rr);
+    ctx.arcTo(x, y, x + w, y, rr);
+    ctx.closePath();
+  }
+
+  function fitText(ctx, txt, max, size, weight) {
+    var s = String(txt == null ? '' : txt);
+    ctx.font = (weight || 700) + ' ' + size + 'px ' + SC_FONT;
+    if (ctx.measureText(s).width <= max) return s;
+    var out = s;
+    while (out.length > 1 && ctx.measureText(out + '…').width > max) out = out.slice(0, -1);
+    return out + '…';
+  }
+
+  var SC_FONT = 'Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif';
+
+  function scFont(size, weight) { return (weight || 700) + ' ' + size + 'px ' + SC_FONT; }
+
+  function summaryData() {
+    var rows = PLAYERS.map(function (p) {
+      var list = recent(p, 5);
+      return { p: p, m: list, t: tally(list) };
+    });
+    var w = 0, l = 0;
+    rows.forEach(function (r) { w += r.t.w; l += r.t.l; });
+    var next = LIVE.official && LIVE.official.ok ? LIVE.official.next : null;
+    var nextMain = '', nextSub = '';
+    if (next) {
+      var opp = next.opponent || {};
+      nextMain = 'DK vs ' + (opp.code || opp.name || 'TBD');
+      nextSub = [eventDate(next), next.time || '', leagueName(next.league), blockText(next.block)]
+        .filter(Boolean).join(' · ');
+    } else {
+      nextMain = T('summary.nextTbd');
+      nextSub = T('summary.nextOff');
+    }
+    var notices = calNotices().slice().sort(function (a, b) {
+      return String(b.posted || b.date || '').localeCompare(String(a.posted || a.date || ''));
+    });
+    var notice = notices.length ? (notices[0].title ? L(notices[0].title) : (notices[0].titleName || '')) : '';
+    return { rows: rows, w: w, l: l, nextMain: nextMain, nextSub: nextSub, notice: notice };
+  }
+
+  function drawSummaryCard(logo) {
+    var W = 1080, H = 1350;
+    var canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = H;
+    var ctx = canvas.getContext('2d');
+    var d = summaryData();
+    var now = new Date();
+    var C = {
+      ink: '#EAF6F3', ink2: '#A9C3BD', muted: '#78938D', dim: '#5A736D',
+      mint: '#00F5C4', mint2: '#00C49A', red: '#FF6B7A', line: 'rgba(255,255,255,.09)'
+    };
+
+    /* 배경 */
+    var bg = ctx.createLinearGradient(0, 0, W, H);
+    bg.addColorStop(0, '#04120F'); bg.addColorStop(.42, '#061A1A'); bg.addColorStop(1, '#03251F');
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+    var glow = ctx.createRadialGradient(960, 40, 20, 960, 40, 620);
+    glow.addColorStop(0, 'rgba(0,245,196,.20)'); glow.addColorStop(1, 'rgba(0,245,196,0)');
+    ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+    var glow2 = ctx.createRadialGradient(80, 1240, 20, 80, 1240, 520);
+    glow2.addColorStop(0, 'rgba(0,196,154,.10)'); glow2.addColorStop(1, 'rgba(0,196,154,0)');
+    ctx.fillStyle = glow2; ctx.fillRect(0, 0, W, H);
+
+    /* 머리: 로고 · 워드마크 · DAILY REPORT */
+    if (logo) {
+      ctx.save();
+      try { ctx.filter = 'brightness(0) invert(1)'; } catch (e) {}
+      ctx.drawImage(logo, 64, 56, 124, 72);
+      ctx.restore();
+    } else {
+      ctx.fillStyle = 'rgba(255,255,255,.10)';
+      roundRect(ctx, 64, 56, 124, 72, 14); ctx.fill();
+      ctx.fillStyle = C.ink; ctx.font = scFont(34, 900); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('DK', 126, 92);
+      ctx.textAlign = 'left';
+    }
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = C.ink; ctx.font = scFont(32, 900);
+    ctx.fillText('DK', 212, 96);
+    var dkW = ctx.measureText('DK ').width;
+    ctx.fillStyle = C.mint; ctx.fillText('SIGNAL', 212 + dkW, 96);
+    ctx.fillStyle = C.muted; ctx.font = scFont(18, 600);
+    ctx.fillText(T('brand.sub'), 213, 124);
+
+    ctx.textAlign = 'right';
+    ctx.fillStyle = C.mint; ctx.font = scFont(17, 800);
+    ctx.fillText('●  ' + T('summary.kicker'), 1016, 78);
+    ctx.fillStyle = C.ink; ctx.font = scFont(26, 800);
+    ctx.fillText(window.I18N.feedDate(now), 1016, 116);
+    ctx.textAlign = 'left';
+
+    ctx.strokeStyle = C.line; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(64, 168); ctx.lineTo(1016, 168); ctx.stroke();
+
+    /* 제목 */
+    var title = T('summary.title');
+    var parts = title.split('DK');
+    ctx.font = scFont(62, 900);
+    var tx = 64;
+    if (parts.length > 1) {
+      ctx.fillStyle = C.ink; ctx.fillText(parts[0], tx, 262);
+      tx += ctx.measureText(parts[0]).width;
+      ctx.fillStyle = C.mint; ctx.fillText('DK', tx, 262);
+      tx += ctx.measureText('DK').width;
+      ctx.fillStyle = C.ink; ctx.fillText(parts.slice(1).join('DK'), tx, 262);
+    } else {
+      ctx.fillStyle = C.ink; ctx.fillText(title, tx, 262);
+    }
+    ctx.textAlign = 'right'; ctx.fillStyle = C.muted; ctx.font = scFont(21, 600);
+    ctx.fillText(T('summary.sub', { w: d.w, l: d.l }), 1016, 256);
+    ctx.textAlign = 'left';
+
+    /* 5인 패널 */
+    var px = 64, pw = 952, py = 306, rh = 168, gap = 8;
+    var ph = rh * 5 + gap * 2;
+    var panelGrad = ctx.createLinearGradient(px, py, px + pw, py + ph);
+    panelGrad.addColorStop(0, 'rgba(9,38,34,.84)'); panelGrad.addColorStop(1, 'rgba(5,22,22,.80)');
+    ctx.fillStyle = panelGrad;
+    roundRect(ctx, px, py, pw, ph, 30); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,245,196,.20)'; ctx.lineWidth = 1.6;
+    roundRect(ctx, px, py, pw, ph, 30); ctx.stroke();
+
+    d.rows.forEach(function (row, i) {
+      var y = py + 8 + i * rh;
+      var p = row.p, t = row.t;
+      if (i) {
+        ctx.strokeStyle = 'rgba(255,255,255,.06)'; ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.moveTo(px + 22, y - 4); ctx.lineTo(px + pw - 22, y - 4); ctx.stroke();
+      }
+      var cy = y + 76;
+      /* 아바타 */
+      var ring = ctx.createLinearGradient(96, cy - 46, 184, cy + 46);
+      ring.addColorStop(0, 'rgba(0,245,196,.55)'); ring.addColorStop(1, 'rgba(0,245,196,.12)');
+      ctx.beginPath(); ctx.arc(140, cy, 44, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(0,245,196,.10)'; ctx.fill();
+      ctx.strokeStyle = ring; ctx.lineWidth = 2.4; ctx.stroke();
+      var initial = (p.nameKo || p.nameEn || '?').slice(0, 1);
+      ctx.fillStyle = C.mint; ctx.font = scFont(40, 900);
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(initial, 140, cy + 2);
+      ctx.textBaseline = 'alphabetic';
+      ctx.textAlign = 'center'; ctx.fillStyle = C.dim; ctx.font = scFont(14, 800);
+      ctx.fillText(p.pos || '', 140, y + 152);
+      ctx.textAlign = 'left';
+
+      /* 이름 + MY PICK */
+      ctx.fillStyle = C.ink; ctx.font = scFont(40, 900);
+      ctx.fillText(pName(p), 210, y + 58);
+      var nameW = ctx.measureText(pName(p)).width;
+      if (p.key === myPick) {
+        var cw = 118, chh = 30, cx = 210 + nameW + 14, cyy = y + 32;
+        ctx.fillStyle = 'rgba(0,245,196,.16)';
+        roundRect(ctx, cx, cyy, cw, chh, 15); ctx.fill();
+        ctx.strokeStyle = 'rgba(0,245,196,.5)'; ctx.lineWidth = 1.4; ctx.stroke();
+        ctx.fillStyle = C.mint; ctx.font = scFont(15, 900);
+        ctx.fillText('★ MY PICK', cx + 13, cyy + 21);
+      }
+
+      ctx.fillStyle = C.muted; ctx.font = scFont(21, 600);
+      ctx.fillText(pReal(p) + ' · ' + T('pos.' + (p.pos || 'TOP')), 210, y + 94);
+
+      ctx.fillStyle = C.ink2; ctx.font = scFont(23, 700);
+      ctx.fillText(tierText(p), 210, y + 132);
+      var tw = ctx.measureText(tierText(p)).width;
+      ctx.fillStyle = C.mint; ctx.font = scFont(23, 800);
+      ctx.fillText(lpText(p), 210 + tw + 14, y + 132);
+      var lw = ctx.measureText(lpText(p)).width;
+      ctx.fillStyle = C.dim; ctx.font = scFont(19, 600);
+      ctx.fillText('· ' + winRateText(p), 210 + tw + 14 + lw + 12, y + 132);
+
+      /* 최근 5경기 막대 (막대 = 관여도, 최신 →) */
+      ctx.fillStyle = C.dim; ctx.font = scFont(15, 700);
+      ctx.fillText(T('summary.recent'), 510, y + 36);
+      var bw = 34, bgap = 12, baseY = y + 112;
+      var bars = row.m.slice().reverse();
+      bars.forEach(function (m, bi) {
+        var bx = 510 + bi * (bw + bgap);
+        var hgt = barHeight(m) * 4.6;
+        var grd = ctx.createLinearGradient(bx, baseY - hgt, bx, baseY);
+        if (m.win) { grd.addColorStop(0, '#00F5C4'); grd.addColorStop(1, '#00A783'); }
+        else { grd.addColorStop(0, '#FF8C97'); grd.addColorStop(1, '#C44756'); }
+        ctx.fillStyle = grd;
+        roundRect(ctx, bx, baseY - hgt, bw, hgt, 7); ctx.fill();
+        ctx.fillStyle = C.dim; ctx.font = scFont(12, 600);
+        ctx.textAlign = 'center';
+        ctx.fillText(String(m.kda || ''), bx + bw / 2, y + 136);
+        ctx.textAlign = 'left';
+      });
+
+      /* 승·패 */
+      var full = T('summary.winLose', { w: t.w, l: t.l });
+      ctx.font = scFont(36, 900);
+      var fm = full.match(/^(.*?\d+\D+?)(\d+\D*)$/);
+      if (fm) {
+        var w1 = ctx.measureText(fm[1]).width, w2 = ctx.measureText(fm[2]).width;
+        var sx = 992 - (w1 + w2);
+        ctx.fillStyle = t.w >= t.l ? C.mint : C.ink;
+        ctx.fillText(fm[1], sx, y + 66);
+        ctx.fillStyle = t.l > t.w ? C.red : C.ink2;
+        ctx.fillText(fm[2], sx + w1, y + 66);
+      } else {
+        ctx.textAlign = 'right'; ctx.fillStyle = C.ink;
+        ctx.fillText(full, 992, y + 66); ctx.textAlign = 'left';
+      }
+      var lastM = row.m[0];
+      var lastD = '';
+      if (lastM && lastM.date) {
+        var pm = /(\d{4})-(\d{2})-(\d{2})/.exec(String(lastM.date));
+        if (pm) lastD = pm[2] + '.' + pm[3];
+      }
+      ctx.textAlign = 'right'; ctx.fillStyle = C.dim; ctx.font = scFont(16, 600);
+      ctx.fillText(lastD ? T('summary.lastGame', { date: lastD }) : '', 992, y + 104);
+      ctx.textAlign = 'left';
+    });
+
+    /* 꼬리: 다음 경기 · 최신 공지 · 주소 */
+    var fy = 1206;
+    ctx.fillStyle = 'rgba(255,255,255,.035)';
+    roundRect(ctx, 64, fy, 730, 104, 20); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,245,196,.22)'; ctx.lineWidth = 1.4;
+    roundRect(ctx, 64, fy, 730, 104, 20); ctx.stroke();
+    ctx.fillStyle = C.mint; ctx.font = scFont(13, 800);
+    ctx.fillText(T('summary.next'), 92, fy + 32);
+    ctx.fillStyle = C.ink; ctx.font = scFont(25, 800);
+    ctx.fillText(fitText(ctx, d.nextMain, 310, 25, 800), 92, fy + 64);
+    ctx.fillStyle = C.dim; ctx.font = scFont(14, 600);
+    ctx.fillText(fitText(ctx, d.nextSub, 310, 14, 600), 92, fy + 88);
+    ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(430, fy + 18); ctx.lineTo(430, fy + 86); ctx.stroke();
+    ctx.fillStyle = C.mint; ctx.font = scFont(13, 800);
+    ctx.fillText(T('summary.notice'), 456, fy + 32);
+    ctx.fillStyle = C.ink2; ctx.font = scFont(20, 700);
+    ctx.fillText(fitText(ctx, d.notice || T('summary.noticeNone'), 300, 20, 700), 456, fy + 66);
+
+    ctx.textAlign = 'right';
+    ctx.fillStyle = C.mint; ctx.font = scFont(18, 800);
+    ctx.fillText('dk-signal.vercel.app', 1016, fy + 36);
+    ctx.fillStyle = C.dim; ctx.font = scFont(12, 600);
+    ctx.fillText(T('summary.basis', { time: pad(now.getHours()) + ':' + pad(now.getMinutes()) }), 1016, fy + 62);
+    ctx.textAlign = 'left';
+    ctx.fillStyle = 'rgba(255,255,255,.18)'; ctx.font = scFont(11, 600);
+    ctx.fillText('DK SIGNAL · ' + window.I18N.feedDate(now), 64, fy + 132);
+
+    return canvas;
+  }
+
+  function renderSummaryPreview() {
+    var stage = $('#scStage'), img = $('#scImg'), loading = $('#scLoading');
+    if (!stage) return;
+    if (loading) loading.hidden = false;
+    if (img) img.hidden = true;
+    Promise.all([ensureFont(), loadImage('./logo/dpluskia.svg')]).then(function (res) {
+      var canvas;
+      try {
+        canvas = drawSummaryCard(res[1]);
+      } catch (e) {
+        if (loading) { loading.textContent = T('summary.saveFail'); loading.hidden = false; }
+        return;
+      }
+      var url = canvas.toDataURL('image/png');
+      scImage = { canvas: canvas, url: url };
+      if (loading) loading.hidden = true;
+      if (img) { img.src = url; img.hidden = false; }
+      var open = $('#scOpen');
+      if (open) { open.href = url; open.hidden = false; }
+      var save = $('#scSave');
+      if (save) save.disabled = false;
+    });
+  }
+
+  function openSummary() {
+    var modal = $('#summaryModal');
+    if (!modal) return;
+    modal.hidden = false;
+    document.body.classList.add('is-sheet');
+    renderSummaryPreview();
+    var sheet = modal.querySelector('.lg-sheet');
+    if (sheet) { try { sheet.focus({ preventScroll: true }); } catch (e) {} }
+  }
+  function closeSummary() {
+    var modal = $('#summaryModal');
+    if (modal) modal.hidden = true;
+    document.body.classList.remove('is-sheet');
+  }
+
+  function summaryFileName() {
+    var d = new Date();
+    return 'dk-signal-' + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + '.png';
+  }
+
+  function saveSummary() {
+    if (!scImage) return;
+    var canvas = scImage.canvas;
+    try {
+      if (canvas.toBlob) {
+        canvas.toBlob(function (blob) {
+          if (!blob) { toast(T('summary.saveFail')); return; }
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url; a.download = summaryFileName();
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(function () { a.remove(); URL.revokeObjectURL(url); }, 4000);
+          toast(T('summary.saved'));
+        }, 'image/png');
+        return;
+      }
+      var a2 = document.createElement('a');
+      a2.href = scImage.url; a2.download = summaryFileName();
+      document.body.appendChild(a2); a2.click(); a2.remove();
+      toast(T('summary.saved'));
+    } catch (e) { toast(T('summary.saveFail')); }
+  }
+
+  function shareSummary() {
+    if (!scImage) return;
+    var canvas = scImage.canvas;
+    function fallback() { toast(T('summary.shareNo')); }
+    if (!canvas.toBlob || !navigator.canShare) { fallback(); return; }
+    canvas.toBlob(function (blob) {
+      if (!blob) { fallback(); return; }
+      try {
+        var file = new File([blob], summaryFileName(), { type: 'image/png' });
+        if (!navigator.canShare({ files: [file] })) { fallback(); return; }
+        navigator.share({ files: [file], title: T('summary.title') }).catch(function () {});
+      } catch (e) { fallback(); }
+    }, 'image/png');
+  }
+
+  /* ---------- 진행 중인 투표 팝업 ---------- */
+  var VOTE_POP_KEY = 'dk.signal.votePop.hide';
+
+  function votePopMd(iso) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || ''));
+    if (!m) return '';
+    var l = lang();
+    if (l === 'vi') return m[3] + '/' + m[2];
+    if (l === 'en') return m[2] + '/' + m[3];
+    return m[2] + '.' + m[3];
+  }
+
+  function votePopItemHTML(v) {
+    var start = votePopMd(v.start) || votePopMd(v.deadline);
+    var end = votePopMd(v.deadline);
+    var period = T('votePop.period', { start: start, end: end });
+    var dday = ddayText(daysUntil(v.deadline));
+    return '<li class="vp-item">' +
+      '<span class="vp-top"><span class="vp-event">' + esc(L(v.event)) + '</span>' +
+        '<span class="vp-dday">' + esc(dday) + '</span></span>' +
+      '<span class="vp-name">' + esc(L(v.title)) + '</span>' +
+      '<span class="vp-cand">' + (v.dk ? '<em class="vote-dk">DK</em>' : '') + esc(L(v.candidate)) +
+        (L(v.candidateNote) ? '<i>' + esc(L(v.candidateNote)) + '</i>' : '') + '</span>' +
+      '<span class="vp-when">' + esc(period) + '</span>' +
+      '<a class="vp-go" href="' + esc(v.url) + '" target="_blank" rel="noopener">' + esc(T('votePop.cta')) + '</a>' +
+    '</li>';
+  }
+
+  function renderVotePop() {
+    var list = $('#votePopList');
+    var sub = $('#votePopSub');
+    var open = openVotes();
+    if (list) list.innerHTML = open.map(votePopItemHTML).join('');
+    if (sub) sub.textContent = T('votePop.sub', { n: open.length });
+  }
+
+  function openVotePop() {
+    if (!openVotes().length) return;
+    var modal = $('#votePop');
+    if (!modal) return;
+    renderVotePop();
+    modal.hidden = false;
+    document.body.classList.add('is-sheet');
+    var sheet = modal.querySelector('.lg-sheet');
+    if (sheet) { try { sheet.focus({ preventScroll: true }); } catch (e) {} }
+  }
+  function closeVotePop() {
+    var modal = $('#votePop');
+    if (modal) modal.hidden = true;
+    document.body.classList.remove('is-sheet');
+  }
+  function hideVotePopToday() {
+    var d = new Date();
+    store.set(VOTE_POP_KEY, d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()));
+    closeVotePop();
+  }
+  function initVotePop() {
+    if (!openVotes().length) return;
+    var d = new Date();
+    var today = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+    if (store.get(VOTE_POP_KEY, '') === today) return;
+    setTimeout(function () {
+      var modal = $('#votePop');
+      if (!modal || !modal.hidden) return;
+      if (document.hidden) return;
+      openVotePop();
+    }, 900);
   }
 
   /* ---------- 인앱 유튜브 플레이어 (찜 목록 연속 재생 · 다음 영상 · MY LIST) ---------- */
@@ -2142,6 +2928,7 @@
     renderVideoChamps();
     renderVideoCats();
     renderVideoFilters();
+    renderMineRow();
     renderVideoList();
     renderVideoVod();
     var hint = $('#videoArchiveHint');
@@ -3013,6 +3800,44 @@
       }
       return;
     }
+    /* ---------- v3.12: 나만의 재생목록 · 내 링크 · 요약 카드 · 투표 팝업 ---------- */
+    var mineDel = e.target.closest('[data-mine-del]');
+    if (mineDel) { removeFolder(mineDel.getAttribute('data-mine-del')); return; }
+    if (e.target.closest('[data-mine-new]')) { openFolderForm(); return; }
+    var mineChip = e.target.closest('[data-mine]');
+    if (mineChip) {
+      var mid = mineChip.getAttribute('data-mine');
+      mine.active = mid === 'all' ? 'all' : (folderById(mid) ? mid : 'all');
+      if (mine.active !== 'all') mine.target = mine.active;
+      state.videoPlayer = 'all';
+      state.videoCat = 'all';
+      state.videoChamp = 'all';
+      saveMine();
+      renderMineRow();
+      renderVideoFilters();
+      renderVideoCats();
+      renderVideoChamps();
+      renderVideoList();
+      return;
+    }
+    if (e.target.closest('#mineNew')) { openFolderForm(); return; }
+    if (e.target.closest('#mineFormCancel')) { closeFolderForm(); return; }
+    if (e.target.closest('#minePlay')) { playMine(); return; }
+    if (e.target.closest('#mineAddLink') || e.target.closest('#mineAddLink2')) { openAddLink(); return; }
+    var addMine = e.target.closest('[data-add]');
+    if (addMine) { toggleMineVideo(addMine.getAttribute('data-add')); return; }
+    if (e.target.closest('#addLinkClose') || e.target.closest('#addLinkCancel') || e.target.closest('#addLinkVeil')) {
+      closeAddLink(); return;
+    }
+    if (e.target.closest('#summaryBtn')) { openSummary(); return; }
+    if (e.target.closest('#summaryClose') || e.target.closest('#summaryVeil')) { closeSummary(); return; }
+    if (e.target.closest('#scSave')) { saveSummary(); return; }
+    if (e.target.closest('#scShare')) { shareSummary(); return; }
+    if (e.target.closest('#votePopClose') || e.target.closest('#votePopDone') || e.target.closest('#votePopVeil')) {
+      closeVotePop(); return;
+    }
+    if (e.target.closest('#votePopHide')) { hideVotePopToday(); return; }
+
     var cheerDel = e.target.closest('[data-cheer]');
     if (cheerDel) {
       var list = getCheers();
@@ -3192,6 +4017,30 @@
     if (searchComposing) return;
     state.videoQuery = e.target.value || '';
     renderVideoList();
+  });
+
+  /* 새 폴더 폼 · 내 링크 폼 */
+  var mineForm = $('#mineForm');
+  if (mineForm) mineForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var input = $('#mineFolderName');
+    var f = addFolder(input ? input.value : '');
+    if (f) closeFolderForm();
+  });
+  var addLinkUrl = $('#addLinkUrl');
+  if (addLinkUrl) {
+    addLinkUrl.addEventListener('input', updateLinkPreview);
+    addLinkUrl.addEventListener('change', updateLinkPreview);
+  }
+  var addLinkTitle = $('#addLinkTitle');
+  if (addLinkTitle) addLinkTitle.addEventListener('input', function () {
+    var note = $('#addLinkPvNote');
+    if (note) note.textContent = T('addLink.found');
+  });
+  var addLinkForm = $('#addLinkForm');
+  if (addLinkForm) addLinkForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    submitAddLink();
   });
 
   /* ESC 로 플레이어를 닫습니다. */
@@ -3481,18 +4330,22 @@
     /* 지금 쓰는 기기의 안내를 맨 위로 올립니다 (인앱 브라우저 주의 → 기기별 순서 → 나머지). */
     var iosSec = $('#installIos');
     var andSec = $('#installAndroid');
+    var deskSec = $('#installDesktop');
     var manual = $('#installManualTitle');
+    if (deskSec) deskSec.hidden = !env.desktop;
     if (iosSec && andSec) {
       var first = env.ios ? iosSec : andSec;
       var second = env.ios ? andSec : iosSec;
-      if (env.desktop) { first = iosSec; second = andSec; }
-      first.style.order = '7';
-      second.style.order = '8';
-      first.classList.add('is-here');
-      second.classList.remove('is-here');
       if (env.desktop) {
-        iosSec.classList.remove('is-here');
-        andSec.classList.remove('is-here');
+        first = iosSec; second = andSec;
+        iosSec.style.order = '8'; andSec.style.order = '9';
+        iosSec.classList.remove('is-here'); andSec.classList.remove('is-here');
+        if (deskSec) { deskSec.style.order = '7'; deskSec.classList.add('is-here'); }
+      } else {
+        first.style.order = '7';
+        second.style.order = '8';
+        first.classList.add('is-here');
+        second.classList.remove('is-here');
       }
     }
     if (manual) manual.style.order = '6';
@@ -3578,6 +4431,12 @@
     if (e.key !== 'Escape') return;
     var install = $('#installModal');
     if (install && !install.hidden) { closeInstall(); return; }
+    var summary = $('#summaryModal');
+    if (summary && !summary.hidden) { closeSummary(); return; }
+    var addLink = $('#addLinkModal');
+    if (addLink && !addLink.hidden) { closeAddLink(); return; }
+    var votePop = $('#votePop');
+    if (votePop && !votePop.hidden) { closeVotePop(); return; }
     if (lgOpenKey) closeLive();
   });
 
@@ -3599,6 +4458,7 @@
     if (lgOpenKey) closeLive();
     renderAll();
     applyLiveStatus();
+    if ($('#votePop') && !$('#votePop').hidden) renderVotePop();
     if (canUseApi() && !LIVE.offline) refreshLive();
   });
 
@@ -3612,6 +4472,7 @@
   applyLiveStatus();
   refreshLive();
   scheduleLivePoll();
+  initVotePop();
   setInterval(function () {
     if (!document.hidden && !LIVE.offline) refreshLive();
   }, LIVE_INTERVAL);

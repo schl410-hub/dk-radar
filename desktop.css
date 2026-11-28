@@ -1,0 +1,255 @@
+/* =========================================================================
+   딮기 시그널 · PC 데스크톱 레이아웃 (≥1024px)
+   - 모바일(최대 480px) 1열 화면은 그대로 두고, 넓은 화면에서만 2~3열로 펼칩니다.
+   - styles.css 뒤에 붙습니다. (index.html 의 <link> 순서 고정)
+   ========================================================================= */
+
+.only-m { display: inline; }
+.only-d { display: none; }
+
+@media (min-width: 1024px) {
+  .only-m { display: none; }
+  .only-d { display: inline; }
+
+  .app { max-width: none; padding-bottom: 0; }
+
+  /* ---------- 상단 헤더: 로고 · 5탭 · 언어 · 테마 · PC 앱 설치 한 줄 ---------- */
+  .appbar {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 20px;
+    padding: 11px 26px;
+    min-height: 68px;
+  }
+  .brand-row { display: contents; }
+  .brand { grid-column: 1; grid-row: 1; gap: 12px; }
+  .logo img { width: 62px; }
+  .brand-text { padding-left: 12px; }
+  .brand-name { font-size: 14.5px; letter-spacing: .15em; }
+  .brand-sub { font-size: 10px; margin-top: 3px; }
+
+  .tabs {
+    grid-column: 2; grid-row: 1;
+    justify-self: center;
+    margin-top: 0;
+    gap: 2px;
+    padding: 4px;
+    border-radius: 999px;
+  }
+  .tab {
+    flex: 0 0 auto;
+    padding: 9px 19px;
+    font-size: 12.5px;
+    border-radius: 999px;
+    gap: 6px;
+  }
+  .tab svg { width: 14px; height: 14px; }
+
+  .head-actions { grid-column: 3; grid-row: 1; margin-left: 0; gap: 7px; flex-wrap: nowrap; }
+  .lang-switch { padding: 3px; gap: 1px; }
+  .lang-switch button, .lang-switch a { font-size: 10.5px; padding: 4px 7px; }
+  .theme-btn { height: 34px; padding: 0 13px 0 11px; font-size: 11.5px; gap: 6px; }
+  .theme-btn .ic { width: 15px; height: 15px; }
+  .install-btn { height: 34px; padding: 0 15px 0 13px; font-size: 11.5px; }
+  [hidden] { display: none !important; }
+
+  /* ---------- 본문 캔버스 ---------- */
+  main {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 14px 26px 40px;
+    zoom: 1.2;
+  }
+
+  /* 홈이 아닌 탭은 가운데 3단 폭으로 */
+  #panel-official, #panel-solo, #panel-records { max-width: 960px; margin: 0 auto; }
+
+  /* =====================================================================
+     홈 — 좌: MY PICK / 설치 / 하이라이트 / 영상 / 응원 · 우: 5인 보드 / 최근 솔랭
+     ===================================================================== */
+  .feed-meta { padding: 2px 2px 0; font-size: 11px; gap: 7px; }
+
+  .desk-home {
+    display: grid;
+    grid-template-columns: minmax(0, 372px) minmax(0, 1fr);
+    gap: 18px;
+    align-items: start;
+    margin-top: 12px;
+  }
+  .col { display: flex; flex-direction: column; min-width: 0; }
+  .col-right { padding-top: 0; }
+
+  /* --- 왼쪽: MY PICK --- */
+  .desk-home .pick { margin: 0; padding: 16px 16px 14px; border-radius: 22px; }
+  .desk-home .pick-tools { gap: 6px; }
+
+  /* --- 왼쪽: 설치 · 하이라이트 · 영상 바로가기 · 응원 --- */
+  .desk-home .install-card { margin: 10px 0 0; }
+  .desk-home .hl-card { margin: 10px 0 0; }
+  .desk-home .video-jump { width: 100%; margin: 10px 0 0; }
+  .desk-home .cheer-card { margin: 10px 0 0; }
+
+  /* --- 오른쪽: 5인 상태 보드 --- */
+  .desk-home .sec { padding: 0 2px 9px; align-items: center; gap: 10px; }
+  .desk-home .sec b { font-size: 14px; }
+  .desk-home .sec .sec-sub { font-size: 10px; }
+  .desk-home .sum-btn { height: 30px; padding: 0 13px; font-size: 10px; }
+  .desk-home .sum-btn svg { width: 13px; height: 13px; }
+
+  /* 5인 상태 보드: 최애 타일이 2칸을 차지하는 3열 보드 */
+  .desk-home .tiles {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 9px;
+    padding: 0;
+  }
+  .desk-home .tile { padding: 13px 14px 12px; border-radius: 16px; }
+  .desk-home .tile.is-active { grid-column: span 2; }
+  .desk-home .tile.is-active .t-name { font-size: 18px; margin-top: 8px; }
+  .desk-home .tile.is-active .t-tier { font-size: 12px; margin-top: 6px; }
+  .desk-home .tile.is-active .bars { height: 20px; }
+  .desk-home .t-name { font-size: 15.5px; }
+  .desk-home .t-tier { font-size: 10.5px; }
+  .desk-home .t-pos { font-size: 9.5px; }
+  .desk-home .t-st { font-size: 9.5px; }
+  .desk-home .bars { height: 17px; margin-top: 9px; gap: 3px; }
+  .desk-home .board-note { padding: 8px 2px 0; font-size: 9.5px; }
+
+  /* --- 오른쪽: 최근 솔로랭크 전적 --- */
+  .desk-home .solo-card { margin: 12px 0 0; }
+
+  /* --- 아래: 알림 · 로스터 2단 --- */
+  .desk-below {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    align-items: start;
+    margin-top: 18px;
+  }
+  .desk-below > .card { margin: 0; }
+
+  /* =====================================================================
+     영상 — 상단 LIVE NOW + 생중계·공식 채널 / 공식 재생목록 6열 / 아카이브 4열
+     ===================================================================== */
+  #panel-video { animation: none; }
+
+  .dv-top {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    gap: 14px;
+    align-items: stretch;
+    margin-top: 2px;
+  }
+  .dv-top .live-hero { margin-top: 0; display: flex; flex-direction: column; justify-content: center; min-width: 0; }
+  .dv-top .lh-card { flex: 1; display: flex; flex-direction: column; }
+  .dv-top .lh-thumb { aspect-ratio: auto; flex: 1; min-height: 186px; }
+  .dv-top .lh-thumb img { object-position: 50% 62%; }
+  .dv-top .lh-foot { padding: 7px 10px; }
+  .dv-top .lh-cap b { font-size: 19px; }
+  .dv-top .lh-cap span { font-size: 10px; }
+
+  .dv-top .live-card {
+    margin: 0;
+    padding: 12px 14px 12px;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .dv-top .live-card .next-line { margin-top: 8px; padding: 6px 9px; }
+  .dv-top .live-card .card-title { font-size: 16px; }
+  .dv-top .live-card .vc-sub { font-size: 9.5px; }
+  .dv-top .chan-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 9px; gap: 6px; }
+  .dv-top .chan { padding: 8px 9px; }
+  .dv-top .chan-top { font-size: 10px; }
+  .dv-top .chan-sub { font-size: 7px; }
+
+  /* --- 공식 재생목록 --- */
+  .pl-strip { margin-top: 16px; }
+  .pl-strip-head { padding: 0 2px; }
+  .pl-strip-title { font-size: 14px; }
+  .pl-grid.is-strip {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 9px;
+    overflow: visible;
+    padding-bottom: 0;
+  }
+  .pl-grid.is-strip .pl-item { flex: none; }
+  .pl-grid.is-strip .pl-thumb { aspect-ratio: auto; height: 104px; }
+  .pl-grid.is-strip .pl-title { font-size: 10px; min-height: 0; -webkit-line-clamp: 1; line-height: 1.35; }
+
+  /* --- 영상 아카이브: 왼쪽 필터 레일 + 오른쪽 4열 카드 그리드 --- */
+  .video-card {
+    margin: 16px 0 0;
+    padding: 14px 16px 16px;
+    border-radius: 22px;
+    display: grid;
+    grid-template-columns: 236px minmax(0, 1fr);
+    column-gap: 18px;
+    align-items: start;
+  }
+  .video-card > .arc-head { grid-column: 1 / -1; grid-row: 1; align-items: baseline; gap: 10px; }
+  .video-card .arc-title { display: flex; align-items: baseline; gap: 9px; }
+  .video-card .arc-title .card-title { margin-top: 0; font-size: 16px; }
+  .video-card .arc-kicker { font-size: 8px; }
+
+  .video-card > .hl-tools { grid-column: 1 / -1; grid-row: 2; max-width: none; gap: 8px; margin-top: 8px; flex-wrap: nowrap; }
+  .video-card .hl-search-input { height: 32px; font-size: 10.5px; }
+  .video-card .hl-sort .chip { font-size: 9px; padding: 6px 10px; }
+  .video-card .mine-add-link { height: 32px; padding: 0 13px; font-size: 10.5px; }
+
+  .video-card > .arc-rail {
+    grid-column: 1;
+    grid-row: 3;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    min-width: 0;
+    margin-top: 10px;
+  }
+  .video-card > .arc-rail .mine-row { margin-top: 0; padding: 9px 10px 10px; border-radius: 14px; }
+  .video-card > .arc-rail .mine-chips { gap: 4px; }
+  .video-card > .arc-rail .mine-tools { gap: 4px; }
+  .video-card > .arc-rail .chip-row { margin-top: 0; flex-wrap: wrap; overflow: visible; gap: 4px; }
+  .video-card > .arc-rail .pick-wrap { margin-top: 0; flex-wrap: wrap; }
+  .video-card > .arc-rail .pick-wrap .chip-row { flex: 1 1 auto; }
+  .video-card > .arc-rail .chip-row.champ-row { display: none; }
+  .video-card > .arc-rail .yt-search-link { margin-top: 0; }
+
+  .video-card > .vc-list {
+    grid-column: 2;
+    grid-row: 3;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 10px;
+  }
+  .vc-list > .hl-group { grid-column: 1 / -1; margin: 8px 0 0; }
+  .vc-row { display: block; }
+  .vc-item {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 7px;
+    padding: 7px;
+    border-radius: 14px;
+  }
+  .vc-thumb { width: 100%; border-radius: 10px; }
+  .vc-body { gap: 3px; }
+  .vc-title { font-size: 11.5px; line-height: 1.35; }
+  .vc-meta { font-size: 8.5px; }
+  .vc-add { left: 13px; top: 13px; font-size: 8.5px; padding: 3px 8px; }
+  .vc-add i { font-size: 9.5px; }
+
+  /* 아래 카드들(공식 유튜브·방송국·다시보기)은 2단 */
+  .dy-card, .video-card + .card { margin-top: 16px; }
+}
+
+/* 좁은 데스크톱(1024~1359)에서는 아카이브 3열·레일 폭 축소 */
+@media (min-width: 1024px) and (max-width: 1359px) {
+  .video-card { grid-template-columns: 208px minmax(0, 1fr); column-gap: 14px; }
+  .video-card > .vc-list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  .dv-top { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); }
+  .pl-grid.is-strip { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+}

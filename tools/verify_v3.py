@@ -107,6 +107,18 @@ CHAMP_CARDS = 0
 TOTAL_VIDEOS = 0
 
 
+async def dk_hide_vote_pop(ctx):
+    """v3.12 첫 화면 '진행 중인 투표' 팝업이 다른 검증을 가리지 않게 오늘 하루 보지 않기 상태로 시작합니다.
+    (팝업 자체는 tools/verify_v4.py 가 따로 검증합니다.)"""
+    await ctx.add_init_script("""
+      try {
+        var d = new Date();
+        var t = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+        localStorage.setItem('dk.signal.votePop.hide', t);
+      } catch (e) {}
+    """)
+
+
 def check(name, ok, detail=""):
     results.append((name, bool(ok), detail))
     print(("PASS " if ok else "FAIL ") + name + ((" :: " + str(detail)) if detail else ""))
@@ -155,6 +167,7 @@ async def main():
             ctx = await browser.new_context(
                 viewport={"width": 390, "height": 844}, device_scale_factor=2,
                 locale="ko-KR", permissions=["notifications"], color_scheme="dark")
+            await dk_hide_vote_pop(ctx)
             page = await ctx.new_page()
             logs = []
             page.on("console", lambda m: logs.append((m.type, m.text)))
@@ -1269,6 +1282,7 @@ async def main():
                          "(KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1")
             ctx_ios = await browser.new_context(viewport={"width": 390, "height": 844}, locale="ko-KR",
                                                 user_agent=iphone_ua, is_mobile=True, has_touch=True)
+            await dk_hide_vote_pop(ctx_ios)
             pg_ios = await ctx_ios.new_page()
             await pg_ios.goto(BASE, wait_until="networkidle")
             await pg_ios.wait_for_timeout(700)
@@ -1288,6 +1302,7 @@ async def main():
                         "Chrome/130.0.0.0 Mobile Safari/537.36 KAKAOTALK 11.2.0")
             ctx_ka = await browser.new_context(viewport={"width": 390, "height": 844}, locale="ko-KR",
                                                user_agent=kakao_ua, is_mobile=True, has_touch=True)
+            await dk_hide_vote_pop(ctx_ka)
             pg_ka = await ctx_ka.new_page()
             await pg_ka.goto(BASE, wait_until="networkidle")
             await pg_ka.wait_for_timeout(700)
@@ -1309,6 +1324,7 @@ async def main():
                                                 user_agent=("Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 "
                                                             "(KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36"),
                                                 is_mobile=True, has_touch=True)
+            await dk_hide_vote_pop(ctx_and)
             pg_and = await ctx_and.new_page()
             await pg_and.goto(BASE, wait_until="networkidle")
             await pg_and.wait_for_timeout(600)
@@ -1331,6 +1347,7 @@ async def main():
 
             # ---------- 스탠드얼론(이미 설치됨)에서는 버튼을 숨깁니다 ----------
             ctx_sa = await browser.new_context(viewport={"width": 390, "height": 844}, locale="ko-KR")
+            await dk_hide_vote_pop(ctx_sa)
             pg_sa = await ctx_sa.new_page()
             await pg_sa.add_init_script("Object.defineProperty(window.matchMedia, 'call', {});"
                                         "window.matchMedia = (q) => ({ matches: /standalone/.test(q), media: q,"
@@ -1355,6 +1372,7 @@ async def main():
             # ---------- 브라우저 언어 자동 감지 (저장값 없는 새 컨텍스트) ----------
             for loc, want in [("en-US", "en"), ("ja-JP", "ja"), ("zh-CN", "zh-CN"), ("zh-TW", "zh-CN"), ("vi-VN", "vi"), ("fr-FR", "ko")]:
                 ctx2 = await browser.new_context(viewport={"width": 390, "height": 844}, locale=loc)
+                await dk_hide_vote_pop(ctx2)
                 pg = await ctx2.new_page()
                 await pg.goto(BASE, wait_until="networkidle")
                 await pg.wait_for_timeout(600)

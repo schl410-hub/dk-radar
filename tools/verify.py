@@ -63,6 +63,18 @@ def start_server():
     raise SystemExit("dev server did not start: " + out.decode(errors="replace"))
 
 
+async def dk_hide_vote_pop(ctx):
+    """v3.12 첫 화면 '진행 중인 투표' 팝업이 다른 검증을 가리지 않게 오늘 하루 보지 않기 상태로 시작합니다.
+    (팝업 자체는 tools/verify_v4.py 가 따로 검증합니다.)"""
+    await ctx.add_init_script("""
+      try {
+        var d = new Date();
+        var t = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+        localStorage.setItem('dk.signal.votePop.hide', t);
+      } catch (e) {}
+    """)
+
+
 def check(name, ok, detail=""):
     results.append((name, bool(ok), detail))
     print(("PASS " if ok else "FAIL ") + name + ((" :: " + str(detail)) if detail else ""))
@@ -92,6 +104,7 @@ async def main():
         ctx = await browser.new_context(
             viewport={"width": 390, "height": 844}, device_scale_factor=2,
             locale="ko-KR", permissions=["notifications"], color_scheme="dark")
+        await dk_hide_vote_pop(ctx)
         page = await ctx.new_page()
         logs = []
         page.on("console", lambda m: logs.append((m.type, m.text)))

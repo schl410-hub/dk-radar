@@ -16,6 +16,7 @@
 <link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
 <link rel="stylesheet" href="./styles.css">
+<link rel="stylesheet" href="./desktop.css">
 <script>
 /* 저장된 테마·언어를 첫 페인트 전에 적용해 깜빡임을 막습니다. */
 (function () {
@@ -61,7 +62,7 @@
           <span id="themeTxt">다크</span>
         </button>
         <button class="install-btn" id="installBtn" type="button" data-i18n-attr="aria-label:install.installAria" aria-label="앱 설치 안내 열기" title="앱 설치">
-          <span class="ib-ico" aria-hidden="true">📲</span><span class="ib-txt" data-i18n="install.btn">앱 설치</span>
+          <span class="ib-ico" aria-hidden="true">📲</span><span class="ib-txt only-m" data-i18n="install.btn">앱 설치</span><span class="ib-txt only-d" data-i18n="install.btnPc">PC 앱 설치</span>
         </button>
       </div>
     </div>
@@ -106,26 +107,20 @@
         <span class="live-chip" id="liveChip" hidden>실시간</span>
       </div>
 
+      <div class="desk-home">
+        <div class="col col-left">
       <section class="pick" id="pickBanner" aria-live="polite"></section>
 
       <!-- 앱 설치 배너: 스탠드얼론(설치됨)이 아니면 어떤 브라우저에서든 보입니다 -->
       <section class="install-card" id="installCard" hidden>
         <span class="ic-badge" aria-hidden="true">📲</span>
         <span class="ic-body">
-          <b data-i18n="install.cardTitle">홈 화면에 딮기 시그널 설치</b>
-          <span data-i18n="install.cardBody">10초면 끝나요. 아이콘만 누르면 앱처럼 열려요.</span>
+          <b><span class="only-m" data-i18n="install.cardTitle">홈 화면에 딮기 시그널 설치</span><span class="only-d" data-i18n="install.cardTitlePc">PC에 딮기 시그널 설치</span></b>
+          <span><span class="only-m" data-i18n="install.cardBody">10초면 끝나요. 아이콘만 누르면 앱처럼 열려요.</span><span class="only-d" data-i18n="install.cardBodyPc">주소창 오른쪽 설치 아이콘을 누르면 앱처럼 열려요.</span></span>
         </span>
         <button class="ic-go" id="installCardBtn" type="button" data-i18n="install.cardCta">설치 방법</button>
         <button class="ic-x" id="installCardX" type="button" data-i18n-attr="aria-label:install.dismiss" aria-label="설치 안내 닫기">✕</button>
       </section>
-
-      <!-- 홈 D-DAY 스트립은 뺐습니다. 일정·D-DAY는 [캘린더] 탭(리스트·월간 캘린더)에서 모두 볼 수 있어요.
-           되살리려면 아래 한 줄의 주석을 풀면 됩니다(app.js renderEvents()가 그대로 채워 줍니다).
-           <section class="events" id="eventStrip" hidden aria-label="이벤트 · D-DAY" data-i18n-attr="aria-label:event.stripAria"></section> -->
-
-      <div class="sec"><b data-i18n="board.title">5인 상태 보드</b><span class="sec-sub" data-i18n="board.sub">타일을 눌러 둘러보기 · 별로 최애 고정</span></div>
-      <div class="tiles" id="statusGrid"></div>
-      <p class="board-note" id="boardNote">최근 솔로랭크 기록 기준 · 2026-11-26 확인</p>
 
       <section class="hl-card" id="highlightCard" aria-live="polite"></section>
 
@@ -135,6 +130,62 @@
         <span class="vj-go" aria-hidden="true">›</span>
       </button>
 
+      <section class="card cheer-card">
+        <div class="card-head">
+          <div>
+            <div class="eyebrow">FAN CHEER</div>
+            <h2 class="card-title" data-i18n="cheer.title">한 줄 응원</h2>
+          </div>
+          <span class="cheer-count" id="cheerCount">0줄</span>
+        </div>
+        <form class="cheer-form" id="cheerForm" autocomplete="off">
+          <input id="cheerInput" type="text" maxlength="60" placeholder="도란에게 한 줄 응원을 남겨보세요" aria-label="한 줄 응원 입력">
+          <button class="cheer-send" type="submit" aria-label="응원 남기기">
+            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3.4 10.2 16.6 4l-3.5 12-2.8-4-6.1.7 3-2.4-3.8-1.1Z" fill="currentColor"/></svg>
+          </button>
+        </form>
+        <ul class="cheer-list" id="cheerList"></ul>
+        <p class="cheer-empty" id="cheerEmpty">아직 남긴 응원이 없어요. 첫 한 줄을 남겨보세요.</p>
+        <p class="cheer-note" data-i18n="cheer.note">이 기기에만 저장돼요.</p>
+      </section>
+
+        </div>
+
+        <div class="col col-right">
+
+      <!-- 홈 D-DAY 스트립은 뺐습니다. 일정·D-DAY는 [캘린더] 탭(리스트·월간 캘린더)에서 모두 볼 수 있어요.
+           되살리려면 아래 한 줄의 주석을 풀면 됩니다(app.js renderEvents()가 그대로 채워 줍니다).
+           <section class="events" id="eventStrip" hidden aria-label="이벤트 · D-DAY" data-i18n-attr="aria-label:event.stripAria"></section> -->
+
+      <div class="sec">
+        <span class="sec-l"><b data-i18n="board.title">5인 상태 보드</b><span class="sec-sub" data-i18n="board.sub">타일을 눌러 둘러보기 · 별로 최애 고정</span></span>
+        <button class="sum-btn" id="summaryBtn" type="button" data-i18n-attr="aria-label:summary.aria" aria-label="오늘의 DK 요약 카드 만들기">
+          <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="2.6" y="4.2" width="14.8" height="11.6" rx="2.6" stroke="currentColor" stroke-width="1.6"/><path d="M2.6 7.6h14.8M6 11.2h3.2M6 13.4h5.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <span data-i18n="summary.btn">오늘 요약 카드</span>
+        </button>
+      </div>
+      <div class="tiles" id="statusGrid"></div>
+      <p class="board-note" id="boardNote">최근 솔로랭크 기록 기준 · 2026-11-26 확인</p>
+
+      <section class="card solo-card">
+        <div class="card-head">
+          <div>
+            <div class="eyebrow">RANKED SOLO / DUO</div>
+            <h2 class="section-title" data-i18n="solo.title">최근 솔로랭크 전적</h2>
+          </div>
+          <a class="ghost-btn" id="soloOpgg" href="#" target="_blank" rel="noopener">OP.GG ↗</a>
+        </div>
+        <p class="meta" id="soloMeta"></p>
+        <p class="solo-note" id="soloNoteFeed"></p>
+        <div class="tier-row" id="tierRow"></div>
+        <div class="table-wrap" id="soloTable"></div>
+        <a class="table-more" id="soloMore" href="#" target="_blank" rel="noopener">전체 전적 보기 ↗</a>
+      </section>
+
+        </div>
+      </div>
+
+      <div class="desk-below">
       <section class="card notify-card">
         <div class="card-head">
           <div>
@@ -174,46 +225,15 @@
         <p class="notify-note" id="notifyNote">지금은 앱을 열어 둔 동안 자동으로 새 전적을 확인해요. 서버 푸시를 켜면 앱을 닫아도 알림이 옵니다.</p>
       </section>
 
-      <section class="card cheer-card">
-        <div class="card-head">
-          <div>
-            <div class="eyebrow">FAN CHEER</div>
-            <h2 class="card-title" data-i18n="cheer.title">한 줄 응원</h2>
-          </div>
-          <span class="cheer-count" id="cheerCount">0줄</span>
-        </div>
-        <form class="cheer-form" id="cheerForm" autocomplete="off">
-          <input id="cheerInput" type="text" maxlength="60" placeholder="도란에게 한 줄 응원을 남겨보세요" aria-label="한 줄 응원 입력">
-          <button class="cheer-send" type="submit" aria-label="응원 남기기">
-            <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3.4 10.2 16.6 4l-3.5 12-2.8-4-6.1.7 3-2.4-3.8-1.1Z" fill="currentColor"/></svg>
-          </button>
-        </form>
-        <ul class="cheer-list" id="cheerList"></ul>
-        <p class="cheer-empty" id="cheerEmpty">아직 남긴 응원이 없어요. 첫 한 줄을 남겨보세요.</p>
-        <p class="cheer-note" data-i18n="cheer.note">이 기기에만 저장돼요.</p>
-      </section>
-
-      <section class="card solo-card">
-        <div class="card-head">
-          <div>
-            <div class="eyebrow">RANKED SOLO / DUO</div>
-            <h2 class="section-title" data-i18n="solo.title">최근 솔로랭크 전적</h2>
-          </div>
-          <a class="ghost-btn" id="soloOpgg" href="#" target="_blank" rel="noopener">OP.GG ↗</a>
-        </div>
-        <p class="meta" id="soloMeta"></p>
-        <p class="solo-note" id="soloNoteFeed"></p>
-        <div class="tier-row" id="tierRow"></div>
-        <div class="table-wrap" id="soloTable"></div>
-        <a class="table-more" id="soloMore" href="#" target="_blank" rel="noopener">전체 전적 보기 ↗</a>
-      </section>
-
       <section class="card roster-card">
         <div class="eyebrow" data-i18n="roster.eyebrow">DPLUS KIA · 2027 ROSTER</div>
         <h2 class="section-title" data-i18n="roster.title">도카쇼스딜</h2>
         <p class="meta" data-i18n="roster.meta">2027 시즌 디플러스 기아 로스터 5인. 이름을 눌러 선수를 바꿀 수 있어요.</p>
         <ul class="roster" id="rosterList"></ul>
       </section>
+
+      </div>
+
 
       <footer class="foot">
         <p id="footAbout"><b>딮기 시그널</b> · 공식 경기는 LoL Esports에서 자동으로 받아 오고, 솔로랭크는 2026-11-26 공개 전적(KO.LOL·OP.GG·u.gg)을 기준값으로 두고 있어요.</p>
@@ -355,6 +375,9 @@
         <p class="panel-sub" data-i18n="video.tabSub">생중계부터 선수 방송·하이라이트·다시보기까지 한곳에 모았어요.</p>
       </div>
 
+
+
+      <div class="dv-top">
       <!-- ③ LIVE NOW · 선수 방송 (방송 중이면 16:9 히어로 카드, 전원 오프라인이면 컴팩트 바) -->
       <section class="live-hero" id="liveHero" aria-labelledby="liveHeroTitle">
         <div class="lh-head">
@@ -367,7 +390,6 @@
         </div>
         <div class="lh-body" id="liveHeroBody" aria-live="polite"></div>
       </section>
-
       <section class="card live-card">
         <div class="card-head">
           <div>
@@ -380,6 +402,7 @@
         <p class="next-line" id="videoNextLine"></p>
         <div class="chan-grid" id="videoChannels"></div>
       </section>
+      </div>
 
       <section class="pl-strip">
         <div class="pl-strip-head">
@@ -413,7 +436,23 @@
             <button class="chip is-active" type="button" data-video-sort="player" data-i18n="video.sortPlayer">선수별</button>
             <button class="chip" type="button" data-video-sort="recent" data-i18n="video.sortRecent">최신순</button>
           </div>
+          <button class="mine-add-link" id="mineAddLink" type="button" data-i18n="mine.addLink">＋ 내 링크 추가</button>
         </div>
+        <div class="arc-rail" id="videoRail" aria-label="영상 필터">
+          <div class="mine-row" id="mineRow">
+            <span class="mine-label"><i aria-hidden="true">★</i> <span data-i18n="mine.title">나만의 재생목록</span></span>
+            <div class="mine-chips" id="mineChips" role="group" data-i18n-attr="aria-label:mine.title" aria-label="나만의 재생목록"></div>
+            <p class="mine-hint" id="mineHint" hidden></p>
+            <form class="mine-form" id="mineForm" hidden autocomplete="off">
+              <input class="mine-input" id="mineFolderName" type="text" maxlength="20" placeholder="새 폴더 이름" data-i18n-attr="placeholder:mine.folderPh;aria-label:mine.folderPh" aria-label="새 폴더 이름">
+              <button class="mine-ok" type="submit" data-i18n="mine.create">만들기</button>
+              <button class="mine-cancel" type="button" id="mineFormCancel" data-i18n="mine.cancel">취소</button>
+            </form>
+            <div class="mine-tools">
+              <button class="mine-play" id="minePlay" type="button" data-i18n="mine.playAll">▶ 연속 재생</button>
+              <button class="mine-new is-link" id="mineAddLink2" type="button" data-i18n="mine.addLink">＋ 내 링크 추가</button>
+            </div>
+          </div>
         <a class="yt-search-link" id="videoYtSearch" href="#" target="_blank" rel="noopener" hidden></a>
         <div class="chip-row champ-row is-scroll" id="videoChampChips" role="group" data-i18n-attr="aria-label:video.champAria" aria-label="추천 챔피언"></div>
         <div class="chip-row vid-filters is-scroll" id="videoCats" role="tablist" data-i18n-attr="aria-label:video.catsAria" aria-label="영상 종류"></div>
@@ -426,6 +465,8 @@
           <span class="pick-label" aria-hidden="true">PICK</span>
           <div class="chip-row vid-filters pick-row is-scroll" id="videoFilters" role="tablist" data-i18n-attr="aria-label:video.filtersAria" aria-label="선수별 필터"></div>
         </div>
+        </div>
+
         <ul class="vc-list" id="videoList"></ul>
         <p class="watch-hint" id="videoArchiveHint"></p>
       </section>
@@ -598,6 +639,15 @@
       </ol>
     </section>
     <h4 class="in-sub" id="installManualTitle" data-i18n="install.manualTitle">버튼이 안 보이면 이렇게 해요</h4>
+    <section class="in-sec" id="installDesktop">
+      <h4 class="in-h"><i aria-hidden="true">💻</i><span data-i18n="install.desktopTitle"></span></h4>
+      <ol class="in-steps">
+        <li data-i18n="install.desktopStep1"></li>
+        <li data-i18n="install.desktopStep2"></li>
+        <li data-i18n="install.desktopStep3"></li>
+      </ol>
+      <p class="in-note" data-i18n="install.desktopNote"></p>
+    </section>
     <section class="in-sec" id="installIos">
       <h4 class="in-h"><i aria-hidden="true">🍎</i><span data-i18n="install.iosTitle"></span></h4>
       <ol class="in-steps">
@@ -615,6 +665,81 @@
         <li data-i18n="install.androidStep3"></li>
       </ol>
     </section>
+  </div>
+</div>
+
+
+<!-- 오늘의 DK 요약 카드: 지금 화면의 5인 데이터로 1080×1350 PNG 를 만들어 미리보기·저장합니다 -->
+<div class="lg-modal sc-modal" id="summaryModal" hidden>
+  <div class="lg-veil" id="summaryVeil"></div>
+  <div class="lg-sheet sc-sheet" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="scTitle">
+    <div class="lg-head">
+      <b class="lg-title" id="scTitle" data-i18n="summary.prevTitle">오늘 요약 카드 미리보기</b>
+      <button class="lg-close" id="summaryClose" type="button" data-i18n-attr="aria-label:summary.close" aria-label="닫기">✕</button>
+    </div>
+    <div class="sc-stage" id="scStage" aria-live="polite">
+      <p class="sc-loading" id="scLoading" data-i18n="summary.building">카드를 만드는 중…</p>
+      <img class="sc-img" id="scImg" alt="" hidden>
+    </div>
+    <p class="sc-note" id="scNote" data-i18n="summary.note">1080×1350 PNG · 이 기기에 저장하거나 공유할 수 있어요.</p>
+    <div class="sc-actions">
+      <button class="sc-btn is-primary" id="scSave" type="button" data-i18n="summary.save">이미지 저장</button>
+      <button class="sc-btn" id="scShare" type="button" data-i18n="summary.share">공유</button>
+      <a class="sc-btn" id="scOpen" href="#" target="_blank" rel="noopener" hidden data-i18n="summary.open">새 창에서 열기</a>
+    </div>
+  </div>
+</div>
+
+<!-- ＋ 내 링크 추가: 유튜브 주소를 붙여넣으면 videoId·제목·썸네일을 붙여 아카이브에 담습니다 -->
+<div class="lg-modal" id="addLinkModal" hidden>
+  <div class="lg-veil" id="addLinkVeil"></div>
+  <div class="lg-sheet al-sheet" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="alTitle">
+    <div class="lg-head">
+      <b class="lg-title" id="alTitle" data-i18n="addLink.title">내 링크 추가</b>
+      <button class="lg-close" id="addLinkClose" type="button" data-i18n-attr="aria-label:addLink.cancel" aria-label="닫기">✕</button>
+    </div>
+    <form class="al-form" id="addLinkForm" autocomplete="off" novalidate>
+      <label class="al-label" for="addLinkUrl" data-i18n="addLink.urlLabel">유튜브 주소</label>
+      <input class="al-input" id="addLinkUrl" type="text" inputmode="url" spellcheck="false"
+             placeholder="https://www.youtube.com/watch?v=..." data-i18n-attr="placeholder:addLink.urlPh;aria-label:addLink.urlLabel" aria-label="유튜브 주소">
+      <p class="al-err" id="addLinkErr" role="alert"></p>
+      <div class="al-preview" id="addLinkPreview" hidden>
+        <span class="al-thumb"><img id="addLinkThumb" alt="" loading="lazy"></span>
+        <span class="al-pv-body">
+          <b id="addLinkId"></b>
+          <span id="addLinkPvNote" data-i18n="addLink.found">유튜브 영상을 찾았어요. 제목을 확인해 주세요.</span>
+        </span>
+      </div>
+      <label class="al-label" for="addLinkTitle" data-i18n="addLink.titleLabel">제목</label>
+      <input class="al-input" id="addLinkTitle" type="text" maxlength="120"
+             placeholder="영상 제목 (비우면 자동으로 가져와요)" data-i18n-attr="placeholder:addLink.titlePh;aria-label:addLink.titleLabel" aria-label="제목">
+      <div class="al-actions">
+        <button class="sc-btn" id="addLinkCancel" type="button" data-i18n="addLink.cancel">취소</button>
+        <button class="sc-btn is-primary" id="addLinkSave" type="submit" data-i18n="addLink.save">추가</button>
+      </div>
+      <p class="al-note" data-i18n="addLink.note">주소만 붙여넣으면 썸네일·제목을 자동으로 채워요. 이 기기에만 저장돼요.</p>
+    </form>
+  </div>
+</div>
+
+<!-- 진행 중인 투표 팝업: 마감 전 투표가 있을 때 하루 한 번 띄웁니다 -->
+<div class="lg-modal vote-pop" id="votePop" hidden>
+  <div class="lg-veil" id="votePopVeil"></div>
+  <div class="lg-sheet vp-sheet" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="votePopTitle" aria-describedby="votePopSub">
+    <div class="lg-head">
+      <div class="vp-head-txt">
+        <span class="vp-kicker" data-i18n="votePop.kicker">VOTE · 진행 중</span>
+        <b class="lg-title" id="votePopTitle" data-i18n="votePop.title">진행 중인 투표</b>
+      </div>
+      <button class="lg-close" id="votePopClose" type="button" data-i18n-attr="aria-label:votePop.close" aria-label="닫기">✕</button>
+    </div>
+    <p class="vp-sub" id="votePopSub"></p>
+    <ul class="vp-list" id="votePopList"></ul>
+    <div class="vp-actions">
+      <button class="vp-hide" id="votePopHide" type="button" data-i18n="votePop.hideToday">오늘 하루 보지 않기</button>
+      <button class="vp-done" id="votePopDone" type="button" data-i18n="votePop.closeBtn">닫기</button>
+    </div>
+    <p class="vp-note" data-i18n="votePop.note">투표는 공식 페이지에서 진행돼요.</p>
   </div>
 </div>
 
