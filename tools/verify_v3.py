@@ -246,6 +246,12 @@ async def main():
                   await page.eval_on_selector_all("#calGrid .cal-week", "e=>e.length"))
             bars = await page.eval_on_selector_all("#calGrid .cal-bar", "e=>e.map(x=>x.className)")
             check("calendar bars all categories", all(c in " ".join(bars) for c in ["cat-match", "cat-anniv", "cat-vote", "cat-cast"]), bars)
+            anniv_bars = await page.eval_on_selector_all(
+                "#calGrid .cal-bar.cat-anniv", "e=>e.map(x=>x.textContent.replace(/\\s+/g,' ').trim())")
+            check("debut badge shows player name",
+                  any(t.startswith("쇼메이커") and "데뷔 9주년" in t for t in anniv_bars), anniv_bars)
+            check("birthday badge shows player name",
+                  any(t.startswith("🎂") and "카나비" in t for t in anniv_bars), anniv_bars)
             check("calendar no CHZZK in broadcast", "CHZZK" not in await page.inner_text("#officialCalView"))
 
             await page.click('[data-cal-day="2026-11-29"]')

@@ -116,6 +116,22 @@
     if (lang() === 'zh') return p.nameZh || p.nameIntl || p.nameKo;
     return p.nameIntl || p.nameEn || p.nameKo;
   }
+  /* 캘린더 셀 배지용 이름: 한 칸이 45px 남짓이라 일본어는 카타카나 대신 라틴 표기를 씁니다. */
+  function pBarName(p) {
+    return lang() === 'ko' ? p.nameKo
+      : (lang() === 'zh' ? (p.nameZh || p.nameIntl || p.nameKo)
+        : (p.nameIntl || p.nameEn || p.nameKo));
+  }
+  /* ShowMaker 처럼 긴 라틴 이름은 낱말 경계(대문자 앞)에서 줄이 바뀔 수 있게 <wbr> 를 넣습니다. */
+  function barNameHTML(name) {
+    return esc(name).replace(/([a-z])([A-Z])/g, '$1<wbr>$2');
+  }
+  /* 영어 서수: 1st · 2nd · 3rd · 9th */
+  function enOrdinal(n) {
+    var m = n % 100;
+    if (m >= 11 && m <= 13) return n + 'th';
+    return n + ({ 1: 'st', 2: 'nd', 3: 'rd' }[n % 10] || 'th');
+  }
   function pReal(p) {
     if (lang() === 'ko') return p.real;
     if (lang() === 'ja') return p.realJa || p.realEn || p.real;
@@ -874,7 +890,8 @@
       var dd = new Date(year, db.getMonth(), db.getDate());
       push({
         cat: 'anniv', start: ymd(dd), end: ymd(dd),
-        bar: '🎉 ' + T('cal.debutBar', { n: n }),
+        bar: T('cal.debutBar', { name: pBarName(p), n: n, o: enOrdinal(n) }),
+        barHtml: T('cal.debutBar', { name: barNameHTML(pBarName(p)), n: n, o: enOrdinal(n) }),
         title: T('cal.debutTitle', { name: pName(p), n: n }) + ' 🎉',
         sub: T('cal.debutSub', { real: pReal(p), note: L(p.debutNote) }),
         emoji: '🎉'
@@ -1048,8 +1065,9 @@
       var barHTML = bars.placed.map(function (b) {
         var openL = b.ev.startDate < week[0];
         var openR = b.ev.endDate > week[6];
-        var label = (openL ? '‹ ' : '') + b.ev.bar + (openR ? ' ~' + calMd(b.ev.endDate) : '');
-        return '<span class="cal-bar cat-' + b.ev.cat + '" style="grid-area:' + (2 + b.lane) + ' / ' + (b.cs + 1) + ' / span 1 / span ' + (b.ce - b.cs + 1) + ';">' + esc(label) + '</span>';
+        var label = (openL ? '‹ ' : '') + (b.ev.barHtml || esc(b.ev.bar)) +
+          (openR ? ' ~' + esc(calMd(b.ev.endDate)) : '');
+        return '<span class="cal-bar cat-' + b.ev.cat + '" style="grid-area:' + (2 + b.lane) + ' / ' + (b.cs + 1) + ' / span 1 / span ' + (b.ce - b.cs + 1) + ';">' + label + '</span>';
       }).join('');
       html += '<div class="cal-week">' + cells + barHTML + '</div>';
     }
