@@ -1,5 +1,5 @@
 /* 딮기 시그널 서비스 워커 · 오프라인 캐시 + 웹 푸시 */
-const CACHE = 'dk-signal-v15';
+const CACHE = 'dk-signal-v16';
 const ASSETS = [
   './',
   './index.html',
@@ -91,13 +91,17 @@ self.addEventListener('fetch', (event) => {
 });
 
 /* ---------- 웹 푸시 ---------- */
-/* 서버가 보내는 payload: {title, body, tag, url, kind, player} */
+/* 서버가 보내는 payload: {title, body, tag, url, kind, player}
+ * iOS 16.4+ 홈 화면 앱도 같은 showNotification 경로를 씁니다 — 제목이 비었거나 그리기가 실패하면
+ * 알림이 그냥 사라지고(반복되면 구독이 해지될 수 있어) 최소 옵션으로 한 번 더 시도합니다. */
 self.addEventListener('push', (event) => {
   let payload = { title: '딮기 시그널', body: '새 소식이 있어요.' };
-  try { payload = Object.assign(payload, event.data.json()); } catch (e) {}
+  try { if (event.data) payload = Object.assign(payload, event.data.json()); } catch (e) {}
+  const title = String(payload.title || '딮기 시그널');
+  const body = String(payload.body || '새 소식이 있어요.');
 
   const options = {
-    body: payload.body,
+    body: body,
     icon: './icons/icon-192.png',
     badge: './icons/badge-96.png',
     tag: payload.tag || 'dk-signal',
@@ -108,7 +112,15 @@ self.addEventListener('push', (event) => {
   if (payload.kind === 'official') {
     options.actions = [{ action: 'open', title: '일정 보기' }];
   }
-  event.waitUntil(self.registration.showNotification(payload.title, options));
+  event.waitUntil(
+    self.registration.showNotification(title, options).catch(() =>
+      self.registration.showNotification(title, {
+        body: body,
+        tag: options.tag,
+        data: options.data
+      }).catch(() => {})
+    )
+  );
 });
 
 self.addEventListener('notificationclick', (event) => {

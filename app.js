@@ -3273,6 +3273,47 @@
     };
   }
 
+  /* 서버에 테스트 알림을 부탁합니다. 서버는 3초 뒤 이 기기 구독 1건으로만 보냅니다.
+     아이폰은 앱을 보고 있으면 배너가 묻히기 때문에, 3초 동안 홈·잠금화면으로 나갈 수 있게 합니다. */
+  function serverTestPush(target, sub) {
+    var payload = {
+      action: 'test',
+      subscription: sub.toJSON(),
+      title: target.title,
+      body: target.body,
+      lang: lang(),
+      delayMs: 3000
+    };
+    setNote(T('banner.serverTestNote'));
+    showBanner(T('banner.serverTestTitle'), T('banner.serverTestNote'));
+    return fetch('./api/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(function (r) { return r.json().catch(function () { return null; }); })
+      .then(function (d) {
+        if (d && d.ok) return d;
+        setNote((d && d.message) || T('banner.serverTestFail'), true);
+        return null;
+      })
+      .catch(function () {
+        setNote(T('banner.serverTestFail'), true);
+        return null;
+      });
+  }
+
+  /* 이미 있는 구독을 가져옵니다 (없으면 null). */
+  function currentSubscription() {
+    if (LIVE.push.sub) return Promise.resolve(LIVE.push.sub);
+    if (!LIVE.push.supported || !('serviceWorker' in navigator)) return Promise.resolve(null);
+    return navigator.serviceWorker.ready.then(function (reg) {
+      return reg.pushManager ? reg.pushManager.getSubscription() : null;
+    }).then(function (sub) {
+      LIVE.push.sub = sub || null;
+      return sub;
+    }).catch(function () { return null; });
+  }
+
   function sendTest() {
     var target = alertTarget();
     if (!target) {
@@ -3280,6 +3321,7 @@
       setNote(T('banner.noneNote'), true);
       return;
     }
+    var env = envInfo();
     var opts = notifyOptions(target.body);
 
     var fallback = function () {
@@ -3318,6 +3360,35 @@
       finish(null);
     };
 
+    /* 1) 아이폰에서 Safari 탭·인앱 브라우저로 열었을 때는 알림 자체가 오지 않습니다 */
+    if (env.ios && !isStandalone()) {
+      setNote(T('banner.iosInstallNote'), true);
+      showBanner(T('banner.iosInstallTitle'), T('banner.iosInstallBody'));
+      if (typeof openInstall === 'function') openInstall();
+      return;
+    }
+
+    /* 2) 서버가 준비돼 있으면(아이폰 홈 화면 앱 · 갤럭시 공통) 서버 경유 3초 지연 테스트 */
+    var serverReady = canUseApi() && !!(LIVE.config && LIVE.config.push && LIVE.config.push.ready);
+    if (serverReady) {
+      currentSubscription().then(function (sub) {
+        if (sub) return serverTestPush(target, sub);
+        /* 아직 구독 전이면 권한 요청 → 구독 → 테스트까지 이어서 */
+        return syncPush(true).then(function () {
+          if (LIVE.push.sub) return serverTestPush(target, LIVE.push.sub);
+          var perm = Notification.permission;
+          if (perm === 'default') {
+            return Promise.resolve(Notification.requestPermission()).catch(function () { return 'denied'; })
+              .then(function (v) { proceed(v === 'granted'); });
+          }
+          proceed(perm === 'granted');
+          return null;
+        });
+      }).catch(function () { proceed(Notification.permission === 'granted'); });
+      return;
+    }
+
+    /* 3) 서버가 없거나 미리보기·오프라인일 때는 기존처럼 기기 안 알림 */
     var perm = Notification.permission;
     if (perm === 'default') {
       try {

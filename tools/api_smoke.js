@@ -652,6 +652,56 @@ async function main() {
   check('config riot source', cfg.json && cfg.json.solo.source === 'riot', cfg.json && cfg.json.solo.source);
   check('config store backend redis', cfg.json && cfg.json.store.backend === 'redis', cfg.json && cfg.json.store.backend);
 
+  /* --- 7-1. 기기 1대 전용 테스트 알림 (POST /api/subscribe {action:'test'}) --- */
+  const testSub = {
+    endpoint: 'https://fcm.googleapis.com/wp/smoke-test-only-me',
+    keys: { p256dh: p256dh, auth: auth }
+  };
+  const tStart = Date.now();
+  const testOne = await call(subscribe, {
+    method: 'POST', url: '/api/subscribe',
+    body: { action: 'test', subscription: testSub, title: '도란 · 테스트 알림', body: '테스트 알림이에요.', lang: 'ko', delayMs: 120 }
+  });
+  const tElapsed = Date.now() - tStart;
+  check('test push 200', testOne.status === 200 && testOne.json.ok === true && testOne.json.sent === true,
+    testOne.status + ' ' + JSON.stringify(testOne.json));
+  check('test push delay honored', testOne.json.delayMs === 120 && tElapsed >= 100, tElapsed + 'ms');
+  check('test push is not a broadcast', testOne.json.broadcast === false && testOne.json.dryRun === true, JSON.stringify(testOne.json));
+  const subsAfterTest = JSON.parse((kv.get('dk:subs') || {}).value || '[]');
+  check('test push leaves subscriptions untouched', subsAfterTest.length === 1 &&
+    !subsAfterTest.some(function (s) { return s.endpoint === testSub.endpoint; }), subsAfterTest.length);
+
+  const testBadSub = await call(subscribe, {
+    method: 'POST', url: '/api/subscribe', body: { action: 'test', subscription: { endpoint: 'http://nope', keys: { p256dh: 'a', auth: 'b' } } }
+  });
+  check('test push rejects http endpoint', testBadSub.status === 400, testBadSub.status);
+  const testNoSub = await call(subscribe, { method: 'POST', url: '/api/subscribe', body: { action: 'test' } });
+  check('test push needs subscription', testNoSub.status === 400, testNoSub.status);
+
+  const testSlow = await call(subscribe, {
+    method: 'POST', url: '/api/subscribe',
+    body: { action: 'test', delayMs: 9000,
+            subscription: { endpoint: 'https://fcm.googleapis.com/wp/smoke-test-clamp', keys: { p256dh: p256dh, auth: auth } } }
+  });
+  check('test push clamps delay to 5s', testSlow.json && testSlow.json.delayMs === 5000, testSlow.json && testSlow.json.delayMs);
+
+  const testAgain = await call(subscribe, {
+    method: 'POST', url: '/api/subscribe', body: { action: 'test', subscription: testSub, delayMs: 0 }
+  });
+  check('test push rate limited per device', testAgain.status === 429 && testAgain.json.error === 'too_many_requests',
+    testAgain.status + ' ' + (testAgain.json && testAgain.json.error));
+
+  delete process.env.VAPID_PUBLIC_KEY;
+  delete process.env.VAPID_PRIVATE_KEY;
+  const testNoVapid = await call(subscribe, {
+    method: 'POST', url: '/api/subscribe',
+    body: { action: 'test', subscription: { endpoint: 'https://fcm.googleapis.com/wp/smoke-test-b', keys: { p256dh: p256dh, auth: auth } } }
+  });
+  check('test push needs vapid', testNoVapid.status === 503 && testNoVapid.json.error === 'push_not_configured',
+    testNoVapid.status + ' ' + (testNoVapid.json && testNoVapid.json.error));
+  process.env.VAPID_PUBLIC_KEY = vapid.publicKey;
+  process.env.VAPID_PRIVATE_KEY = vapid.privateKey;
+
   /* --- 8. 저장소 없을 때 구독 거절 --- */
   const child = require('child_process').spawnSync(process.execPath, ['-e', `
     delete process.env.UPSTASH_REDIS_REST_URL; delete process.env.KV_REST_API_URL; delete process.env.KV_REST_API_TOKEN; delete process.env.DK_ALLOW_MEMORY_STORE;
