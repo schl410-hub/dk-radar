@@ -16,7 +16,7 @@
 - **태국어 폰트**: Pretendard 서브셋에 태국 글리프가 없어 **Noto Sans Thai 서브셋**(`fonts/notosansthai.woff2`, 26KB · `fonts/notothai.css`)을 넣고 `body` 글꼴 스택에서 태국 글자만 대체합니다. 태국어는 띄어쓰기가 없어 `word-break: normal` 로 단어 중간 줄바꿈을 허용하고, `font-feature-settings: "locl" 0` 으로 연도·날짜 숫자가 태국 숫자(๒๐๒๖)로 바뀌지 않게 했습니다.
 - **data.js 문장도 번체로**: 영상 제목·경기명·대회명처럼 `data.js` 안에 간체(zh)만 있던 문구 518개에 **tw 문구를 나란히 추가**했습니다(`tools/make_tw_data.py`, OpenCC s2twp + 대만 용어 보정 — 世界大賽·LCK 盃·例行賽·季後賽·負於). 스페인어·포르투갈어·태국어·인도네시아어는 그런 문장형 데이터가 아직 없어 영어로 대체합니다(`app.js` `pickLang()`).
 - 서버 언어 목록(`api/config.js`·`api/subscribe.js`)도 10개로 늘려 관리자 대시보드 언어 비율·테스트 알림이 새 언어를 받습니다. `sw.js` 캐시 **v21**(`langmenu.css`·태국어 폰트 포함), `package.json` 3.13.0.
-- 새 검증 `tools/verify_lang10.py`: **10개 언어 × 5탭 × 360/390/430 + 데스크톱(1440)** 에서 가로 넘침 0건, 번역 키 노출 0건, 메뉴 열기/닫기·키보드 이동·저장값·`<html lang>`·언어별 홈 탭 문구·챔피언 표기를 331항목으로 확인합니다.
+- 새 검증 `tools/verify_lang10.py`: **10개 언어 × 5탭 × 360/390/430 + 데스크톱(1440)** 에서 가로 넘침 0건, 번역 키 노출 0건, 메뉴 열기/닫기·키보드 이동·저장값·`<html lang>`·언어별 홈 탭 문구·챔피언 표기를 421항목으로 확인합니다.
 
 ### v3.12 (2026-11-28) 새로 추가
 - **PC 데스크톱 레이아웃** (`desktop.css`, 1024px 이상): 헤더 한 줄(로고·5탭·언어·테마·`PC 앱 설치`), 홈은 **좌 MY PICK·설치·하이라이트·응원 / 우 5인 보드(최애 타일 2칸)·최근 솔랭** 2단, 영상 탭은 **LIVE NOW + 생중계·공식 채널 2단 → 공식 재생목록 6열 → 아카이브(왼쪽 필터 레일 + 4열 카드 그리드)**. 모바일(390×844) 화면과 캘린더·경기로그·기록실 탭은 그대로입니다.
@@ -277,7 +277,7 @@ tools/verify_v3.py    다국어·재생목록·영상 아카이브·인앱 플�
 tools/smoke_v3.py     빠른 화면 점검(스크린샷 없음)
 tools/make_champions.py  Riot Data Dragon 10개 로캘 → data.js 챔피언 이름 표(10칸) 재생성
 tools/make_tw_data.py  data.js 의 간체(zh) 문구 → 대만 번체(tw) 생성(OpenCC s2twp + 용어 보정)
-tools/verify_lang10.py  10개국어 언어 메뉴·번역·가로 넘침 검증 331항목 + 스크린샷
+tools/verify_lang10.py  10개국어 언어 메뉴·번역·가로 넘침 검증 421항목 + 스크린샷
 tools/verify_api.py   자동 갱신·실시간 반영·오프라인 검증 + 스크린샷
 tools/make_snapshot.js data.js → api/_lib/snapshot.js
 tools/make_vapid.js   VAPID 키 생성
@@ -297,7 +297,7 @@ node tools/api_smoke.js                    # 서버 함수 164항목 (실제 LoL
 LD_LIBRARY_PATH=... PLAYWRIGHT_BROWSERS_PATH=... python3 tools/verify.py       # 104/104
 LD_LIBRARY_PATH=... PLAYWRIGHT_BROWSERS_PATH=... python3 tools/verify_api.py   # 31/31
 LD_LIBRARY_PATH=... python3 tools/verify_v3.py                                 # 614/614 (다국어 10종·재생목록·아카이브·인앱 플레이어·라이브·설치 가이드)
-LD_LIBRARY_PATH=... python3 tools/verify_lang10.py                             # 331/331 (10개 언어 × 5탭 × 360/390/430·데스크톱 가로 넘침 0)
+LD_LIBRARY_PATH=... python3 tools/verify_lang10.py                             # 421/421 (10개 언어 × 5탭 × 360/390/430·데스크톱 가로 넘침 0)
 LD_LIBRARY_PATH=... PLAYWRIGHT_BROWSERS_PATH=... python3 tools/verify_v4.py    # 63/63 (PC 레이아웃·재생목록·요약 카드·투표 팝업)
 # 관리자 앱(독립 사이트) 검증은 별도 저장소에서:
 #   python3 tools/verify_standalone.py   # 라이브 헤더·manifest·SW·CORS·잠금/대시보드

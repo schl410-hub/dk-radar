@@ -197,7 +197,22 @@ async def main():
                 await page.set_viewport_size({"width": 390, "height": 844})
                 await page.wait_for_timeout(200)
 
-            # ---------- 4. 언어별 대표 문구 (실제 번역이 들어갔는지) ----------
+            # ---------- 4. 헤더 한 줄 유지 (360·390·430) ----------
+            for code in CODES:
+                await pick(page, code)
+                for w in WIDTHS:
+                    await page.set_viewport_size({"width": w, "height": 844})
+                    await page.wait_for_timeout(200)
+                    row_h = await page.evaluate("document.querySelector('.brand-row').getBoundingClientRect().height")
+                    ov = await overflow(page)
+                    tw = await page.evaluate("document.querySelector('#langBtn').getBoundingClientRect().width")
+                    check(f"{code} 헤더 한 줄 @{w}", row_h <= 40, row_h)
+                    check(f"{code} 헤더 넘침 없음 @{w}", ov <= 0, ov)
+                    check(f"{code} 언어 버튼 폭 @{w}", tw <= 84, tw)
+            await page.set_viewport_size({"width": 390, "height": 844})
+            await page.wait_for_timeout(200)
+
+            # ---------- 5. 언어별 대표 문구 (실제 번역이 들어갔는지) ----------
             expect = {
                 "ko": "홈", "en": "Home", "ja": "ホーム", "zh": "首页", "tw": "首頁",
                 "vi": "Trang chủ", "es": "Inicio", "pt": "Início", "th": "หน้าแรก", "id": "Beranda",
@@ -223,7 +238,7 @@ async def main():
             check("en 챔피언 이름 라틴", bool(re.search(r"[A-Za-z]", en_champ)), en_champ)
             check("같은 경기 · 언어별 표기가 다름", len({tw_champ, ko_champ, en_champ}) >= 2, (tw_champ, ko_champ, en_champ))
 
-            # ---------- 5. 데스크톱 ----------
+            # ---------- 6. 데스크톱 ----------
             ctx2 = await browser.new_context(viewport={"width": 1440, "height": 900}, device_scale_factor=1,
                                              locale="ko-KR", color_scheme="dark")
             await hide_vote_pop(ctx2)
