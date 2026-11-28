@@ -1011,11 +1011,28 @@
     if (Date.now() - lastFetch > 30 * 1000) load(false);
   });
 
-  /* 관리자 전용 서비스 워커 — /admin 범위만 담당합니다(메인 앱 sw.js 와 분리). */
+  /* 관리자 페이지는 별도 PWA 가 아니라 '홈 화면 바로가기'입니다.
+   * 예전 버전은 /admin 범위 서비스 워커(admin-sw.js)를 등록했는데, manifest 와 함께 쓰이면
+   * 같은 오리진의 메인 앱 WebAPK 를 '딮기 관리자'로 덮어썼습니다.
+   * 이미 방문한 기기에 남은 등록·캐시를 여기서 정리합니다. */
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function () {
-      navigator.serviceWorker.register('/admin-sw.js', { scope: '/admin' }).catch(function () {});
-    });
+    navigator.serviceWorker.getRegistrations().then(function (regs) {
+      (regs || []).forEach(function (reg) {
+        var sw = reg.active || reg.installing || reg.waiting;
+        var scriptURL = (sw && sw.scriptURL) || '';
+        if (scriptURL.indexOf('/admin-sw.js') > -1) {
+          reg.unregister().catch(function () {});
+        }
+      });
+    }).catch(function () {});
+
+    if (window.caches && caches.keys) {
+      caches.keys().then(function (keys) {
+        (keys || []).forEach(function (k) {
+          if (k.indexOf('dk-admin-') === 0) caches.delete(k).catch(function () {});
+        });
+      }).catch(function () {});
+    }
   }
 
   /* ───────────── 시작 ───────────── */

@@ -217,7 +217,10 @@ async def page_tests(browser):
     check("대시보드는 처음에 숨겨져 있다", await page.is_hidden("#dash"))
     check("숫자 키패드 0~9 + 지우기 (11개)", await page.locator(".key[data-key]").count() == 11)
     check("PIN 자리 표시 4개", await page.locator("#pinDots i").count() == 4)
-    check("manifest-admin.json 연결", "manifest-admin.json" in (await page.get_attribute('link[rel="manifest"]', "href") or ""))
+    check("manifest 링크 없음(WebAPK 덮어쓰기 방지)", await page.locator('link[rel="manifest"]').count() == 0,
+          await page.locator('link[rel="manifest"]').count())
+    check("admin.html 이 manifest-admin.json 을 참조하지 않는다",
+          "manifest-admin.json" not in (await page.content()).split("<body")[0])
     check("테마 전환 버튼 없음(단일 민트 테마)", await page.locator("[data-theme], #themeBtn, .theme-btn").count() == 0)
     lock_bg = await page.evaluate("() => getComputedStyle(document.body).backgroundColor")
     key_color = await page.evaluate("() => getComputedStyle(document.querySelector('.key')).color")
@@ -393,6 +396,27 @@ async def page_tests(browser):
     await ctx.close()
 
 
+async def no_admin_sw_tests(browser):
+    """관리자 페이지가 서비스 워커(/admin-sw.js)를 등록하지 않는지 — 실제 SW 허용 컨텍스트에서 확인."""
+    ctx = await browser.new_context(
+        viewport={"width": 390, "height": 844}, device_scale_factor=2,
+        is_mobile=True, has_touch=True, locale="ko-KR", timezone_id="Asia/Seoul")
+    page = await ctx.new_page()
+    requested = []
+    page.on("request", lambda r: requested.append(r.url))
+    await page.goto(BASE + "/admin", wait_until="domcontentloaded")
+    await page.wait_for_timeout(1200)
+    regs = await page.evaluate(
+        "() => navigator.serviceWorker.getRegistrations().then(r => r.map(x => "
+        "((x.active || x.installing || x.waiting || {}).scriptURL) || ''))")
+    check("관리자 페이지가 서비스 워커를 등록하지 않는다", regs == [], regs)
+    check("admin-sw.js 를 요청하지 않는다", not any("admin-sw.js" in u for u in requested),
+          [u for u in requested if "admin-sw" in u])
+    man = await page.evaluate("() => document.querySelectorAll('link[rel=\"manifest\"]').length")
+    check("브라우저가 볼 manifest 가 없다(SW 허용 상태)", man == 0, man)
+    await ctx.close()
+
+
 async def empty_state_tests(browser, base=BASE_EMPTY):
     """구독·기록이 하나도 없을 때의 빈 상태 (실제 API 응답 그대로)."""
     ctx = await browser.new_context(
@@ -535,6 +559,16 @@ def source_tests():
     check("admin.html 에 테마 전환 버튼이 없다", "data-theme" not in html and "themeBtn" not in html and "테마 전환" not in html)
     check("admin.html 이 설치 안내를 본문 안에 둔다", html.index('id="installHint"') > html.index('id="playersList"'))
     check("admin.html 에 관리자 외 정보 없음", "schl410" not in html)
+    check("admin.html 에 manifest 링크가 없다", '<link rel="manifest"' not in html)
+    check("admin.html 이 manifest-admin.json 을 참조하지 않는다", "manifest-admin.json" not in html)
+    check("설치 안내가 '홈 화면에 추가(바로가기)' · 별도 아이콘 안내",
+          "홈 화면에 추가(바로가기)" in html and "별도 아이콘" in html and "기존 딮기 시그널 앱" in html)
+    js = (ROOT / "admin.js").read_text(encoding="utf-8")
+    check("admin.js 가 admin-sw.js 를 등록하지 않는다", "serviceWorker.register" not in js and "register('/admin-sw.js'" not in js)
+    check("admin.js 가 남은 admin-sw 등록을 해제한다",
+          "getRegistrations" in js and "unregister()" in js and "/admin-sw.js" in js)
+    check("admin.html 인라인으로도 admin-sw 를 해제한다",
+          "unregister()" in html and "getRegistrations" in html)
 
     icon_svg = (ROOT / "icons" / "admin-icon.svg").read_text(encoding="utf-8")
     check("아이콘이 민트색", "#00F5C4" in icon_svg)
@@ -553,6 +587,21 @@ def source_tests():
     check("메인 sw.js 가 /admin 을 가로채지 않는다", "'/admin'" in sw)
     check("메인 sw.js 캐시 버전 올림", "dk-signal-v18" in sw)
     check("메인 페이지에 관리자 링크 없음", "admin" not in (ROOT / "index.html").read_text(encoding="utf-8").lower())
+
+    main_man = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
+    tab_labels = dict(re.findall(r'data-i18n="tab\.(\w+)">([^<]+)</span>',
+                                 (ROOT / "index.html").read_text(encoding="utf-8")))
+    check("메인 manifest 숏컷 4개", len(main_man.get("shortcuts", [])) == 4, main_man.get("shortcuts"))
+    check("숏컷 이름이 탭 이름과 같다(캘린더·영상·경기로그·기록실)",
+          [s.get("name") for s in main_man.get("shortcuts", [])]
+          == [tab_labels.get(k) for k in ["official", "video", "solo", "records"]],
+          [s.get("name") for s in main_man.get("shortcuts", [])])
+    check("숏컷 첫 항목이 '캘린더'(옛 '공식일정' 아님)",
+          (main_man.get("shortcuts") or [{}])[0].get("name") == "캘린더",
+          (main_man.get("shortcuts") or [{}])[0].get("name"))
+    check("manifest.webmanifest 도 같은 숏컷 이름",
+          [s.get("name") for s in json.loads((ROOT / "manifest.webmanifest").read_text(encoding="utf-8"))["shortcuts"]]
+          == [s.get("name") for s in main_man.get("shortcuts", [])])
 
     cfg = (ROOT / "api" / "config.js").read_text(encoding="utf-8")
     check("config.js 는 기존 파일을 확장만 한다", cfg.count("module.exports") == 1 and "exports.runCheck" not in cfg)
@@ -586,6 +635,7 @@ async def main():
             browser = await p.chromium.launch()
             # 빈 저장소 상태를 먼저 본다 (아래 api_tests 가 구독을 심습니다)
             await empty_state_tests(browser)
+            await no_admin_sw_tests(browser)
             await page_tests(browser)
             await browser.close()
 

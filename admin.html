@@ -11,7 +11,30 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="robots" content="noindex, nofollow">
-<link rel="manifest" href="./manifest-admin.json">
+<!-- 관리자 페이지는 PWA(WebAPK)로 설치하지 않습니다.
+     manifest 를 연결하면 같은 오리진의 메인 앱(/ · scope /) WebAPK 를 '딮기 관리자'로
+     덮어쓰기 때문에, 크롬이 '홈 화면 바로가기'로만 추가하도록 manifest 를 두지 않습니다. -->
+<script>
+/* 예전 버전이 등록한 /admin 범위 서비스 워커(admin-sw.js)가 남아 있으면 해제합니다.
+   (예전 SW 가 admin.js 를 캐시로 먼저 내려줘도 이 스크립트는 항상 새 HTML 에서 먼저 실행됩니다) */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(function (regs) {
+    (regs || []).forEach(function (reg) {
+      var sw = reg.active || reg.installing || reg.waiting;
+      if (sw && sw.scriptURL && sw.scriptURL.indexOf('/admin-sw.js') > -1) {
+        reg.unregister().catch(function () {});
+      }
+    });
+  }).catch(function () {});
+  if (window.caches && caches.keys) {
+    caches.keys().then(function (keys) {
+      (keys || []).forEach(function (k) {
+        if (k.indexOf('dk-admin-') === 0) caches.delete(k).catch(function () {});
+      });
+    }).catch(function () {});
+  }
+}
+</script>
 <link rel="icon" href="./icons/admin-192.png" sizes="192x192">
 <link rel="icon" href="./icons/admin-icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./icons/admin-192.png">
@@ -228,7 +251,7 @@
     <!-- 설치 안내: 화면을 가리지 않도록 본문 맨 아래 -->
     <div class="install-hint" id="installHint" hidden>
       <span class="ih-ico" aria-hidden="true">📲</span>
-      <span>크롬 메뉴(<b>⋮</b>) → <b>홈 화면에 추가</b>를 누르면 별도 앱으로 설치돼요</span>
+      <span>크롬 메뉴(<b>⋮</b>) → <b>홈 화면에 추가(바로가기)</b>를 누르면 기존 딮기 시그널 앱과 별도 아이콘으로 추가돼요</span>
     </div>
 
     <p class="foot">딮기 시그널 운영 관리자 · 새로고침하면 방금 수집된 값으로 바뀝니다.</p>

@@ -47,8 +47,8 @@
   ],
   "shortcuts": [
     {
-      "name": "공식일정",
-      "short_name": "공식일정",
+      "name": "캘린더",
+      "short_name": "캘린더",
       "url": "./?tab=official"
     },
     {

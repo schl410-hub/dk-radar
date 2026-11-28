@@ -187,9 +187,11 @@ curl -s "$BASE/api/check?test=1&token=$CHECK_SECRET"   # 잠금화면 알림 확
 - **관리자 동작 보호**: `runCheck`·`setBanner`·`broadcast` 는 모두 `X-Admin-Pin`(관리자 PIN SHA-256) 헤더가 맞아야 실행됩니다.
   배포 때 `ADMIN_PIN_HASH` 환경변수를 넣으면 그 값이 우선합니다(넣지 않으면 앱에 들어 있는 기본 해시).
   ※ 공개 주소 + 4자리 PIN 이라 화면 잠금은 강한 인증이 아닙니다. 개인 운영용 전제이고, 더 조이려면 `ADMIN_PIN_HASH` 로 더 긴 PIN 해시를 쓰세요.
-- **별도 앱 설치**: `manifest-admin.json` — 이름 `딮기 관리자`, `id`/`start_url`/`scope` 모두 `/admin`, 민트 방패 아이콘(`icons/admin-192.png`·`admin-512.png`·`admin-maskable-512.png`).
-  브라우저 탭으로 열면 **본문 맨 아래**에 설치 안내가 보입니다(화면을 가리지 않음).
-- **분리**: `admin-sw.js` 는 범위가 `/admin` 뿐이고, 메인 `sw.js` 는 `/admin`·`admin.js`·`admin.css`·`admin-sw.js`·`manifest-admin.json` 을 가로채지 않습니다.
+- **설치 방법**: 관리자 페이지는 **별도 PWA(WebAPK)로 설치하지 않습니다.** `admin.html` 에 manifest 를 연결하지 않아 크롬이 **'홈 화면에 추가(바로가기)'** 로만 추가하고, 같은 오리진의 메인 앱(`딮기 시그널` · scope `/`) WebAPK 를 `딮기 관리자` 로 덮어 쓰지 않습니다.
+  아이콘은 `icons/admin-192.png`(`apple-touch-icon`·`favicon`)를 바로가기 아이콘으로 씁니다.
+  브라우저 탭으로 열면 **본문 맨 아래**에 "크롬 메뉴(⋮) → 홈 화면에 추가(바로가기)를 누르면 기존 딮기 시그널 앱과 별도 아이콘으로 추가돼요" 안내가 보입니다(화면을 가리지 않음).
+- **정리**: 예전 버전은 `manifest-admin.json` + `admin-sw.js`(범위 `/admin`)로 설치했는데, 그 조합이 메인 앱 WebAPK 를 덮어썼습니다. 지금은 **등록하지 않고**, 페이지를 열면 남아 있는 `/admin-sw.js` 등록과 `dk-admin-*` 캐시를 해제합니다(`admin.html` 인라인 스크립트 + `admin.js`). `manifest-admin.json`·`admin-sw.js` 파일은 참조되지 않는 예전 자산으로만 남겨 둡니다.
+- **분리**: 메인 `sw.js` 는 `/admin`·`admin.js`·`admin.css`·`admin-sw.js`·`manifest-admin.json` 을 가로채지 않습니다(오프라인 폴백이 `index.html` 로 새지 않게).
 
 ## 환경변수 (Vercel → Settings → Environment Variables)
 
@@ -235,8 +237,8 @@ manifest.json         PWA 설정 (manifest.webmanifest 와 동일 내용)
 admin.html            관리자 앱 화면 (잠금 화면 + 대시보드)
 admin.css             관리자 앱 전용 스타일 (검정 + 민트)
 admin.js              잠금(PIN 해시·localStorage) · 실시간 대시보드 · 7개 카드 · 점검/공지/전체 알림(PIN 헤더)
-manifest-admin.json   관리자 앱 PWA 설정 (id/start_url/scope = /admin)
-admin-sw.js           관리자 앱 전용 서비스 워커 (범위 /admin)
+manifest-admin.json   (미사용 예전 자산) 관리자 PWA 설정 — WebAPK 덮어쓰기 문제로 더 이상 연결하지 않음
+admin-sw.js           (미사용 예전 자산) 관리자 전용 SW — 페이지를 열면 등록 해제됨
 api/official.js       DK 공식 일정
 api/solo.js           솔로랭크
 api/config.js         프론트용 공개 설정 + 관리자 집계(GET) + 관리자 동작(POST · PIN 검증)
