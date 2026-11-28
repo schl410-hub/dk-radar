@@ -9,6 +9,15 @@
 
 ## 지금 동작하는 것
 
+### v3.14 (2026-11-29) 새로 추가 — 경기로그 '공식 경기' · 세트별 요약 카드
+- **경기로그 2단 전환 `솔로랭크 | 공식 경기`**: 경기로그 탭 상단 토글. `공식 경기`를 고르면 최근 DK 공식 경기 카드 목록 → 스코어 바(DK : 상대, DK WIN/LOSS) → **1·2·3세트 탭**으로 이어집니다. 선택은 `localStorage`(`dk.signal.matchView`·`dk.signal.matchId`)에 남습니다.
+- **세트별 진영 · 밴픽 · K/D/A · 딜 비중**: 세트 탭에 `승/패` 와 `🔵 블루(선픽)` / `🔴 레드` 배지를 함께 표시하고, 양 팀 **밴 5:5**(흑백 + 붉은 사선), DK 5인의 챔피언·K/D/A·**팀 내 딜 비중 %** 바를 보여 줍니다. 데이터는 LoL Esports `livestats`(window·details) + **Leaguepedia Cargo**(밴·세트 승리 팀)에서 서버가 합쳐 내려 줍니다.
+- **데스크톱 2열**: 왼쪽 = 경기 목록·스코어·밴(목록은 카드 안에서 스크롤) / 오른쪽 = 세트 탭·5인 스탯(+ KDA·킬관여·CS/골드, 팀 오브젝트 `KILL·GOLD·DRAGON·BARON` 요약).
+- **캘린더 → 경기로그 연결**: 리스트/모달의 공식 경기 항목에 `밴픽 보기` 버튼이 생겨 그 경기의 공식 경기 화면으로 바로 이동합니다.
+- **오늘의 요약 카드 3종**: 경기 없는 날은 기존 5인 카드, **경기 있는 날(경기 전)** 은 `MATCH DAY` 카드(D-DAY·시간·상대·WATCH·남은 시간 + 오늘의 5인 솔랭), **경기 결과**는 모달에서 **1·2·3세트를 골라** 그 세트의 진영·양 팀 밴·DK 5인 픽·K/D/A·딜 비중이 담긴 **1080×1350 PNG** 를 각각 저장합니다(파일명 `dk-signal-YYYYMMDD-s2.png`).
+- **서버**: `api/match.js` + `api/_lib/matchdetail.js` — 세트 하나를 window 2회 + details 1회로 읽고, 밴은 Leaguepedia(`api.php` → 실패 시 `Special:CargoExport`)로 채웁니다. 종료된 경기는 7일, 밴이 비었으면 30분 뒤 다시 시도합니다. `vercel.json` `maxDuration: 30`.
+- 새 검증 `tools/verify_match.py`(69항목): 전환·목록·스코어 바·세트 진영·밴 10개·5인 스탯·세트 전환·캘린더 이동·데스크톱 2열·세트별 카드 1080×1350·10개국어 문구·가로 넘침 0건. `tools/api_smoke.js` 에 `/api/match` 검사 13항목 추가. `sw.js` 캐시 **v22**, `package.json`·`api/config.js` 3.14.0.
+
 ### v3.13 (2026-11-28) 새로 추가 — 10개국어 언어 메뉴
 - **상단 언어 메뉴 `[🌐 KO ▾]`**: 헤더에 흩어져 있던 5개 국어 버튼을 **알약 버튼 하나 + 2열 × 5줄 팝오버**로 바꿨습니다(`langmenu.css` · `app.js` `renderLangSwitch()`). 좁은 화면(≤520px)에서는 헤더 바로 아래 시트로, 넓은 화면에서는 버튼에 꼬리가 붙은 팝오버로 펼쳐지고 화면 아래로 넘치면 위로 뜹니다. Esc·바깥 클릭·스크롤로 닫히고 ↑↓·Home·End 로 이동, 선택한 줄만 민트 카드 + 체크입니다. 다크·소프트 두 테마 모두 대응.
 - **10개국어 전체 번역**: 기존 5개국어(KO/EN/JA/ZH/VI)에 **대만 번체(TW) · 스페인어(ES) · 포르투갈어(PT) · 태국어(TH) · 인도네시아어(ID)** 를 더해 `i18n.js` 사전 545개 문구를 10개 언어로 채웠습니다(데스크톱 레이아웃·재생목록·내 링크·오늘 요약 카드·투표 팝업 포함). 날짜·요일·달 이름 표기도 언어별로 나눴습니다(es `27 nov 2026 (vie)`, pt `27 nov 2026 (sex)`, th `27 พ.ย. 2026 (ศ.)`, id `27 Nov 2026 (Jum)`, tw `2026年11月27日 (週五)`).
@@ -259,6 +268,8 @@ api/_lib/champions.js Riot 숫자 id → 챔피언·스펠 영어 이름 (tools/
 manifest.json         PWA 설정 (manifest.webmanifest 와 동일 내용)
 icons/shortcut-*-192.png  홈 화면 숏컷 4종 아이콘(tools/make_shortcut_icons.py)
 api/official.js       DK 공식 일정
+api/match.js          공식 경기 한 경기의 세트별 진영·밴픽·K/D/A·딜 비중
+api/_lib/matchdetail.js  LoL Esports livestats + Leaguepedia(밴) 합치기 · 7일/30분 캐시
 api/solo.js           솔로랭크
 api/config.js         프론트용 공개 설정 + 관리자 집계(GET) + 관리자 동작(POST · PIN 검증)
 api/subscribe.js      푸시 구독 저장/해지
@@ -270,7 +281,7 @@ api/_lib/             공식 일정·Riot·저장소·푸시·HTTP 유틸, 스�
 vercel.json           Cron(하루 1회) · 함수 실행시간 · /api 캐시 금지 헤더 (관리자 /admin rewrite 제거됨)
 package.json          의존성(web-push)
 tools/dev_server.js   로컬 서버(정적 + /api) · 픽스처 모드 · DK_LIVE_FAKE 라이브 배지 검증
-tools/fixtures/       검증용 고정 일정(다음 경기 없음/있음)
+tools/fixtures/       검증용 고정 일정(다음 경기 없음/있음) · 공식 경기 상세(match-detail.json)
 tools/api_smoke.js    /api 함수 동작 검증(실 API·YouTube RSS 1회 + 가짜 Riot/Redis/SOOP/CHZZK)
 tools/verify.py       390×844 브라우저 회귀 검증 87항목 + 스크린샷
 tools/verify_v3.py    다국어·재생목록·영상 아카이브·인앱 플레이어·라이브 배지 검증 233항목 + 스크린샷(downloads/dk-signal-v3)
@@ -278,6 +289,7 @@ tools/smoke_v3.py     빠른 화면 점검(스크린샷 없음)
 tools/make_champions.py  Riot Data Dragon 10개 로캘 → data.js 챔피언 이름 표(10칸) 재생성
 tools/make_tw_data.py  data.js 의 간체(zh) 문구 → 대만 번체(tw) 생성(OpenCC s2twp + 용어 보정)
 tools/verify_lang10.py  10개국어 언어 메뉴·번역·가로 넘침 검증 421항목 + 스크린샷
+tools/verify_match.py  경기로그 공식 경기(진영·밴픽·스탯)·세트별 요약 카드 검증 69항목 + 스크린샷
 tools/verify_api.py   자동 갱신·실시간 반영·오프라인 검증 + 스크린샷
 tools/make_snapshot.js data.js → api/_lib/snapshot.js
 tools/make_vapid.js   VAPID 키 생성

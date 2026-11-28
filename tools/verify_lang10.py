@@ -29,7 +29,7 @@ CODES = [c for c, _ in LANGS]
 TABS = ["feed", "official", "video", "solo", "records"]
 WIDTHS = [360, 390, 430]
 # 화면에 날 것의 번역 키가 새어 나오는지 보는 표본 (i18n 키는 전부 'aaa.bbb' 꼴)
-RAW_KEY = re.compile(r"\b(?:tab|install|notify|video|solo|records|official|cal|mine|summary|pick|vote|"
+RAW_KEY = re.compile(r"\b(?:tab|install|notify|video|solo|records|official|cal|mine|summary|pick|vote|mt|"
                      r"lang|brand|theme|board|cheer|live|link|links|foot|ingame|mu|hl|event|result|time|"
                      r"roster|banner|day|tier|pos|app|nav)\.[a-zA-Z][a-zA-Z0-9]\b")
 

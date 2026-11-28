@@ -1180,12 +1180,21 @@
 
     /* 2) 경기 — 저장된 2026 월즈 기록 + 서버 공식 일정 */
     (typeof MATCH_LOG !== 'undefined' ? MATCH_LOG : []).forEach(function (g) {
+      /* 같은 날짜의 공식 일정(getSchedule) 경기가 있으면 그 id 를 붙여
+       * 캘린더에서 '밴픽 보기'로 경기로그 공식 경기에 바로 갈 수 있게 합니다. */
+      var omHit = null;
+      var offNow = LIVE.official;
+      if (offNow && offNow.ok && Array.isArray(offNow.recent)) {
+        omHit = offNow.recent.filter(function (r) {
+          return r.startIso && String(r.startIso).slice(0, 10) === String(g.date).slice(0, 10);
+        })[0] || null;
+      }
       push({
         cat: 'match', start: g.date, end: g.date,
         bar: g.opp + ' ' + g.score.replace(/\s*:\s*/, ':') + (g.win ? ' W' : ' L'),
         title: L(g.league) + ' ' + L(g.round) + ' · DK ' + g.score + ' ' + g.opp,
         sub: T(g.win ? 'cal.gameWin' : 'cal.gameLoss', { opp: g.opp, score: g.score }),
-        url: g.url, action: 'cal.matchLink'
+        url: g.url, action: 'cal.matchLink', matchId: omHit ? omHit.id : ''
       });
     });
     var off = LIVE.official;
@@ -1200,7 +1209,7 @@
           bar: 'DK vs ' + oppN,
           title: 'DK vs ' + oppN,
           sub: [leagueName(off.next.league), blockText(off.next.block), off.next.time].filter(Boolean).join(' · '),
-          url: 'https://lolesports.com/ko-KR/schedule', action: 'cal.matchLink'
+          url: 'https://lolesports.com/ko-KR/schedule', action: 'cal.matchLink', matchId: off.next.id
         });
         seen[ymd(nd)] = true;
       }
@@ -1216,7 +1225,7 @@
           title: (leagueName(g.league) || 'LCK') + ' ' + (blockText(g.block) || '') + ' · DK ' + (g.score || '') + ' ' + opp,
           sub: g.win === true ? T('cal.gameWin', { opp: opp, score: g.score || '' })
             : (g.win === false ? T('cal.gameLoss', { opp: opp, score: g.score || '' }) : ''),
-          url: 'https://lolesports.com/ko-KR/schedule', action: 'cal.matchLink'
+          url: 'https://lolesports.com/ko-KR/schedule', action: 'cal.matchLink', matchId: g.id
         });
         seen[ymd(d)] = true;
       });
@@ -1375,8 +1384,10 @@
       return '<li class="cal-day-item">' +
         '<span class="cal-tag is-' + ev.cat + '">' + esc(tag) + '</span>' +
         '<span class="cal-day-body"><b>' + esc(ev.title) + '</b><span>' + esc(ev.sub) + '</span></span>' +
-        (ev.url ? '<a class="cal-day-go" href="' + esc(ev.url) + '" target="_blank" rel="noopener">' +
-          esc(T(ev.action || (ev.cat === 'cast' ? 'cal.noticeLink' : 'vote.cta'))) + '</a>' : '') +
+        (ev.matchId ? '<button class="cal-day-go is-om" type="button" data-om-open="' + esc(ev.matchId) + '">' +
+          esc(T('cal.watchMatch')) + '</button>'
+          : (ev.url ? '<a class="cal-day-go" href="' + esc(ev.url) + '" target="_blank" rel="noopener">' +
+          esc(T(ev.action || (ev.cat === 'cast' ? 'cal.noticeLink' : 'vote.cta'))) + '</a>' : '')) +
       '</li>';
     }).join('');
   }
@@ -1432,6 +1443,23 @@
   function champImg(name) {
     if (!name) return '';
     return (typeof DD_CDN !== 'undefined' ? DD_CDN : '') + '/img/champion/' + encodeURIComponent(name) + '.png';
+  }
+  /* Data Dragon 파일 이름(= CHAMPIONS 키)을 이름표에서 찾습니다.
+   * Leaguepedia 밴 데이터는 "Lee Sin" 처럼 표시 이름으로 오기 때문에 필요합니다. */
+  var CHAMP_KEYS = null;
+  function champKey(name) {
+    if (!name) return '';
+    if (!CHAMP_KEYS) {
+      CHAMP_KEYS = {};
+      Object.keys(CHAMPIONS || {}).forEach(function (k) {
+        CHAMP_KEYS[normChamp(k)] = k;
+        var row = CHAMPIONS[k];
+        if (!row) return;
+        if (row[0]) CHAMP_KEYS[normChamp(row[0])] = k;
+        if (row[1]) CHAMP_KEYS[normChamp(row[1])] = k;
+      });
+    }
+    return CHAMP_KEYS[normChamp(name)] || name;
   }
   function spellImg(name) {
     if (!name) return '';
@@ -2601,28 +2629,793 @@
     return canvas;
   }
 
+  /* ---------- 카드 3종: 경기 없는 날 · 경기 전 · 경기 결과(세트별) ---------- */
+  var scState = { mode: 'solo', matchId: '', sets: [], idx: 0, loading: false, failed: '' };
+
+  function kstTodayKey() {
+    var n = new Date();
+    return n.getFullYear() + '-' + pad(n.getMonth() + 1) + '-' + pad(n.getDate());
+  }
+  function summaryMatch() {
+    var today = kstTodayKey();
+    var list = mtList();
+    for (var i = 0; i < list.length; i++) {
+      var iso = String(list[i].startIso || '');
+      if (iso.slice(0, 10) === today) return list[i];
+    }
+    return null;
+  }
+  function summarySet() {
+    if (!scState.sets.length) return null;
+    var idx = Math.max(0, Math.min(scState.sets.length - 1, scState.idx));
+    return scState.sets[idx];
+  }
+
+  /* 챔피언 아이콘은 Data Dragon 이 CORS 를 허용해 캔버스에 그릴 수 있습니다. */
+  var SC_IMG_CACHE = {};
+  function loadImageCors(src) {
+    if (!src) return Promise.resolve(null);
+    if (SC_IMG_CACHE[src]) return Promise.resolve(SC_IMG_CACHE[src]);
+    return new Promise(function (resolve) {
+      var im = new Image();
+      im.crossOrigin = 'anonymous';
+      im.onload = function () { SC_IMG_CACHE[src] = im; resolve(im); };
+      im.onerror = function () { resolve(null); };
+      im.src = src;
+    });
+  }
+  function loadChampIcons(names) {
+    var uniq = {};
+    (names || []).forEach(function (n) { if (n) uniq[n] = true; });
+    var keys = Object.keys(uniq);
+    return Promise.all(keys.map(function (n) { return loadImageCors(champImg(champKey(n))); })).then(function (list) {
+      var map = {};
+      keys.forEach(function (n, i) { map[n] = list[i]; });
+      return map;
+    });
+  }
+
+  function scBg(ctx, W, H) {
+    var bg = ctx.createLinearGradient(0, 0, W, H);
+    bg.addColorStop(0, '#04120F'); bg.addColorStop(.42, '#061A1A'); bg.addColorStop(1, '#03251F');
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+    var glow = ctx.createRadialGradient(960, 40, 20, 960, 40, 620);
+    glow.addColorStop(0, 'rgba(0,245,196,.20)'); glow.addColorStop(1, 'rgba(0,245,196,0)');
+    ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+    var glow2 = ctx.createRadialGradient(80, 1240, 20, 80, 1240, 520);
+    glow2.addColorStop(0, 'rgba(0,196,154,.10)'); glow2.addColorStop(1, 'rgba(0,196,154,0)');
+    ctx.fillStyle = glow2; ctx.fillRect(0, 0, W, H);
+  }
+  function scColors() {
+    return {
+      ink: '#EAF6F3', ink2: '#A9C3BD', muted: '#78938D', dim: '#5A736D',
+      mint: '#00F5C4', mint2: '#00C49A', red: '#FF6B7A', line: 'rgba(255,255,255,.09)'
+    };
+  }
+  function scHeader(ctx, logo, C, kicker, dateStr) {
+    var W = 1080;
+    if (logo) {
+      ctx.save();
+      try { ctx.filter = 'brightness(0) invert(1)'; } catch (e) {}
+      ctx.drawImage(logo, 64, 56, 124, 72);
+      ctx.restore();
+    } else {
+      ctx.fillStyle = 'rgba(255,255,255,.10)';
+      roundRect(ctx, 64, 56, 124, 72, 14); ctx.fill();
+      ctx.fillStyle = C.ink; ctx.font = scFont(34, 900); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('DK', 126, 92);
+      ctx.textAlign = 'left';
+    }
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = C.ink; ctx.font = scFont(32, 900);
+    ctx.fillText('DK', 212, 96);
+    var dkW = ctx.measureText('DK ').width;
+    ctx.fillStyle = C.mint; ctx.fillText('SIGNAL', 212 + dkW, 96);
+    ctx.fillStyle = C.muted; ctx.font = scFont(18, 600);
+    ctx.fillText(T('brand.sub'), 213, 124);
+
+    ctx.textAlign = 'right';
+    ctx.fillStyle = C.mint; ctx.font = scFont(17, 800);
+    ctx.fillText('●  ' + kicker, 1016, 78);
+    ctx.fillStyle = C.ink; ctx.font = scFont(26, 800);
+    ctx.fillText(dateStr, 1016, 116);
+    ctx.textAlign = 'left';
+
+    ctx.strokeStyle = C.line; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(64, 168); ctx.lineTo(1016, 168); ctx.stroke();
+    void W;
+  }
+  /* 상대팀은 이미지 CORS 가 막혀 있어 팀 코드 배지로 그립니다. */
+  function scTeamBadge(ctx, C, label, x, y, w, h, accent) {
+    ctx.fillStyle = accent ? 'rgba(255,107,122,.12)' : 'rgba(0,245,196,.10)';
+    roundRect(ctx, x, y, w, h, Math.min(18, h / 2)); ctx.fill();
+    ctx.strokeStyle = accent ? 'rgba(255,107,122,.42)' : 'rgba(0,245,196,.42)';
+    ctx.lineWidth = 1.6;
+    roundRect(ctx, x, y, w, h, Math.min(18, h / 2)); ctx.stroke();
+    ctx.fillStyle = accent ? C.red : C.mint;
+    ctx.font = scFont(Math.min(46, h * 0.5), 900);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(String(label || '').toUpperCase(), x + w / 2, y + h / 2 + 1);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  }
+
+  /* 경기 있는 날(경기 전): D-DAY · 시간 · 상대팀 + 오늘의 5인 솔랭 요약 */
+  function drawMatchDayCard(logo, m, d) {
+    var W = 1080, H = 1350;
+    var canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = H;
+    var ctx = canvas.getContext('2d');
+    var C = scColors();
+    var now = new Date();
+    scBg(ctx, W, H);
+    scHeader(ctx, logo, C, T('summary.mkicker'), window.I18N.feedDate(now));
+
+    /* TODAY'S MATCH 패널 */
+    var px = 64, pw = 952, py = 186, ph = 212;
+    var g = ctx.createLinearGradient(px, py, px + pw, py + ph);
+    g.addColorStop(0, 'rgba(0,245,196,.10)'); g.addColorStop(.5, 'rgba(9,32,30,.92)'); g.addColorStop(1, 'rgba(6,20,20,.96)');
+    ctx.fillStyle = g;
+    roundRect(ctx, px, py, pw, ph, 28); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,245,196,.32)'; ctx.lineWidth = 1.8;
+    roundRect(ctx, px, py, pw, ph, 28); ctx.stroke();
+
+    ctx.fillStyle = C.mint; ctx.font = scFont(15, 900);
+    ctx.fillText('●  ' + T('summary.todayMatch'), px + 30, py + 36);
+    var league = [leagueName(m.league), blockText(m.block)].filter(Boolean).join(' · ');
+    if (league) {
+      ctx.font = scFont(17, 800);
+      var lw = ctx.measureText(league).width;
+      ctx.fillStyle = 'rgba(0,245,196,.10)';
+      roundRect(ctx, px + pw - 30 - lw - 30, py + 16, lw + 30, 34, 17); ctx.fill();
+      ctx.strokeStyle = 'rgba(0,245,196,.34)'; ctx.lineWidth = 1.4;
+      roundRect(ctx, px + pw - 30 - lw - 30, py + 16, lw + 30, 34, 17); ctx.stroke();
+      ctx.fillStyle = C.mint; ctx.textAlign = 'center';
+      ctx.fillText(league, px + pw - 30 - lw / 2 - 15, py + 39);
+      ctx.textAlign = 'left';
+    }
+
+    /* 왼쪽 DK */
+    if (logo) {
+      ctx.save();
+      try { ctx.filter = 'brightness(0) invert(1)'; } catch (e) {}
+      ctx.drawImage(logo, px + 66, py + 46, 138, 80);
+      ctx.restore();
+    }
+    ctx.fillStyle = C.ink2; ctx.font = scFont(16, 800); ctx.textAlign = 'center';
+    ctx.fillText((m.dk && m.dk.name) || 'DPLUS KIA', px + 137, py + 150);
+    ctx.textAlign = 'left';
+
+    /* 가운데 시간 */
+    var cx = px + pw / 2;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = C.mint; ctx.font = scFont(16, 900);
+    ctx.fillText('V S', cx, py + 58);
+    ctx.fillStyle = C.ink; ctx.font = scFont(74, 900);
+    ctx.fillText(m.time || 'TBD', cx, py + 126);
+    ctx.fillStyle = C.muted; ctx.font = scFont(17, 800);
+    ctx.fillText([m.bo ? T('mt.bo', { n: m.bo }) : '', m.weekday ? '(' + m.weekday + ')' : ''].filter(Boolean).join('  '), cx, py + 154);
+    ctx.textAlign = 'left';
+
+    /* 오른쪽 상대 */
+    var opp = m.opponent || {};
+    var oppLabel = opp.code || opp.name || 'TBD';
+    scTeamBadge(ctx, C, oppLabel, px + pw - 212, py + 46, 150, 84, true);
+    ctx.fillStyle = C.ink2; ctx.font = scFont(16, 800); ctx.textAlign = 'center';
+    ctx.fillText(String(opp.name || oppLabel), px + pw - 137, py + 150);
+    ctx.textAlign = 'left';
+
+    /* 아래줄: WATCH + 시작까지 */
+    ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(px + 24, py + ph - 42); ctx.lineTo(px + pw - 24, py + ph - 42); ctx.stroke();
+    ctx.fillStyle = C.mint; ctx.font = scFont(13, 900);
+    ctx.fillText(T('summary.watch'), px + 30, py + ph - 16);
+    ctx.fillStyle = C.muted; ctx.font = scFont(15, 700);
+    ctx.fillText(T('summary.watchLine'), px + 118, py + ph - 16);
+    var left = m.startIso ? Date.parse(m.startIso) - Date.now() : NaN;
+    var countdown = T('summary.startsSoon');
+    if (Number.isFinite(left) && left > 0) {
+      var hh = Math.floor(left / 3600000), mm = Math.round((left % 3600000) / 60000);
+      countdown = hh > 0 ? T('summary.startsIn', { h: hh, m: mm }) : T('summary.startsSoon');
+    } else if (Number.isFinite(left)) {
+      countdown = T('summary.liveNow');
+    }
+    ctx.font = scFont(16, 900);
+    var cw2 = ctx.measureText(countdown).width;
+    ctx.fillStyle = 'rgba(0,245,196,.12)';
+    roundRect(ctx, px + pw - 30 - cw2 - 32, py + ph - 40, cw2 + 32, 32, 16); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,245,196,.44)'; ctx.lineWidth = 1.4;
+    roundRect(ctx, px + pw - 30 - cw2 - 32, py + ph - 40, cw2 + 32, 32, 16); ctx.stroke();
+    ctx.fillStyle = C.mint; ctx.textAlign = 'center';
+    ctx.fillText(countdown, px + pw - 30 - cw2 / 2 - 16, py + ph - 19);
+    ctx.textAlign = 'left';
+
+    /* 오늘의 DK 요약 */
+    var ty = 452;
+    ctx.font = scFont(52, 900);
+    ctx.fillStyle = C.ink;
+    var base = T('summary.title');
+    var parts = base.split('DK');
+    var tx = 64;
+    if (parts.length > 1) {
+      ctx.fillStyle = C.ink; ctx.fillText(parts[0], tx, ty);
+      tx += ctx.measureText(parts[0]).width;
+      ctx.fillStyle = C.mint; ctx.fillText('DK', tx, ty);
+      tx += ctx.measureText('DK').width;
+      ctx.fillStyle = C.ink; ctx.fillText(parts.slice(1).join('DK'), tx, ty);
+    } else {
+      ctx.fillStyle = C.ink; ctx.fillText(base, tx, ty);
+    }
+    ctx.textAlign = 'right'; ctx.fillStyle = C.muted; ctx.font = scFont(20, 700);
+    ctx.fillText(T('summary.sub', { w: d.w, l: d.l }), 1016, ty - 4);
+    ctx.textAlign = 'left';
+
+    scPlayerRows(ctx, C, d, 64, 488, 952, 148, 6);
+    scFoot(ctx, C, d, 1252, true, m);
+    return canvas;
+  }
+
+  /* 5인 솔로랭크 요약줄 (두 카드가 같이 씀) */
+  function scPlayerRows(ctx, C, d, px, py, pw, rh, gap) {
+    var ph = rh * 5 + gap * 2;
+    var panelGrad = ctx.createLinearGradient(px, py, px + pw, py + ph);
+    panelGrad.addColorStop(0, 'rgba(9,38,34,.84)'); panelGrad.addColorStop(1, 'rgba(5,22,22,.80)');
+    ctx.fillStyle = panelGrad;
+    roundRect(ctx, px, py, pw, ph, 28); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,245,196,.20)'; ctx.lineWidth = 1.6;
+    roundRect(ctx, px, py, pw, ph, 28); ctx.stroke();
+
+    var k = rh / 168;
+    d.rows.forEach(function (row, i) {
+      var y = py + 7 + i * rh;
+      var p = row.p, t = row.t;
+      if (i) {
+        ctx.strokeStyle = 'rgba(255,255,255,.06)'; ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.moveTo(px + 22, y - 4); ctx.lineTo(px + pw - 22, y - 4); ctx.stroke();
+      }
+      var cy = y + 76 * k;
+      var ring = ctx.createLinearGradient(96, cy - 46, 184, cy + 46);
+      ring.addColorStop(0, 'rgba(0,245,196,.55)'); ring.addColorStop(1, 'rgba(0,245,196,.12)');
+      ctx.beginPath(); ctx.arc(140, cy, 44 * k, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(0,245,196,.10)'; ctx.fill();
+      ctx.strokeStyle = ring; ctx.lineWidth = 2.4; ctx.stroke();
+      var initial = (p.nameKo || p.nameEn || '?').slice(0, 1);
+      ctx.fillStyle = C.mint; ctx.font = scFont(40 * k, 900);
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(initial, 140, cy + 2);
+      ctx.textBaseline = 'alphabetic';
+      ctx.textAlign = 'center'; ctx.fillStyle = C.dim; ctx.font = scFont(14, 800);
+      ctx.fillText(p.pos || '', 140, y + 152 * k);
+      ctx.textAlign = 'left';
+
+      ctx.fillStyle = C.ink; ctx.font = scFont(40 * k, 900);
+      ctx.fillText(pName(p), 210, y + 58 * k);
+      var nameW = ctx.measureText(pName(p)).width;
+      if (p.key === myPick) {
+        var cw = 118, chh = 30, cx = 210 + nameW + 14, cyy = y + 32 * k;
+        ctx.fillStyle = 'rgba(0,245,196,.16)';
+        roundRect(ctx, cx, cyy, cw, chh, 15); ctx.fill();
+        ctx.strokeStyle = 'rgba(0,245,196,.5)'; ctx.lineWidth = 1.4; ctx.stroke();
+        ctx.fillStyle = C.mint; ctx.font = scFont(15, 900);
+        ctx.fillText('★ MY PICK', cx + 13, cyy + 21);
+      }
+
+      ctx.fillStyle = C.muted; ctx.font = scFont(21 * k, 600);
+      ctx.fillText(pReal(p) + ' · ' + T('pos.' + (p.pos || 'TOP')), 210, y + 94 * k);
+      ctx.fillStyle = C.ink2; ctx.font = scFont(23 * k, 700);
+      ctx.fillText(tierText(p), 210, y + 132 * k);
+      var tw = ctx.measureText(tierText(p)).width;
+      ctx.fillStyle = C.mint; ctx.font = scFont(23 * k, 800);
+      ctx.fillText(lpText(p), 210 + tw + 14, y + 132 * k);
+      var lw = ctx.measureText(lpText(p)).width;
+      ctx.fillStyle = C.dim; ctx.font = scFont(19 * k, 600);
+      ctx.fillText('· ' + winRateText(p), 210 + tw + 14 + lw + 12, y + 132 * k);
+
+      ctx.fillStyle = C.dim; ctx.font = scFont(15, 700);
+      ctx.fillText(T('summary.recent'), 510, y + 36 * k);
+      var bw = 34, bgap = 12, baseY = y + 112 * k;
+      row.m.slice().reverse().forEach(function (mg, bi) {
+        var bx = 510 + bi * (bw + bgap);
+        var hgt = barHeight(mg) * 4.6 * k;
+        var grd = ctx.createLinearGradient(bx, baseY - hgt, bx, baseY);
+        if (mg.win) { grd.addColorStop(0, '#00F5C4'); grd.addColorStop(1, '#00A783'); }
+        else { grd.addColorStop(0, '#FF8C97'); grd.addColorStop(1, '#C44756'); }
+        ctx.fillStyle = grd;
+        roundRect(ctx, bx, baseY - hgt, bw, hgt, 7); ctx.fill();
+        ctx.fillStyle = C.dim; ctx.font = scFont(12, 600);
+        ctx.textAlign = 'center';
+        ctx.fillText(String(mg.kda || ''), bx + bw / 2, y + 136 * k);
+        ctx.textAlign = 'left';
+      });
+
+      var full = T('summary.winLose', { w: t.w, l: t.l });
+      ctx.font = scFont(36 * k, 900);
+      var fm = full.match(/^(.*?\d+\D+?)(\d+\D*)$/);
+      if (fm) {
+        var w1 = ctx.measureText(fm[1]).width, w2 = ctx.measureText(fm[2]).width;
+        var sx = 992 - (w1 + w2);
+        ctx.fillStyle = t.w >= t.l ? C.mint : C.ink;
+        ctx.fillText(fm[1], sx, y + 66 * k);
+        ctx.fillStyle = t.l > t.w ? C.red : C.ink2;
+        ctx.fillText(fm[2], sx + w1, y + 66 * k);
+      } else {
+        ctx.textAlign = 'right'; ctx.fillStyle = C.ink;
+        ctx.fillText(full, 992, y + 66 * k); ctx.textAlign = 'left';
+      }
+      var lastM = row.m[0];
+      var lastD = '';
+      if (lastM && lastM.date) {
+        var pm = /(\d{4})-(\d{2})-(\d{2})/.exec(String(lastM.date));
+        if (pm) lastD = pm[2] + '.' + pm[3];
+      }
+      ctx.textAlign = 'right'; ctx.fillStyle = C.dim; ctx.font = scFont(16, 600);
+      ctx.fillText(lastD ? T('summary.lastGame', { date: lastD }) : '', 992, y + 104 * k);
+      ctx.textAlign = 'left';
+    });
+  }
+
+  function scFoot(ctx, C, d, fy, withAlert, m) {
+    ctx.fillStyle = 'rgba(255,255,255,.035)';
+    roundRect(ctx, 64, fy, 730, 78, 20); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,245,196,.22)'; ctx.lineWidth = 1.4;
+    roundRect(ctx, 64, fy, 730, 78, 20); ctx.stroke();
+    ctx.fillStyle = C.mint; ctx.font = scFont(12, 900);
+    ctx.fillText(withAlert ? T('summary.matchAlert') : T('summary.next'), 92, fy + 28);
+    ctx.fillStyle = C.ink; ctx.font = scFont(21, 800);
+    if (withAlert && m) {
+      ctx.fillText(fitText(ctx, 'DK vs ' + ((m.opponent && (m.opponent.code || m.opponent.name)) || 'TBD') + ' · ' + (m.time || 'TBD'), 320, 21, 800), 92, fy + 58);
+    } else {
+      ctx.fillText(fitText(ctx, d.nextMain, 320, 21, 800), 92, fy + 56);
+      ctx.fillStyle = C.dim; ctx.font = scFont(13, 600);
+      ctx.fillText(fitText(ctx, d.nextSub, 320, 13, 600), 92, fy + 74);
+    }
+    ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(430, fy + 14); ctx.lineTo(430, fy + 64); ctx.stroke();
+    ctx.fillStyle = C.mint; ctx.font = scFont(12, 900);
+    ctx.fillText(T('summary.noticeTitle') || T('summary.notice'), 456, fy + 28);
+    ctx.fillStyle = C.ink2; ctx.font = scFont(18, 700);
+    ctx.fillText(fitText(ctx, d.notice || T('summary.noticeNone'), 300, 18, 700), 456, fy + 58);
+
+    ctx.textAlign = 'right';
+    ctx.fillStyle = C.mint; ctx.font = scFont(17, 800);
+    ctx.fillText('dk-signal.vercel.app', 1016, fy + 32);
+    ctx.fillStyle = C.dim; ctx.font = scFont(12, 600);
+    var now = new Date();
+    ctx.fillText(T('summary.basis', { time: pad(now.getHours()) + ':' + pad(now.getMinutes()) }), 1016, fy + 56);
+    ctx.textAlign = 'left';
+  }
+
+  /* 경기 결과(세트 선택): 진영 · 양 팀 밴 · DK 5인 픽 · K/D/A · 팀 내 딜 비중 */
+  function drawMatchResultCard(logo, m, d, set, icons) {
+    var W = 1080, H = 1350;
+    var canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = H;
+    var ctx = canvas.getContext('2d');
+    var C = scColors();
+    var now = new Date();
+    scBg(ctx, W, H);
+    scHeader(ctx, logo, C, T('summary.rkicker'), window.I18N.feedDate(now));
+
+    var px = 64, pw = 952;
+    var dkWins = d.dk && d.dk.wins != null ? d.dk.wins : (m.dk && m.dk.gameWins);
+    var opWins = d.opponent && d.opponent.wins != null ? d.opponent.wins : (m.opponent && m.opponent.gameWins);
+    var outcome = d.win != null ? d.win : m.win;
+
+    /* FINAL 패널 */
+    var py = 182, ph = 212;
+    var g = ctx.createLinearGradient(px, py, px + pw, py + ph);
+    g.addColorStop(0, 'rgba(0,245,196,.10)'); g.addColorStop(.5, 'rgba(9,32,30,.92)'); g.addColorStop(1, 'rgba(6,20,20,.96)');
+    ctx.fillStyle = g;
+    roundRect(ctx, px, py, pw, ph, 28); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,245,196,.32)'; ctx.lineWidth = 1.8;
+    roundRect(ctx, px, py, pw, ph, 28); ctx.stroke();
+
+    ctx.fillStyle = C.mint; ctx.font = scFont(15, 900);
+    ctx.fillText('●  ' + T('summary.finalTag'), px + 30, py + 36);
+    var league = [leagueName(m.league), blockText(m.block), m.bo ? T('mt.bo', { n: m.bo }) : ''].filter(Boolean).join(' · ');
+    if (league) {
+      ctx.font = scFont(16, 800);
+      var lw = ctx.measureText(league).width;
+      ctx.fillStyle = 'rgba(0,245,196,.10)';
+      roundRect(ctx, px + pw - 30 - lw - 30, py + 16, lw + 30, 32, 16); ctx.fill();
+      ctx.strokeStyle = 'rgba(0,245,196,.34)'; ctx.lineWidth = 1.4;
+      roundRect(ctx, px + pw - 30 - lw - 30, py + 16, lw + 30, 32, 16); ctx.stroke();
+      ctx.fillStyle = C.mint; ctx.textAlign = 'center';
+      ctx.fillText(league, px + pw - 30 - lw / 2 - 15, py + 38);
+      ctx.textAlign = 'left';
+    }
+
+    if (logo) {
+      ctx.save();
+      try { ctx.filter = 'brightness(0) invert(1)'; } catch (e) {}
+      ctx.drawImage(logo, px + 66, py + 44, 138, 80);
+      ctx.restore();
+    }
+    ctx.fillStyle = C.ink2; ctx.font = scFont(16, 800); ctx.textAlign = 'center';
+    ctx.fillText((m.dk && m.dk.name) || 'DPLUS KIA', px + 137, py + 150);
+    ctx.textAlign = 'left';
+
+    var cx = px + pw / 2;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = C.dim; ctx.font = scFont(13, 900);
+    ctx.fillText(T('summary.finalScore'), cx, py + 48);
+    ctx.fillStyle = C.ink; ctx.font = scFont(66, 900);
+    ctx.fillText((dkWins == null ? '-' : dkWins) + ' : ' + (opWins == null ? '-' : opWins), cx - 26, py + 114);
+    if (outcome != null) {
+      ctx.font = scFont(16, 900);
+      var wtxt = T(outcome ? 'mt.dkWin' : 'mt.dkLoss');
+      var ww = ctx.measureText(wtxt).width;
+      ctx.fillStyle = outcome ? C.mint : C.red;
+      roundRect(ctx, cx + 52, py + 88, ww + 22, 28, 14); ctx.fill();
+      ctx.fillStyle = '#04120F'; ctx.textAlign = 'left';
+      ctx.fillText(wtxt, cx + 63, py + 108);
+      ctx.textAlign = 'center';
+    }
+    ctx.fillStyle = C.muted; ctx.font = scFont(15, 700);
+    var subline = [m.bo ? T('mt.bo', { n: m.bo }) : '', set ? T('mt.setN', { n: set.number }) + ' · ' + mtDur(set.duration || 0) : ''].filter(Boolean).join(' · ');
+    ctx.fillText(subline, cx, py + 142);
+    ctx.textAlign = 'left';
+
+    var opp = m.opponent || {};
+    scTeamBadge(ctx, C, opp.code || opp.name || 'TBD', px + pw - 212, py + 44, 150, 84, true);
+    ctx.fillStyle = C.ink2; ctx.font = scFont(16, 800); ctx.textAlign = 'center';
+    ctx.fillText(String(opp.name || opp.code || ''), px + pw - 137, py + 150);
+    ctx.textAlign = 'left';
+
+    /* KILL / GOLD / 시간 */
+    ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(px + 24, py + ph - 40); ctx.lineTo(px + pw - 24, py + ph - 40); ctx.stroke();
+    ctx.fillStyle = C.mint; ctx.font = scFont(12, 900);
+    ctx.fillText('VOD', px + 30, py + ph - 15);
+    ctx.fillStyle = C.muted; ctx.font = scFont(14, 700);
+    ctx.fillText(T('summary.watchLine'), px + 78, py + ph - 15);
+    ctx.textAlign = 'right'; ctx.fillStyle = C.ink2; ctx.font = scFont(13, 800);
+    var t = set && set.team && set.team.dk ? set.team.dk : null;
+    var o = set && set.team && set.team.opp ? set.team.opp : null;
+    var objLine = t ? ('K ' + t.kills + ' : ' + (o ? o.kills : '-') + '   GOLD ' + (t.gold / 1000).toFixed(1) + 'k : ' + (o ? (o.gold / 1000).toFixed(1) + 'k' : '-')) : '';
+    ctx.fillText(objLine + (m.time ? '   ·   ' + m.time + ' ' + T('mt.kst') : ''), px + pw - 30, py + ph - 15);
+    ctx.textAlign = 'left';
+
+    /* BAN / PICK 패널 (밴 기록이 없으면 한 줄짜리 안내로 줄입니다) */
+    var hasBans = !!(set && set.bans && ((set.bans.dk && set.bans.dk.length) || (set.bans.opp && set.bans.opp.length)));
+    var by = py + ph + 14, bh = hasBans ? 190 : 118;
+    ctx.fillStyle = 'rgba(13,22,33,.62)';
+    roundRect(ctx, px, by, pw, bh, 24); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.075)'; ctx.lineWidth = 1.4;
+    roundRect(ctx, px, by, pw, bh, 24); ctx.stroke();
+
+    ctx.fillStyle = C.mint; ctx.font = scFont(14, 900);
+    ctx.fillText('BAN / PICK', px + 26, by + 32);
+    ctx.fillStyle = C.ink; ctx.font = scFont(20, 900);
+    var banTitle = T('mt.banTitle', { n: set ? set.number : 1 });
+    ctx.fillText(banTitle, px + 138, by + 33);
+    ctx.fillStyle = C.dim; ctx.font = scFont(13, 700);
+    ctx.fillText(T('mt.banSub') + (set && set.dkSide ? ' · ' + (set.dkSide === 'blue' ? '🔵 ' + T('mt.blue') : '🔴 ' + T('mt.red')) : ''), px + 26 + 138 + ctx.measureText(banTitle).width + 16, by + 33);
+
+    /* 오른쪽 세트 탭 */
+    var tabs = d.sets || [];
+    var tabW = 86, tabH = 32, gapT = 6;
+    var tx0 = px + pw - 26 - (tabs.length * (tabW + gapT) - gapT);
+    tabs.forEach(function (s, i) {
+      var on = set && Number(s.number) === Number(set.number);
+      var x = tx0 + i * (tabW + gapT);
+      ctx.fillStyle = on ? 'rgba(0,245,196,.22)' : 'rgba(255,255,255,.04)';
+      roundRect(ctx, x, by + 14, tabW, tabH, 9); ctx.fill();
+      ctx.strokeStyle = on ? 'rgba(0,245,196,.5)' : 'rgba(255,255,255,.08)'; ctx.lineWidth = 1.2;
+      roundRect(ctx, x, by + 14, tabW, tabH, 9); ctx.stroke();
+      ctx.fillStyle = on ? C.ink : C.muted; ctx.font = scFont(12, 800); ctx.textAlign = 'center';
+      var label = T('mt.setN', { n: s.number }) + (s.win == null ? '' : ' ' + T(s.win ? 'mt.shortWin' : 'mt.shortLose'));
+      ctx.fillText(label, x + tabW / 2, by + 34);
+      ctx.textAlign = 'left';
+    });
+
+    /* 밴 5:5 */
+    var rowY = by + 64;
+    if (hasBans) {
+      scBanRow(ctx, C, (d.dk && (d.dk.code || 'DK')) || 'DK', px + 26, rowY, set.bans.dk, icons, false);
+      scBanRow(ctx, C, opp.code || opp.name || 'TBD', px + 26, rowY + 62, set.bans.opp, icons, true);
+    } else {
+      ctx.fillStyle = C.dim; ctx.font = scFont(16, 600);
+      ctx.fillText(T('mt.banNone'), px + 26, rowY + 4);
+    }
+
+    /* 5인 경기 스탯 */
+    var ty = by + bh + 44;
+    ctx.font = scFont(38, 900);
+    ctx.fillStyle = C.ink; ctx.fillText('5 ', 64, ty);
+    ctx.fillStyle = C.mint; ctx.fillText(T('mt.statsTitle'), 64 + ctx.measureText('5 ').width, ty);
+    ctx.textAlign = 'right'; ctx.fillStyle = C.muted; ctx.font = scFont(15, 700);
+    ctx.fillText(T('mt.statsSub', { n: set ? set.number : 1 }), 1016, ty);
+    ctx.textAlign = 'left';
+
+    var ry0 = ty + 16, rh = 112, gap2 = 5;
+    var ph2 = rh * 5 + gap2 * 2;
+    var grad = ctx.createLinearGradient(64, ry0, 1016, ry0 + ph2);
+    grad.addColorStop(0, 'rgba(9,38,34,.84)'); grad.addColorStop(1, 'rgba(5,22,22,.80)');
+    ctx.fillStyle = grad;
+    roundRect(ctx, 64, ry0, 952, ph2, 26); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,245,196,.20)'; ctx.lineWidth = 1.6;
+    roundRect(ctx, 64, ry0, 952, ph2, 26); ctx.stroke();
+
+    (set && set.players ? set.players : []).forEach(function (p, i) {
+      var y = ry0 + 6 + i * rh;
+      if (i) {
+        ctx.strokeStyle = 'rgba(255,255,255,.06)'; ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.moveTo(86, y - 3); ctx.lineTo(994, y - 3); ctx.stroke();
+      }
+      var isPick = p.key && p.key === myPick;
+      if (isPick) {
+        ctx.fillStyle = 'rgba(0,245,196,.10)';
+        roundRect(ctx, 70, y + 2, 940, rh - 6, 14); ctx.fill();
+      }
+      var ix = 90, iy = y + 16, isz = 66;
+      var icon = icons && p.champion ? icons[p.champion] : null;
+      if (icon) {
+        ctx.save();
+        roundRect(ctx, ix, iy, isz, isz, 14); ctx.clip();
+        ctx.drawImage(icon, ix, iy, isz, isz);
+        ctx.restore();
+        ctx.strokeStyle = isPick ? 'rgba(0,245,196,.7)' : 'rgba(0,245,196,.34)'; ctx.lineWidth = 1.6;
+        roundRect(ctx, ix, iy, isz, isz, 14); ctx.stroke();
+      } else {
+        ctx.fillStyle = 'rgba(255,255,255,.06)';
+        roundRect(ctx, ix, iy, isz, isz, 14); ctx.fill();
+      }
+      var app = p.key ? calPlayer(p.key) : null;
+      var nm = app ? pName(app) : p.player;
+      ctx.fillStyle = C.ink; ctx.font = scFont(30, 900);
+      ctx.fillText(nm, 186, y + 50);
+      var nw = ctx.measureText(nm).width;
+      if (isPick) {
+        ctx.fillStyle = 'rgba(0,245,196,.16)';
+        roundRect(ctx, 186 + nw + 12, y + 28, 104, 26, 13); ctx.fill();
+        ctx.strokeStyle = 'rgba(0,245,196,.5)'; ctx.lineWidth = 1.2;
+        roundRect(ctx, 186 + nw + 12, y + 28, 104, 26, 13); ctx.stroke();
+        ctx.fillStyle = C.mint; ctx.font = scFont(13, 900);
+        ctx.fillText('★ MY PICK', 186 + nw + 21, y + 46);
+      }
+      ctx.fillStyle = C.muted; ctx.font = scFont(17, 600);
+      ctx.fillText(champText(p.champion) + ' · ' + roleText(p.role), 186, y + 76);
+      if (app) {
+        ctx.fillStyle = C.dim; ctx.font = scFont(13, 800);
+        ctx.fillText(pReal(app), 186, y + 100);
+      }
+
+      /* K/D/A */
+      ctx.textAlign = 'center';
+      var kx = 634;
+      ctx.font = scFont(30, 900);
+      var kstr = String(p.k) + ' / ' + String(p.d) + ' / ' + String(p.a);
+      var kParts = [[String(p.k), C.ink], [' / ', C.dim], [String(p.d), C.red], [' / ', C.dim], [String(p.a), C.ink]];
+      ctx.font = scFont(30, 900);
+      var total = 0;
+      kParts.forEach(function (pp) { total += ctx.measureText(pp[0]).width; });
+      var kx0 = kx - total / 2;
+      kParts.forEach(function (pp) {
+        ctx.fillStyle = pp[1]; ctx.textAlign = 'left';
+        ctx.fillText(pp[0], kx0, y + 60);
+        kx0 += ctx.measureText(pp[0]).width;
+      });
+      ctx.textAlign = 'center'; ctx.fillStyle = C.dim; ctx.font = scFont(11, 800);
+      ctx.fillText('K D A', kx, y + 84);
+
+      /* 딜 비중 */
+      var sx = 716, sw = 268;
+      ctx.textAlign = 'left';
+      ctx.fillStyle = C.mint; ctx.font = scFont(26, 900);
+      ctx.fillText(p.damageShare == null ? '–' : p.damageShare + '%', sx, y + 56);
+      ctx.fillStyle = C.dim; ctx.font = scFont(11, 800);
+      ctx.textAlign = 'right';
+      ctx.fillText(T('mt.share'), sx + sw, y + 50);
+      ctx.textAlign = 'left';
+      ctx.fillStyle = 'rgba(255,255,255,.10)';
+      roundRect(ctx, sx, y + 70, sw, 7, 4); ctx.fill();
+      if (p.damageShare != null) {
+        var wpx = Math.max(4, Math.min(sw, sw * (p.damageShare / 34)));
+        var bg2 = ctx.createLinearGradient(sx, 0, sx + wpx, 0);
+        bg2.addColorStop(0, '#00C49A'); bg2.addColorStop(1, '#00F5C4');
+        ctx.fillStyle = bg2;
+        roundRect(ctx, sx, y + 70, wpx, 7, 4); ctx.fill();
+      }
+      void kstr;
+    });
+
+    /* 꼬리 */
+    var fy = Math.min(1240, ry0 + ph2 + 18);
+    ctx.fillStyle = 'rgba(255,255,255,.035)';
+    roundRect(ctx, 64, fy, 730, 62, 18); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,245,196,.22)'; ctx.lineWidth = 1.4;
+    roundRect(ctx, 64, fy, 730, 62, 18); ctx.stroke();
+    ctx.fillStyle = C.mint; ctx.font = scFont(12, 900);
+    ctx.fillText('SET MVP', 92, fy + 24);
+    var mvp = null;
+    (set && set.players ? set.players : []).forEach(function (p) {
+      if (mvp == null || (p.damageShare || 0) > (mvp.damageShare || 0)) mvp = p;
+    });
+    ctx.fillStyle = C.ink; ctx.font = scFont(19, 800);
+    var mvpApp = mvp && mvp.key ? calPlayer(mvp.key) : null;
+    ctx.fillText(fitText(ctx, mvp ? (mvpApp ? pName(mvpApp) : mvp.player) + ' · ' + champText(mvp.champion) + ' ' + mvp.k + '/' + mvp.d + '/' + mvp.a : '–', 320, 19, 800), 92, fy + 48);
+    ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(430, fy + 12); ctx.lineTo(430, fy + 50); ctx.stroke();
+    ctx.fillStyle = C.mint; ctx.font = scFont(12, 900);
+    ctx.fillText(T('summary.matchAlert'), 456, fy + 24);
+    ctx.fillStyle = C.ink2; ctx.font = scFont(16, 700);
+    ctx.fillText(fitText(ctx, T('summary.alertBody'), 300, 16, 700), 456, fy + 48);
+
+    ctx.textAlign = 'right';
+    ctx.fillStyle = C.mint; ctx.font = scFont(17, 800);
+    ctx.fillText('dk-signal.vercel.app', 1016, fy + 24);
+    ctx.fillStyle = C.dim; ctx.font = scFont(12, 600);
+    ctx.fillText(T('summary.basis', { time: pad(now.getHours()) + ':' + pad(now.getMinutes()) }), 1016, fy + 48);
+    ctx.textAlign = 'left';
+    return canvas;
+  }
+
+  /* 밴 한 줄: 팀 코드 + 5개 챔피언 (흑백 + 붉은 사선) */
+  function scBanRow(ctx, C, team, x, y, bans, icons, isOpp) {
+    ctx.fillStyle = C.mint; ctx.font = scFont(12, 900);
+    ctx.fillText(String(team || '').toUpperCase(), x, y + 12);
+    ctx.fillStyle = C.dim; ctx.font = scFont(10, 800);
+    ctx.fillText('BAN', x, y + 28);
+    var bx = x + 74, size = 52, gap = 10;
+    var list = bans || [];
+    if (!list.length) {
+      ctx.fillStyle = C.dim; ctx.font = scFont(14, 700);
+      ctx.fillText(T('mt.banEmpty'), bx, y + 16);
+      return;
+    }
+    list.slice(0, 5).forEach(function (b, i) {
+      var ix = bx + i * (size + gap);
+      var icon = icons && b ? icons[b] : null;
+      if (icon) {
+        ctx.save();
+        roundRect(ctx, ix, y - 18, size, size, 11); ctx.clip();
+        try { ctx.filter = 'grayscale(.85) brightness(.9)'; } catch (e) {}
+        ctx.drawImage(icon, ix, y - 18, size, size);
+        ctx.restore();
+      } else {
+        ctx.fillStyle = 'rgba(255,255,255,.06)';
+        roundRect(ctx, ix, y - 18, size, size, 11); ctx.fill();
+      }
+      ctx.strokeStyle = isOpp ? 'rgba(255,107,122,.32)' : 'rgba(0,245,196,.28)'; ctx.lineWidth = 1.2;
+      roundRect(ctx, ix, y - 18, size, size, 11); ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,107,122,.85)'; ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(ix + 8, y - 18 + size - 8);
+      ctx.lineTo(ix + size - 8, y - 18 + 8);
+      ctx.stroke();
+      ctx.fillStyle = C.muted; ctx.font = scFont(11, 600); ctx.textAlign = 'center';
+      ctx.fillText(fitText(ctx, champText(b), size, 11, 600), ix + size / 2, y + 48);
+      ctx.textAlign = 'left';
+    });
+  }
+
   function renderSummaryPreview() {
     var stage = $('#scStage'), img = $('#scImg'), loading = $('#scLoading');
     if (!stage) return;
     if (loading) loading.hidden = false;
     if (img) img.hidden = true;
+
+    var m = summaryMatch();
+    scState.failed = '';
+    if (!m) {
+      scState.mode = 'solo';
+      scState.sets = [];
+      drawSoloPreview();
+      return;
+    }
+    if (m.state !== 'completed') {
+      scState.mode = 'matchday';
+      scState.sets = [];
+      drawMatchDayPreview(m);
+      return;
+    }
+    scState.mode = 'result';
+    var hit = mtCache[m.id];
+    if (hit) {
+      scState.sets = (hit.sets || []).filter(function (s) { return s.state === 'completed'; });
+      scState.idx = Math.min(scState.idx, Math.max(0, scState.sets.length - 1));
+      drawResultPreview(m, hit);
+      return;
+    }
+    if (scState.loading) return;
+    scState.loading = true;
+    apiGet('./api/match?id=' + encodeURIComponent(m.id) + '&lang=' + lang()).then(function (d) {
+      scState.loading = false;
+      if (d && d.ok) {
+        mtCache[m.id] = d;
+        scState.sets = (d.sets || []).filter(function (s) { return s.state === 'completed'; });
+        scState.idx = 0;
+        renderSummaryPreview();
+      } else {
+        scState.failed = T('mt.loadFail');
+        drawMatchDayPreview(m);
+      }
+    }).catch(function () {
+      scState.loading = false;
+      scState.failed = T('mt.loadFail');
+      drawMatchDayPreview(m);
+    });
+  }
+
+  function finishPreview(canvas) {
+    var img = $('#scImg'), loading = $('#scLoading');
+    var url = canvas.toDataURL('image/png');
+    scImage = { canvas: canvas, url: url };
+    if (loading) loading.hidden = true;
+    if (img) { img.src = url; img.hidden = false; }
+    var open = $('#scOpen');
+    if (open) { open.href = url; open.hidden = false; }
+    var save = $('#scSave');
+    if (save) save.disabled = false;
+    renderScSets();
+  }
+
+  function drawSoloPreview() {
     Promise.all([ensureFont(), loadImage('./logo/dpluskia.svg')]).then(function (res) {
       var canvas;
       try {
         canvas = drawSummaryCard(res[1]);
       } catch (e) {
+        var loading = $('#scLoading');
         if (loading) { loading.textContent = T('summary.saveFail'); loading.hidden = false; }
         return;
       }
-      var url = canvas.toDataURL('image/png');
-      scImage = { canvas: canvas, url: url };
-      if (loading) loading.hidden = true;
-      if (img) { img.src = url; img.hidden = false; }
-      var open = $('#scOpen');
-      if (open) { open.href = url; open.hidden = false; }
-      var save = $('#scSave');
-      if (save) save.disabled = false;
+      finishPreview(canvas);
     });
+  }
+
+  function drawMatchDayPreview(m) {
+    Promise.all([ensureFont(), loadImage('./logo/dpluskia.svg')]).then(function (res) {
+      var canvas;
+      try {
+        canvas = drawMatchDayCard(res[1], m, summaryData());
+      } catch (e) {
+        var loading = $('#scLoading');
+        if (loading) { loading.textContent = T('summary.saveFail'); loading.hidden = false; }
+        return;
+      }
+      finishPreview(canvas);
+    });
+  }
+
+  function drawResultPreview(m, d) {
+    var set = summarySet();
+    if (!set) { drawMatchDayPreview(m); return; }
+    var names = [];
+    (d.sets || []).forEach(function (s) {
+      (s.players || []).forEach(function (p) { if (p.champion) names.push(p.champion); });
+      if (s.bans) { s.bans.dk.forEach(function (b) { names.push(b); }); s.bans.opp.forEach(function (b) { names.push(b); }); }
+    });
+    Promise.all([ensureFont(), loadImage('./logo/dpluskia.svg'), loadChampIcons(names)]).then(function (res) {
+      var canvas;
+      try {
+        canvas = drawMatchResultCard(res[1], m, d, set, res[2]);
+      } catch (e) {
+        var loading = $('#scLoading');
+        if (loading) { loading.textContent = T('summary.saveFail'); loading.hidden = false; }
+        return;
+      }
+      finishPreview(canvas);
+    });
+  }
+
+  function renderScSets() {
+    var host = $('#scSets');
+    var note = $('#scNote');
+    if (!host) return;
+    var show = scState.mode === 'result' && scState.sets.length > 0;
+    host.hidden = !show;
+    if (note) {
+      note.textContent = scState.failed || (show ? T('summary.cardHint') : T('summary.note'));
+    }
+    if (!show) { host.innerHTML = ''; return; }
+    host.innerHTML = scState.sets.map(function (s, i) {
+      var on = i === scState.idx;
+      return '<button class="sc-set' + (on ? ' is-on' : '') + '" type="button" role="tab" aria-selected="' + on + '" data-sc-set="' + i + '">' +
+        T('summary.setCard', { n: s.number }) +
+        (s.win == null ? '' : '<em class="' + (s.win ? 'is-w' : 'is-l') + '">' + esc(T(s.win ? 'mt.win' : 'mt.lose')) + '</em>') +
+      '</button>';
+    }).join('');
   }
 
   function openSummary() {
@@ -2642,7 +3435,14 @@
 
   function summaryFileName() {
     var d = new Date();
-    return 'dk-signal-' + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + '.png';
+    var base = 'dk-signal-' + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate());
+    if (scState.mode === 'result') {
+      var s = summarySet();
+      if (s) base += '-s' + s.number;
+    } else if (scState.mode === 'matchday') {
+      base += '-matchday';
+    }
+    return base + '.png';
   }
 
   function saveSummary() {
@@ -3271,6 +4071,308 @@
     if (title) title.textContent = T('solo.title');
   }
 
+  /* ================= 경기로그: 솔로랭크 | 공식 경기 ================= */
+  var MT_VIEW_KEY = 'dk.signal.matchView';
+  var MT_ID_KEY = 'dk.signal.matchId';
+  var mtCache = {};
+  var mtState = {
+    view: store.get(MT_VIEW_KEY, 'solo') === 'official' ? 'official' : 'solo',
+    id: store.get(MT_ID_KEY, ''),
+    set: 0,
+    loading: false,
+    error: '',
+    tried: {}
+  };
+
+  function mtOfficial() { return LIVE.official && LIVE.official.ok ? LIVE.official : null; }
+
+  /* 최근 공식 경기(최신순) + 아직 안 끝난 다음 경기 */
+  function mtList() {
+    var off = mtOfficial();
+    if (!off) return [];
+    var out = [];
+    var seen = {};
+    function add(g) {
+      if (!g || !g.id || seen[g.id]) return;
+      seen[g.id] = true;
+      out.push(g);
+    }
+    if (off.next) add(off.next);
+    (off.recent || []).forEach(add);
+    return out;
+  }
+  function mtFind(id) {
+    var list = mtList();
+    for (var i = 0; i < list.length; i++) if (String(list[i].id) === String(id)) return list[i];
+    return null;
+  }
+  function mtDefaultId() {
+    var list = mtList();
+    if (!list.length) return '';
+    var done = list.filter(function (g) { return g.state === 'completed'; });
+    return (done[0] || list[0]).id;
+  }
+  function mtCurrentId() {
+    if (mtState.id && mtFind(mtState.id)) return mtState.id;
+    return mtDefaultId();
+  }
+  function mtCurrent() { return mtFind(mtCurrentId()); }
+  function mtDetail() { return mtCache[mtCurrentId()] || null; }
+
+  function mtTeamLabel(code, name) { return code || name || 'TBD'; }
+  function mtHttps(url) { return String(url || '').replace(/^http:\/\//, 'https://'); }
+  function mtLogo(t, cls) {
+    if (!t) return '';
+    var label = mtTeamLabel(t.code, t.name);
+    var img = t.image ? '<img class="' + cls + '" src="' + esc(mtHttps(t.image)) + '" alt="' + esc(label) + '" loading="lazy">' : '';
+    return '<span class="om-team' + (img ? ' has-img' : '') + '"><span class="om-code">' + esc(label) + '</span>' + img + '</span>';
+  }
+  function mtSetWin(set) {
+    if (!set || set.win == null) return '';
+    return '<span class="om-wl ' + (set.win ? 'is-w' : 'is-l') + '">' + esc(T(set.win ? 'mt.win' : 'mt.lose')) + '</span>';
+  }
+
+  function mtPoolHTML() {
+    var list = mtList();
+    if (!list.length) return '';
+    var cur = mtCurrentId();
+    var head = '<div class="om-pool-hd"><b>' + esc(T('mt.poolTitle')) + '</b><span>' + esc(T('mt.poolCount', { n: list.length })) + '</span></div>';
+    var cards = list.map(function (g) {
+      var opp = g.opponent || {};
+      var oppLabel = mtTeamLabel(opp.code, opp.name);
+      var done = g.state === 'completed';
+      var score = done ? String(g.score || '').replace(/\s*:\s*/, ' : ') : T('mt.vsShort');
+      var sub = [g.date, g.weekday ? '(' + g.weekday + ')' : ''].filter(Boolean).join(' ');
+      var tag = g.block || (done ? T('mt.doneTag') : T('mt.nextTag'));
+      return '<button class="om-mc' + (String(g.id) === String(cur) ? ' is-on' : '') + '" type="button" role="tab" aria-selected="' + (String(g.id) === String(cur)) + '" data-om-match="' + esc(g.id) + '">' +
+        '<span class="om-mc-top"><span>' + esc(leagueName(g.league) || 'LCK') + '</span><em>' + esc(tag) + '</em></span>' +
+        '<span class="om-mc-mid"><b class="om-mc-dk">DK</b><b class="om-mc-sc">' + esc(score) + '</b><b class="om-mc-op">' + esc(oppLabel) + '</b></span>' +
+        '<span class="om-mc-bot">' + esc(sub) + '</span>' +
+      '</button>';
+    }).join('');
+    return '<section class="card om-pool-card">' + head + '<div class="om-pool" role="tablist" data-i18n-attr="aria-label:mt.poolAria" aria-label="' + esc(T('mt.poolAria')) + '">' + cards + '</div></section>';
+  }
+
+  function mtBarHTML() {
+    var m = mtCurrent();
+    var d = mtDetail();
+    if (!m) return '';
+    var opp = m.opponent || {};
+    var caption = [leagueName(m.league), blockText(m.block), m.bo ? T('mt.bo', { n: m.bo }) : ''].filter(Boolean).join(' · ');
+    var mid;
+    if (m.state === 'completed' || (d && d.state === 'completed')) {
+      var dkWins = (d && d.dk && d.dk.wins != null) ? d.dk.wins : (m.dk && m.dk.gameWins);
+      var opWins = (d && d.opponent && d.opponent.wins != null) ? d.opponent.wins : (opp.gameWins);
+      var outcome = (d && d.win != null) ? d.win : m.win;
+      var chip = outcome == null ? '' : '<em class="' + (outcome ? 'is-w' : 'is-l') + '">' + esc(T(outcome ? 'mt.dkWin' : 'mt.dkLoss')) + '</em>';
+      mid = '<div class="om-score"><b>' + esc(dkWins == null ? '-' : dkWins) + '</b><i>:</i><b>' + esc(opWins == null ? '-' : opWins) + '</b>' + chip + '</div>';
+    } else {
+      mid = '<div class="om-score is-vs"><b>' + esc(m.time || 'TBD') + '</b><em class="is-live">' + esc(T('mt.kst')) + '</em></div>';
+    }
+    return '<section class="card om-bar-card">' +
+      '<div class="om-bar">' +
+        '<div class="om-side">' + mtLogo(m.dk || { code: 'DK' }, 'om-logo') + '<b>DK</b></div>' +
+        '<div class="om-mid">' + mid + '<div class="om-cap">' + esc(caption || '') + '</div></div>' +
+        '<div class="om-side is-r"><b>' + esc(mtTeamLabel(opp.code, opp.name)) + '</b>' + mtLogo(opp, 'om-logo') + '</div>' +
+      '</div>' +
+    '</section>';
+  }
+
+  function mtSetsHTML() {
+    var d = mtDetail();
+    if (!d || !d.sets || !d.sets.length) return '';
+    var cur = Number(mtState.set) || (d.sets[d.sets.length - 1] || {}).number;
+    return '<div class="om-sets" role="tablist" data-i18n-attr="aria-label:mt.setAria" aria-label="' + esc(T('mt.setAria')) + '">' + d.sets.map(function (s) {
+      var on = Number(s.number) === Number(cur);
+      var side = s.dkSide === 'blue' ? '<span class="om-side-b is-blue">🔵 ' + esc(T('mt.blue')) + '</span>'
+        : (s.dkSide === 'red' ? '<span class="om-side-b is-red">🔴 ' + esc(T('mt.red')) + '</span>' : '');
+      return '<button class="om-set' + (on ? ' is-on' : '') + '" type="button" role="tab" aria-selected="' + on + '" data-om-set="' + esc(s.number) + '">' +
+        '<span class="om-set-l"><b>' + esc(T('mt.setN', { n: s.number })) + '</b>' + mtSetWin(s) + '</span>' +
+        '<span class="om-set-s">' + side + (s.duration ? '<span class="om-dur">' + esc(mtDur(s.duration)) + '</span>' : '') + '</span>' +
+      '</button>';
+    }).join('') + '</div>';
+  }
+
+  function mtDur(sec) {
+    var m = Math.floor(Number(sec) / 60), s = Math.round(Number(sec) % 60);
+    if (!Number.isFinite(m)) return '';
+    return T('mt.duration', { m: m, s: (s < 10 ? '0' : '') + s });
+  }
+
+  function mtBanRow(team, side, bans, cls) {
+    var items = (bans || []).map(function (b) {
+      var key = champKey(b);
+      return '<span class="om-ban"><img class="om-ban-img" src="' + esc(champImg(key)) + '" alt="' + esc(champText(b)) + '" loading="lazy"><i class="om-sl"></i><em>' + esc(champText(b)) + '</em></span>';
+    }).join('');
+    if (!items) items = '<span class="om-ban-empty">' + esc(T('mt.banEmpty')) + '</span>';
+    return '<div class="om-ban-row ' + (cls || '') + '">' +
+      '<span class="om-who">' + mtLogo(team, 'om-mini') + '<b>' + esc(mtTeamLabel(team && team.code, team && team.name)) + '</b><em>' + esc(T('mt.ban')) + '</em></span>' +
+      '<span class="om-bans">' + items + '</span>' +
+    '</div>';
+  }
+
+  function mtBanHTML() {
+    var d = mtDetail();
+    if (!d) return '';
+    var m = mtCurrent() || {};
+    var s = mtSetOf(d);
+    if (!s) return '';
+    var head = '<div class="om-ban-hd"><span class="om-eyebrow">BAN</span><b>' + esc(T('mt.banTitle', { n: s.number })) + '</b><span class="om-ban-sub">' + esc(T('mt.banSub')) + '</span></div>';
+    var body = s.bans
+      ? mtBanRow(d.dk || m.dk, 'dk', s.bans.dk, 'is-dk') + mtBanRow(d.opponent || m.opponent, 'opp', s.bans.opp, 'is-opp')
+      : '<p class="om-note">' + esc(T('mt.banNone')) + '</p>';
+    var foot = s.bans ? '<p class="om-src">' + esc(T('mt.banFrom')) + '</p>' : '';
+    return '<section class="card om-ban-card">' + head + body + foot + '</section>';
+  }
+
+  function mtSetOf(d) {
+    if (!d || !d.sets || !d.sets.length) return null;
+    var cur = Number(mtState.set);
+    for (var i = 0; i < d.sets.length; i++) if (Number(d.sets[i].number) === cur) return d.sets[i];
+    return d.sets[d.sets.length - 1];
+  }
+
+  function mtBoardHTML() {
+    var d = mtDetail();
+    if (!d) return '';
+    var s = mtSetOf(d);
+    if (!s) return '';
+    var m = mtCurrent() || {};
+    var rows = (s.players || []).map(function (p) {
+      var app = p.key ? calPlayer(p.key) : null;
+      var name = app ? pName(app) : p.player;
+      var chip = (p.key && p.key === myPick) ? '<span class="om-chip">★ MY PICK</span>' : '';
+      var share = p.damageShare == null ? null : p.damageShare;
+      var bar = share == null ? '' : '<span class="om-dbar"><i style="width:' + Math.max(2, Math.min(100, share * 2.94)) + '%"></i></span>';
+      return '<div class="om-row' + (p.key && p.key === myPick ? ' is-pick' : '') + '">' +
+        '<span class="om-champ"><img src="' + esc(champImg(champKey(p.champion))) + '" alt="' + esc(champText(p.champion)) + '" loading="lazy"></span>' +
+        '<span class="om-id"><span class="om-nm">' + esc(name) + chip + '</span>' +
+          '<span class="om-sub">' + esc(champText(p.champion)) + ' · ' + esc(roleText(p.role)) + '</span></span>' +
+        '<span class="om-kda"><b>' + esc(p.k) + '</b><i>/</i><b class="d">' + esc(p.d) + '</b><i>/</i><b>' + esc(p.a) + '</b></span>' +
+        '<span class="om-dmg"><b>' + (share == null ? '–' : esc(share) + '%') + '</b><span class="om-dmg-l">' + esc(T('mt.share')) + '</span>' + bar + '</span>' +
+        '<span class="om-extra"><b>KDA ' + esc(p.kda) + '</b><span>' + esc(T('mt.kp', { p: p.kp == null ? '–' : p.kp })) + '</span><span>' + esc(T('mt.csGold', { cs: p.cs, g: (p.gold / 1000).toFixed(1) + 'k' })) + '</span></span>' +
+      '</div>';
+    }).join('');
+    var note = (s.players || []).some(function (p) { return !p.key; }) ? '<p class="om-note">' + esc(T('mt.rosterNote')) + '</p>' : '';
+    var bhead = '<div class="om-bhead" aria-hidden="true"><span></span><span>' + esc(T('mt.colWho')) + '</span><span>' + esc(T('mt.colExtra')) + '</span><span>' + esc(T('mt.kdaLabel')) + '</span><span>' + esc(T('mt.colShare')) + '</span></div>';
+    return '<section class="card om-board-card">' +
+      '<div class="om-board-hd"><b>5 <em>' + esc(T('mt.statsTitle')) + '</em></b><span>' + esc(T('mt.statsSub', { n: s.number })) + '</span></div>' +
+      '<div class="om-board">' + bhead + (rows || '<p class="om-note">' + esc(T('mt.noStats')) + '</p>') + '</div>' + note +
+    '</section>';
+  }
+
+  function mtStripHTML() {
+    var d = mtDetail();
+    var s = d ? mtSetOf(d) : null;
+    if (!s || !s.team || !s.team.dk) return '';
+    var cells = [
+      { k: T('mt.oKill'), a: s.team.dk.kills, b: s.team.opp ? s.team.opp.kills : null },
+      { k: T('mt.oGold'), a: (s.team.dk.gold / 1000).toFixed(1) + 'k', b: s.team.opp ? (s.team.opp.gold / 1000).toFixed(1) + 'k' : null },
+      { k: T('mt.oDragon'), a: s.team.dk.dragons, b: s.team.opp ? s.team.opp.dragons : null },
+      { k: T('mt.oBaron'), a: s.team.dk.barons, b: s.team.opp ? s.team.opp.barons : null }
+    ];
+    return '<div class="om-strip">' + cells.map(function (c) {
+      return '<span class="om-cell"><em>' + esc(c.k) + '</em><b>' + esc(c.a) + '<i>:</i>' + esc(c.b == null ? '-' : c.b) + '</b></span>';
+    }).join('') + '</div>';
+  }
+
+  function mtVodHTML() {
+    var d = mtDetail();
+    if (!d || !d.vod || !d.vod.url) return '';
+    return '<a class="om-vod" href="' + esc(d.vod.url) + '" target="_blank" rel="noopener">' + esc(T('mt.vod')) + ' ↗</a>';
+  }
+
+  function renderOfficialPane() {
+    var host = $('#officialPane');
+    if (!host) return;
+    if (mtState.view !== 'official') return;
+    var list = mtList();
+    if (!LIVE.official) {
+      host.innerHTML = '<section class="card om-empty"><p>' + esc(T('mt.loading')) + '</p></section>';
+      return;
+    }
+    if (!list.length) {
+      host.innerHTML = '<section class="card om-empty"><div class="eyebrow">OFFICIAL MATCH</div><h3 class="card-title">' + esc(T('mt.emptyTitle')) + '</h3>' +
+        '<p class="om-note">' + esc(T('mt.emptyNote')) + '</p>' +
+        '<a class="ghost-btn om-empty-go" href="https://lolesports.com/ko-KR/schedule" target="_blank" rel="noopener">' + esc(T('mt.emptyCta')) + ' ↗</a></section>';
+      return;
+    }
+    var cur = mtCurrent();
+    var need = mtCurrentId();
+    /* 아직 불러오지 않은 경기면 한 번 부릅니다 (renderOfficialPane → loadMatch 는 다시 그리지 않음) */
+    if (need && !mtCache[need] && !mtState.loading && !mtState.tried[need]) {
+      mtState.tried[need] = true;
+      mtState.loading = true;
+      apiGet('./api/match?id=' + encodeURIComponent(need) + '&lang=' + lang()).then(function (d) {
+        mtState.loading = false;
+        if (d && d.ok) mtCache[need] = d;
+        else mtState.error = (d && d.error) || T('mt.loadFail');
+        if (mtCache[need]) mtState.set = (mtCache[need].sets[mtCache[need].sets.length - 1] || {}).number || 0;
+        if (mtState.view === 'official') renderOfficialPane();
+      }).catch(function () {
+        mtState.loading = false;
+        mtState.error = T('mt.loadFail');
+        if (mtState.view === 'official') renderOfficialPane();
+      });
+    }
+    var d = mtDetail();
+    /* 왼쪽 = 경기 목록 · 스코어 · 밴 / 오른쪽 = 세트 · 5인 스탯 (데스크톱 2열) */
+    var left = mtPoolHTML() + mtBarHTML();
+    var right = '';
+    if (mtState.loading && !d) {
+      right = '<section class="card om-empty"><p>' + esc(T('mt.loading')) + '</p></section>';
+    } else if (mtState.error && !d) {
+      right = '<section class="card om-empty"><p>' + esc(mtState.error) + '</p><button class="ghost-btn" type="button" data-om-retry="1">' + esc(T('mt.retry')) + '</button></section>';
+    } else if (d) {
+      if (d.sets && d.sets.length) {
+        right = mtSetsHTML() + mtBoardHTML() + mtStripHTML();
+        left += mtBanHTML();
+      } else {
+        right = '<section class="card om-empty"><p>' + esc(T('mt.beforeNote')) + '</p>' + mtVodHTML() + '</section>';
+      }
+    }
+    var html = '<div class="om-feed"><div class="om-col-a">' + left + '</div><div class="om-col-b">' + right + '</div></div>';
+    if (d && d.vod) html += '<div class="om-vod-row">' + mtVodHTML() + '</div>';
+    if (d) html += '<p class="om-src om-src-foot">' + esc(T('mt.source')) + '</p>';
+    host.innerHTML = html;
+  }
+
+  function renderMatchLog() {
+    var sw = $('#matchSwitch');
+    var solo = $('#soloPane');
+    var off = $('#officialPane');
+    var meta = $('#soloPanelMeta');
+    if (sw) {
+      $$('#matchSwitch [data-match-view]').forEach(function (b) {
+        var on = b.getAttribute('data-match-view') === mtState.view;
+        b.classList.toggle('is-on', on);
+        b.setAttribute('aria-selected', String(on));
+      });
+    }
+    if (meta) meta.textContent = mtState.view === 'official' ? T('mt.panelSub') : T('solo.panelMeta', { name: pName(current()), n: current().matches.length });
+    if (solo) solo.hidden = mtState.view !== 'solo';
+    if (off) off.hidden = mtState.view !== 'official';
+    if (mtState.view === 'official') renderOfficialPane();
+  }
+
+  function mtSetView(view) {
+    mtState.view = view === 'official' ? 'official' : 'solo';
+    store.set(MT_VIEW_KEY, mtState.view);
+    renderMatchLog();
+  }
+
+  function mtSelect(id, opts) {
+    if (!id) return;
+    mtState.id = id;
+    store.set(MT_ID_KEY, id);
+    mtState.error = '';
+    mtState.set = 0;
+    var hit = mtCache[id];
+    if (hit) mtState.set = (hit.sets[hit.sets.length - 1] || {}).number || 0;
+    if (opts && opts.view !== false) mtSetView('official');
+    renderMatchLog();
+  }
+
   function renderRoster() {
     var host = $('#rosterList');
     if (!host) return;
@@ -3587,7 +4689,9 @@
           '<span class="p-teams">DK <b class="' + win + '">' + esc(g.score || '-') + '</b> ' + esc(opp.code || opp.name || '') + '</span>' +
           '<span class="p-res ' + win + '">' + (res ? res + ' · ' : '') + esc(dateLabel) + '</span>' +
         '</div>' +
-        '<div class="p-vid">' + matchVideosHTML(g) + '</div>' +
+        '<div class="p-vid">' + matchVideosHTML(g) +
+          '<button class="p-om" type="button" data-om-open="' + esc(g.id) + '">' + esc(T('cal.watchMatch')) + ' ›</button>' +
+        '</div>' +
       '</li>';
     }).join('');
     if (note) {
@@ -3891,6 +4995,7 @@
     renderVideoPanel();
     renderCheer();
     renderSolo();
+    renderMatchLog();
     renderRoster();
     renderOfficial();
     renderOfficialView();
@@ -4000,6 +5105,40 @@
       closeAddLink(); return;
     }
     if (e.target.closest('#summaryBtn')) { openSummary(); return; }
+    if (e.target.closest('#summaryBtn2')) { openSummary(); return; }
+    /* 경기로그: 솔로랭크 | 공식 경기 · 경기 선택 · 세트 선택 */
+    var mvBtn = e.target.closest('[data-match-view]');
+    if (mvBtn) { mtSetView(mvBtn.getAttribute('data-match-view')); return; }
+    var omPick = e.target.closest('[data-om-match]');
+    if (omPick) { mtSelect(omPick.getAttribute('data-om-match')); return; }
+    var omSet = e.target.closest('[data-om-set]');
+    if (omSet) {
+      mtState.set = Number(omSet.getAttribute('data-om-set')) || 0;
+      renderOfficialPane();
+      return;
+    }
+    if (e.target.closest('[data-om-retry]')) {
+      var rid = mtCurrentId();
+      delete mtState.tried[rid];
+      delete mtCache[rid];
+      mtState.error = '';
+      renderOfficialPane();
+      return;
+    }
+    var omOpen = e.target.closest('[data-om-open]');
+    if (omOpen) {
+      var oid = omOpen.getAttribute('data-om-open');
+      switchTab('solo');
+      delete mtState.tried[oid];
+      mtSelect(oid);
+      return;
+    }
+    var scSet = e.target.closest('[data-sc-set]');
+    if (scSet) {
+      scState.idx = Number(scSet.getAttribute('data-sc-set')) || 0;
+      renderSummaryPreview();
+      return;
+    }
     if (e.target.closest('#summaryClose') || e.target.closest('#summaryVeil')) { closeSummary(); return; }
     if (e.target.closest('#scSave')) { saveSummary(); return; }
     if (e.target.closest('#scShare')) { shareSummary(); return; }

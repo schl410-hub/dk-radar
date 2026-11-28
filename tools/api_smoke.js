@@ -353,6 +353,43 @@ async function main() {
   check('official cache hit second call', (await call(official, { url: '/api/official' })).json.servedFrom === 'cache', null);
   global.fetch = realFetch;
 
+  /* --- 2b. 공식 경기 상세(/api/match): 세트별 밴픽·스탯 --- */
+  const match = require('../api/match');
+  const noId = await call(match, { url: '/api/match' });
+  check('match without id → 400', noId.status === 400 && noId.json && noId.json.ok === false, noId.status + ' ' + (noId.json && noId.json.error));
+  const unknown = await call(match, { url: '/api/match?id=000000000000000000' });
+  check('match unknown id → ok:false (서버 안 죽음)', unknown.status === 200 && unknown.json && unknown.json.ok === false, unknown.json && (unknown.json.error || unknown.json.detail));
+
+  const recentId = live.json && live.json.ok && live.json.recent && live.json.recent[0] ? live.json.recent[0].id : '';
+  if (recentId) {
+    const md = await call(match, { url: '/api/match?id=' + recentId + '&refresh=1' });
+    check('match live status 200', md.status === 200, md.status);
+    if (md.json && md.json.ok) {
+      const sets = md.json.sets || [];
+      const s0 = sets[0] || {};
+      check('match live sets', sets.length >= 1, sets.length);
+      check('match live set has sides', !!s0.dkSide && (s0.dkSide === 'blue' || s0.dkSide === 'red'), s0.dkSide + '/' + s0.oppSide);
+      check('match live 5 dk players', (s0.players || []).length === 5, (s0.players || []).length);
+      check('match live player fields',
+        (s0.players || []).every(function (p) { return p.champion && p.role && typeof p.k === 'number' && typeof p.d === 'number' && typeof p.a === 'number' && typeof p.damageShare === 'number'; }),
+        JSON.stringify((s0.players || [])[0] || {}));
+      check('match live damage share in %', (s0.players || []).every(function (p) { return p.damageShare >= 0 && p.damageShare <= 100; }), (s0.players || []).map(function (p) { return p.damageShare; }).join(','));
+      check('match live team objectives', !!(s0.team && s0.team.dk && typeof s0.team.dk.kills === 'number'), s0.team && JSON.stringify(s0.team.dk));
+      check('match live startIso +09:00', /\+09:00$/.test(md.json.startIso || ''), md.json.startIso);
+      const withBans = sets.filter(function (s) { return s.bans && s.bans.dk && s.bans.dk.length === 5; });
+      console.log('     · 세트 ' + sets.length + '개, 밴 있는 세트 ' + withBans.length + '개 (위키 응답에 따라 달라질 수 있음)');
+      if (withBans.length) {
+        check('match bans 5:5', withBans.every(function (s) { return s.bans.opp.length === 5; }), withBans.length);
+        check('match set winner', withBans.every(function (s) { return typeof s.win === 'boolean'; }), withBans.map(function (s) { return s.win; }).join(','));
+      }
+    } else {
+      check('match live degrades cleanly', md.json && md.json.ok === false, md.json && (md.json.error || md.json.detail));
+    }
+  } else {
+    console.log('     · 최근 공식 경기가 없어 /api/match 실호출은 건너뜀');
+  }
+  global.fetch = realFetch;
+
   /* --- 3. 솔로랭크: 키 없음 → 스냅샷 --- */
   const solo = require('../api/solo');
   delete process.env.RIOT_API_KEY;

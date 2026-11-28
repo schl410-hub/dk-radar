@@ -5,6 +5,9 @@
     "api/official.js": {
       "maxDuration": 20
     },
+    "api/match.js": {
+      "maxDuration": 30
+    },
     "api/solo.js": {
       "maxDuration": 30
     },

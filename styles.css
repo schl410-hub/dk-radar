@@ -2755,3 +2755,243 @@ html[data-theme="mint"] .sc-stage { background: rgba(18, 60, 52, .05); }
   .sc-note { font-size: 9px; }
   .sc-btn { height: 38px; font-size: 10.5px; }
 }
+
+/* =====================================================================
+   경기로그 · 공식 경기 (진영 · 밴픽 · K/D/A · 딜 비중)
+   ===================================================================== */
+.ml-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.ml-head-l { min-width: 0; }
+.ml-sum { height: 28px; padding: 0 10px; font-size: 8.5px; gap: 4px; flex: none; margin-top: 2px; }
+.ml-sum svg { width: 13px; height: 13px; }
+.match-switch { margin: 10px 16px 0; }
+.match-switch .vs-btn { gap: 5px; }
+
+.om-pane { display: block; }
+.om-pane[hidden] { display: none !important; }
+.om-feed { display: flex; flex-direction: column; }
+.om-col-a, .om-col-b { display: contents; }
+/* 모바일 순서: 목록 → 스코어 → 세트 → 밴 → 5인 스탯 */
+.om-pool-card { order: 1; }
+.om-bar-card { order: 2; }
+.om-sets { order: 3; }
+.om-ban-card { order: 4; }
+.om-board-card { order: 5; }
+.om-strip { order: 6; }
+.om-src-foot { order: 7; }
+.om-vod-row { order: 6; padding: 0 16px; }
+.om-pane .card { margin-top: 10px; }
+
+/* ---------- 최근 공식 경기 카드 목록 ---------- */
+.om-pool-card { padding: 12px 0 10px; }
+.om-pool-hd { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 0 15px; }
+.om-pool-hd b { font-size: 11.5px; font-weight: 800; letter-spacing: -.02em; color: var(--ink); }
+.om-pool-hd span { font-size: 8.5px; font-weight: 700; color: var(--muted-2); letter-spacing: .01em; }
+.om-pool {
+  display: flex; gap: 7px; padding: 8px 15px 0;
+  overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.om-pool::-webkit-scrollbar { display: none; }
+.om-mc {
+  flex: 0 0 138px; display: flex; flex-direction: column; justify-content: space-between; gap: 4px;
+  height: 64px; padding: 7px 9px; border-radius: 12px; text-align: left;
+  background: rgba(255, 255, 255, .028); border: 1px solid var(--line);
+  font-family: inherit; color: inherit; cursor: pointer;
+}
+.om-mc.is-on {
+  border-color: var(--accent-line);
+  background: linear-gradient(160deg, var(--accent-soft), rgba(12, 22, 33, .86) 58%);
+  box-shadow: 0 10px 24px -18px var(--accent);
+}
+html[data-theme="mint"] .om-mc.is-on { background: linear-gradient(160deg, rgba(18,185,140,.16), rgba(255,255,255,.9) 58%); }
+.om-mc-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 8px; font-weight: 800; color: var(--muted-2); letter-spacing: .01em; }
+.om-mc-top em { font-style: normal; color: var(--accent); max-width: 52%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.om-mc-mid { display: flex; align-items: baseline; gap: 5px; font-size: 13px; font-weight: 900; letter-spacing: -.03em; }
+.om-mc-dk { color: var(--accent); }
+.om-mc-sc { color: var(--ink); }
+.om-mc-op { color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.om-mc-bot { font-size: 8px; font-weight: 700; color: var(--muted-2); }
+
+/* ---------- 선택 경기 스코어 바 ---------- */
+.om-bar-card {
+  padding: 10px 12px;
+  border-color: var(--accent-line);
+  background:
+    radial-gradient(420px 140px at 50% -60%, rgba(0, 245, 196, .16), transparent 70%),
+    linear-gradient(158deg, var(--accent-soft), rgba(12, 22, 33, .9) 46%, rgba(8, 14, 22, .96));
+}
+html[data-theme="mint"] .om-bar-card {
+  background: radial-gradient(420px 140px at 50% -60%, rgba(18,185,140,.18), transparent 70%),
+    linear-gradient(158deg, #fff, rgba(255,255,255,.72) 52%, rgba(230,251,243,.9));
+}
+.om-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.om-side { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.om-side b { font-size: 12.5px; font-weight: 900; letter-spacing: -.02em; }
+.om-side.is-r { justify-content: flex-end; }
+.om-team { position: relative; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.om-team .om-code {
+  display: none !important; font-size: 8.5px; font-weight: 900; letter-spacing: -.02em;
+  color: var(--accent); background: var(--accent-soft); border: 1px solid var(--accent-line);
+  border-radius: 6px; padding: 2px 5px;
+}
+.om-team:not(.has-img) .om-code { display: inline-flex !important; }
+.om-logo { height: 22px; width: auto; max-width: 34px; object-fit: contain; }
+.om-mini { height: 14px; width: auto; max-width: 22px; object-fit: contain; }
+.om-mid { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; }
+.om-score { display: flex; align-items: baseline; gap: 4px; font-size: 21px; font-weight: 900; letter-spacing: -.05em; color: var(--ink); }
+.om-score i { font-style: normal; font-size: 14px; color: var(--accent); opacity: .65; }
+.om-score em {
+  font-style: normal; font-size: 7.5px; font-weight: 900; letter-spacing: .08em;
+  border-radius: 4px; padding: 2px 5px; align-self: center; margin-left: 2px;
+}
+.om-score em.is-w { color: var(--accent-ink); background: linear-gradient(180deg, #43FFDC, var(--accent-2)); }
+.om-score em.is-l { color: #fff; background: linear-gradient(180deg, #FF8C97, #D24B58); }
+.om-score.is-vs b { font-size: 19px; letter-spacing: -.02em; }
+.om-score em.is-live { color: var(--accent); background: var(--accent-soft); border: 1px solid var(--accent-line); }
+.om-cap { font-size: 8px; font-weight: 700; color: var(--muted); letter-spacing: .01em; text-align: center; }
+
+/* ---------- 세트 탭 ---------- */
+.om-sets { display: flex; gap: 6px; margin: 10px 16px 0; }
+.om-set {
+  flex: 1 1 0; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 7px 4px 6px; border-radius: 11px; cursor: pointer; font-family: inherit;
+  background: var(--chip-bg); border: 1px solid var(--line); color: var(--ink-2);
+}
+.om-set-l { display: flex; align-items: center; gap: 4px; font-size: 10.5px; font-weight: 800; letter-spacing: -.02em; }
+.om-set-l b { font-weight: 800; }
+.om-wl { font-size: 9.5px; font-weight: 900; }
+.om-wl.is-w { color: var(--win); }
+.om-wl.is-l { color: var(--lose); }
+.om-set-s { display: flex; align-items: center; gap: 4px; min-height: 13px; }
+.om-side-b { font-size: 7.5px; font-weight: 800; letter-spacing: -.01em; white-space: nowrap; }
+.om-side-b.is-blue { color: #6EA8FF; }
+.om-side-b.is-red { color: #FF8C97; }
+html[data-theme="mint"] .om-side-b.is-blue { color: #2F6FD0; }
+html[data-theme="mint"] .om-side-b.is-red { color: #C9485A; }
+.om-dur { font-size: 7.5px; font-weight: 700; color: var(--muted-2); }
+.om-set.is-on {
+  border-color: var(--accent-line); color: var(--tab-active-ink);
+  background: var(--tab-active-bg); box-shadow: 0 8px 20px -16px var(--accent);
+}
+
+/* ---------- 밴 ---------- */
+.om-ban-card, .om-board-card { padding: 12px 14px 13px; }
+.om-ban-hd { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.om-eyebrow { font-size: 8.5px; font-weight: 900; letter-spacing: .18em; color: var(--accent); }
+.om-ban-hd b { font-size: 11.5px; font-weight: 800; letter-spacing: -.02em; }
+.om-ban-sub { margin-left: auto; font-size: 8px; font-weight: 700; color: var(--muted-2); }
+.om-ban-row { display: flex; align-items: center; gap: 8px; margin-top: 9px; }
+.om-who { display: flex; align-items: center; gap: 3px; width: 58px; flex: 0 0 58px; }
+.om-who b { font-size: 8px; font-weight: 900; letter-spacing: -.01em; color: var(--ink-2); }
+.om-who em { font-style: normal; font-size: 6.5px; font-weight: 800; letter-spacing: .08em; color: var(--muted-2); }
+.om-bans { display: flex; gap: 5px; min-width: 0; }
+.om-ban { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.om-ban-img {
+  width: 31px; height: 31px; border-radius: 8px; display: block;
+  border: 1px solid rgba(255, 107, 122, .32);
+  filter: grayscale(.8) brightness(.9); opacity: .95; object-fit: cover;
+}
+.om-sl {
+  position: absolute; top: 15px; left: 50%; width: 38px; height: 2px; border-radius: 2px;
+  transform: translate(-50%, -50%) rotate(-45deg);
+  background: linear-gradient(90deg, rgba(255, 107, 122, .12), #FF6B7A 16%, #FF6B7A 84%, rgba(255, 107, 122, .12));
+  box-shadow: 0 0 8px rgba(255, 107, 122, .55);
+}
+.om-ban em {
+  font-style: normal; font-size: 7.5px; font-weight: 600; color: var(--muted);
+  max-width: 42px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.om-ban-empty { font-size: 8.5px; color: var(--muted-2); }
+.om-note { font-size: 8.5px; line-height: 1.55; color: var(--muted-2); margin-top: 8px; }
+.om-src { font-size: 7.5px; font-weight: 600; color: var(--muted-2); margin-top: 7px; letter-spacing: .01em; }
+.om-src-foot { padding: 0 18px; margin-top: 10px; }
+
+/* ---------- 5인 경기 스탯 ---------- */
+.om-board-hd { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.om-board-hd b { font-size: 12.5px; font-weight: 900; letter-spacing: -.03em; }
+.om-board-hd b em { font-style: normal; color: var(--accent); }
+.om-board-hd span { font-size: 8px; font-weight: 700; color: var(--muted-2); }
+.om-bhead { display: none; }
+.om-board { margin-top: 8px; border-radius: 14px; background: var(--tile-bg); border: 1px solid var(--tile-line); overflow: hidden; }
+.om-row {
+  position: relative; display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  grid-template-rows: auto auto; column-gap: 8px; row-gap: 3px;
+  padding: 8px 10px 9px; align-items: center;
+}
+.om-row + .om-row { border-top: 1px solid var(--line-soft); }
+.om-row.is-pick::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(100deg, var(--accent-soft), transparent 72%);
+}
+.om-row.is-pick::after {
+  content: ""; position: absolute; left: 0; top: 5px; bottom: 5px; width: 2.5px; border-radius: 3px;
+  background: linear-gradient(180deg, var(--accent), transparent);
+}
+.om-champ { grid-row: 1 / 3; width: 32px; height: 32px; border-radius: 8px; overflow: hidden; border: 1px solid var(--accent-line); }
+.om-champ img { width: 100%; height: 100%; display: block; object-fit: cover; }
+.om-id { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.om-nm { display: flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 900; letter-spacing: -.03em; white-space: nowrap; }
+.om-chip {
+  font-size: 6px; font-weight: 900; letter-spacing: .05em; padding: 1px 3px; border-radius: 3px;
+  color: var(--accent-ink); background: linear-gradient(180deg, #2BFFD8, var(--accent));
+}
+.om-sub { font-size: 8px; font-weight: 700; color: var(--muted-2); letter-spacing: -.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.om-kda { grid-column: 3; justify-self: end; display: flex; align-items: baseline; gap: 1.5px; font-size: 11.5px; font-weight: 900; }
+.om-kda b { color: var(--ink); }
+.om-kda b.d { color: var(--lose); }
+.om-kda i { font-style: normal; font-size: 8px; color: var(--muted-2); }
+.om-dmg { grid-column: 2 / 4; display: flex; align-items: center; gap: 5px; }
+.om-dmg b { font-size: 10px; font-weight: 900; color: var(--accent); letter-spacing: -.02em; min-width: 26px; }
+.om-dmg-l { font-size: 6.5px; font-weight: 800; letter-spacing: .04em; color: var(--muted-2); white-space: nowrap; }
+.om-dbar { flex: 1 1 auto; height: 4px; border-radius: 99px; background: var(--bar-bg); overflow: hidden; min-width: 30px; }
+.om-dbar i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--accent-2), var(--accent)); }
+.om-extra { display: none; grid-column: 3; justify-self: end; font-size: 8px; font-weight: 700; color: var(--muted-2); }
+.om-extra b { color: var(--ink-2); font-weight: 800; }
+.om-extra span::before { content: "·"; margin: 0 5px; opacity: .5; }
+
+/* ---------- 팀 오브젝트 요약 (데스크톱) ---------- */
+.om-strip { display: none; }
+
+/* ---------- 빈 상태 · VOD ---------- */
+.om-empty { text-align: left; }
+.om-empty .card-title { margin-top: 6px; }
+.om-empty .om-empty-go { display: inline-flex; margin-top: 10px; }
+.om-vod {
+  display: inline-flex; align-items: center; margin-top: 10px;
+  font-size: 9px; font-weight: 800; color: var(--accent);
+  background: var(--accent-soft); border: 1px solid var(--accent-line);
+  border-radius: 999px; padding: 6px 11px;
+}
+.cal-day-go.is-om { cursor: pointer; font-family: inherit; }
+
+/* ---------- 오늘 요약 카드: 세트 선택 ---------- */
+.sc-sets { display: flex; gap: 6px; margin: 0 0 10px; }
+.sc-sets[hidden] { display: none; }
+.sc-set {
+  flex: 1 1 0; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 7px 4px; border-radius: 10px; cursor: pointer; font-family: inherit;
+  background: var(--chip-bg); border: 1px solid var(--line); color: var(--ink-2);
+  font-size: 10px; font-weight: 800; letter-spacing: -.02em;
+}
+.sc-set em { font-style: normal; font-size: 8.5px; font-weight: 900; }
+.sc-set em.is-w { color: var(--win); }
+.sc-set em.is-l { color: var(--lose); }
+.sc-set.is-on { border-color: var(--accent-line); background: var(--tab-active-bg); color: var(--tab-active-ink); }
+
+@media (max-width: 374px) {
+  .om-mc { flex-basis: 126px; }
+  .om-ban-img { width: 27px; height: 27px; }
+  .om-sl { top: 13px; width: 33px; }
+  .om-who { width: 50px; flex-basis: 50px; }
+  .ml-sum span { display: none; }
+  .ml-sum { width: 30px; padding: 0; justify-content: center; }
+}
+
+/* 캘린더 리스트의 '밴픽 보기' (경기로그 → 공식 경기로 이동) */
+.p-om {
+  flex: none; margin-left: auto; padding: 5px 9px; border-radius: 999px;
+  font-family: inherit; font-size: 8.5px; font-weight: 800; letter-spacing: -.01em;
+  color: var(--accent); background: var(--accent-soft); border: 1px solid var(--accent-line);
+  cursor: pointer; white-space: nowrap;
+}
+.p-om:active { transform: scale(.97); }

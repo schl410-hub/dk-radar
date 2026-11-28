@@ -2775,6 +2775,236 @@ html[data-theme="mint"] .sc-stage { background: rgba(18, 60, 52, .05); }
   .sc-btn { height: 38px; font-size: 10.5px; }
 }
 
+/* =====================================================================
+   경기로그 · 공식 경기 (진영 · 밴픽 · K/D/A · 딜 비중)
+   ===================================================================== */
+.ml-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.ml-head-l { min-width: 0; }
+.ml-sum { height: 28px; padding: 0 10px; font-size: 8.5px; gap: 4px; flex: none; margin-top: 2px; }
+.ml-sum svg { width: 13px; height: 13px; }
+.match-switch { margin: 10px 16px 0; }
+.match-switch .vs-btn { gap: 5px; }
+
+.om-pane { display: block; }
+.om-feed { display: flex; flex-direction: column; }
+.om-col-a, .om-col-b { display: contents; }
+/* 모바일 순서: 목록 → 스코어 → 세트 → 밴 → 5인 스탯 */
+.om-pool-card { order: 1; }
+.om-bar-card { order: 2; }
+.om-sets { order: 3; }
+.om-ban-card { order: 4; }
+.om-board-card { order: 5; }
+.om-strip { order: 6; }
+.om-src-foot { order: 7; }
+.om-vod-row { order: 6; padding: 0 16px; }
+.om-pane .card { margin-top: 10px; }
+
+/* ---------- 최근 공식 경기 카드 목록 ---------- */
+.om-pool-card { padding: 12px 0 10px; }
+.om-pool-hd { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 0 15px; }
+.om-pool-hd b { font-size: 11.5px; font-weight: 800; letter-spacing: -.02em; color: var(--ink); }
+.om-pool-hd span { font-size: 8.5px; font-weight: 700; color: var(--muted-2); letter-spacing: .01em; }
+.om-pool {
+  display: flex; gap: 7px; padding: 8px 15px 0;
+  overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.om-pool::-webkit-scrollbar { display: none; }
+.om-mc {
+  flex: 0 0 138px; display: flex; flex-direction: column; justify-content: space-between; gap: 4px;
+  height: 64px; padding: 7px 9px; border-radius: 12px; text-align: left;
+  background: rgba(255, 255, 255, .028); border: 1px solid var(--line);
+  font-family: inherit; color: inherit; cursor: pointer;
+}
+.om-mc.is-on {
+  border-color: var(--accent-line);
+  background: linear-gradient(160deg, var(--accent-soft), rgba(12, 22, 33, .86) 58%);
+  box-shadow: 0 10px 24px -18px var(--accent);
+}
+html[data-theme="mint"] .om-mc.is-on { background: linear-gradient(160deg, rgba(18,185,140,.16), rgba(255,255,255,.9) 58%); }
+.om-mc-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 8px; font-weight: 800; color: var(--muted-2); letter-spacing: .01em; }
+.om-mc-top em { font-style: normal; color: var(--accent); max-width: 52%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.om-mc-mid { display: flex; align-items: baseline; gap: 5px; font-size: 13px; font-weight: 900; letter-spacing: -.03em; }
+.om-mc-dk { color: var(--accent); }
+.om-mc-sc { color: var(--ink); }
+.om-mc-op { color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.om-mc-bot { font-size: 8px; font-weight: 700; color: var(--muted-2); }
+
+/* ---------- 선택 경기 스코어 바 ---------- */
+.om-bar-card {
+  padding: 10px 12px;
+  border-color: var(--accent-line);
+  background:
+    radial-gradient(420px 140px at 50% -60%, rgba(0, 245, 196, .16), transparent 70%),
+    linear-gradient(158deg, var(--accent-soft), rgba(12, 22, 33, .9) 46%, rgba(8, 14, 22, .96));
+}
+html[data-theme="mint"] .om-bar-card {
+  background: radial-gradient(420px 140px at 50% -60%, rgba(18,185,140,.18), transparent 70%),
+    linear-gradient(158deg, #fff, rgba(255,255,255,.72) 52%, rgba(230,251,243,.9));
+}
+.om-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.om-side { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.om-side b { font-size: 12.5px; font-weight: 900; letter-spacing: -.02em; }
+.om-side.is-r { justify-content: flex-end; }
+.om-team { position: relative; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.om-team .om-code {
+  display: none !important; font-size: 8.5px; font-weight: 900; letter-spacing: -.02em;
+  color: var(--accent); background: var(--accent-soft); border: 1px solid var(--accent-line);
+  border-radius: 6px; padding: 2px 5px;
+}
+.om-team:not(.has-img) .om-code { display: inline-flex !important; }
+.om-logo { height: 22px; width: auto; max-width: 34px; object-fit: contain; }
+.om-mini { height: 14px; width: auto; max-width: 22px; object-fit: contain; }
+.om-mid { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; }
+.om-score { display: flex; align-items: baseline; gap: 4px; font-size: 21px; font-weight: 900; letter-spacing: -.05em; color: var(--ink); }
+.om-score i { font-style: normal; font-size: 14px; color: var(--accent); opacity: .65; }
+.om-score em {
+  font-style: normal; font-size: 7.5px; font-weight: 900; letter-spacing: .08em;
+  border-radius: 4px; padding: 2px 5px; align-self: center; margin-left: 2px;
+}
+.om-score em.is-w { color: var(--accent-ink); background: linear-gradient(180deg, #43FFDC, var(--accent-2)); }
+.om-score em.is-l { color: #fff; background: linear-gradient(180deg, #FF8C97, #D24B58); }
+.om-score.is-vs b { font-size: 19px; letter-spacing: -.02em; }
+.om-score em.is-live { color: var(--accent); background: var(--accent-soft); border: 1px solid var(--accent-line); }
+.om-cap { font-size: 8px; font-weight: 700; color: var(--muted); letter-spacing: .01em; text-align: center; }
+
+/* ---------- 세트 탭 ---------- */
+.om-sets { display: flex; gap: 6px; margin: 10px 16px 0; }
+.om-set {
+  flex: 1 1 0; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 7px 4px 6px; border-radius: 11px; cursor: pointer; font-family: inherit;
+  background: var(--chip-bg); border: 1px solid var(--line); color: var(--ink-2);
+}
+.om-set-l { display: flex; align-items: center; gap: 4px; font-size: 10.5px; font-weight: 800; letter-spacing: -.02em; }
+.om-set-l b { font-weight: 800; }
+.om-wl { font-size: 9.5px; font-weight: 900; }
+.om-wl.is-w { color: var(--win); }
+.om-wl.is-l { color: var(--lose); }
+.om-set-s { display: flex; align-items: center; gap: 4px; min-height: 13px; }
+.om-side-b { font-size: 7.5px; font-weight: 800; letter-spacing: -.01em; white-space: nowrap; }
+.om-side-b.is-blue { color: #6EA8FF; }
+.om-side-b.is-red { color: #FF8C97; }
+html[data-theme="mint"] .om-side-b.is-blue { color: #2F6FD0; }
+html[data-theme="mint"] .om-side-b.is-red { color: #C9485A; }
+.om-dur { font-size: 7.5px; font-weight: 700; color: var(--muted-2); }
+.om-set.is-on {
+  border-color: var(--accent-line); color: var(--tab-active-ink);
+  background: var(--tab-active-bg); box-shadow: 0 8px 20px -16px var(--accent);
+}
+
+/* ---------- 밴 ---------- */
+.om-ban-card, .om-board-card { padding: 12px 14px 13px; }
+.om-ban-hd { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.om-eyebrow { font-size: 8.5px; font-weight: 900; letter-spacing: .18em; color: var(--accent); }
+.om-ban-hd b { font-size: 11.5px; font-weight: 800; letter-spacing: -.02em; }
+.om-ban-sub { margin-left: auto; font-size: 8px; font-weight: 700; color: var(--muted-2); }
+.om-ban-row { display: flex; align-items: center; gap: 8px; margin-top: 9px; }
+.om-who { display: flex; align-items: center; gap: 3px; width: 58px; flex: 0 0 58px; }
+.om-who b { font-size: 8px; font-weight: 900; letter-spacing: -.01em; color: var(--ink-2); }
+.om-who em { font-style: normal; font-size: 6.5px; font-weight: 800; letter-spacing: .08em; color: var(--muted-2); }
+.om-bans { display: flex; gap: 5px; min-width: 0; }
+.om-ban { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.om-ban-img {
+  width: 31px; height: 31px; border-radius: 8px; display: block;
+  border: 1px solid rgba(255, 107, 122, .32);
+  filter: grayscale(.8) brightness(.9); opacity: .95; object-fit: cover;
+}
+.om-sl {
+  position: absolute; top: 15px; left: 50%; width: 38px; height: 2px; border-radius: 2px;
+  transform: translate(-50%, -50%) rotate(-45deg);
+  background: linear-gradient(90deg, rgba(255, 107, 122, .12), #FF6B7A 16%, #FF6B7A 84%, rgba(255, 107, 122, .12));
+  box-shadow: 0 0 8px rgba(255, 107, 122, .55);
+}
+.om-ban em {
+  font-style: normal; font-size: 7.5px; font-weight: 600; color: var(--muted);
+  max-width: 42px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.om-ban-empty { font-size: 8.5px; color: var(--muted-2); }
+.om-note { font-size: 8.5px; line-height: 1.55; color: var(--muted-2); margin-top: 8px; }
+.om-src { font-size: 7.5px; font-weight: 600; color: var(--muted-2); margin-top: 7px; letter-spacing: .01em; }
+.om-src-foot { padding: 0 18px; margin-top: 10px; }
+
+/* ---------- 5인 경기 스탯 ---------- */
+.om-board-hd { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.om-board-hd b { font-size: 12.5px; font-weight: 900; letter-spacing: -.03em; }
+.om-board-hd b em { font-style: normal; color: var(--accent); }
+.om-board-hd span { font-size: 8px; font-weight: 700; color: var(--muted-2); }
+.om-bhead { display: none; }
+.om-board { margin-top: 8px; border-radius: 14px; background: var(--tile-bg); border: 1px solid var(--tile-line); overflow: hidden; }
+.om-row {
+  position: relative; display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  grid-template-rows: auto auto; column-gap: 8px; row-gap: 3px;
+  padding: 8px 10px 9px; align-items: center;
+}
+.om-row + .om-row { border-top: 1px solid var(--line-soft); }
+.om-row.is-pick::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(100deg, var(--accent-soft), transparent 72%);
+}
+.om-row.is-pick::after {
+  content: ""; position: absolute; left: 0; top: 5px; bottom: 5px; width: 2.5px; border-radius: 3px;
+  background: linear-gradient(180deg, var(--accent), transparent);
+}
+.om-champ { grid-row: 1 / 3; width: 32px; height: 32px; border-radius: 8px; overflow: hidden; border: 1px solid var(--accent-line); }
+.om-champ img { width: 100%; height: 100%; display: block; object-fit: cover; }
+.om-id { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.om-nm { display: flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 900; letter-spacing: -.03em; white-space: nowrap; }
+.om-chip {
+  font-size: 6px; font-weight: 900; letter-spacing: .05em; padding: 1px 3px; border-radius: 3px;
+  color: var(--accent-ink); background: linear-gradient(180deg, #2BFFD8, var(--accent));
+}
+.om-sub { font-size: 8px; font-weight: 700; color: var(--muted-2); letter-spacing: -.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.om-kda { grid-column: 3; justify-self: end; display: flex; align-items: baseline; gap: 1.5px; font-size: 11.5px; font-weight: 900; }
+.om-kda b { color: var(--ink); }
+.om-kda b.d { color: var(--lose); }
+.om-kda i { font-style: normal; font-size: 8px; color: var(--muted-2); }
+.om-dmg { grid-column: 2 / 4; display: flex; align-items: center; gap: 5px; }
+.om-dmg b { font-size: 10px; font-weight: 900; color: var(--accent); letter-spacing: -.02em; min-width: 26px; }
+.om-dmg-l { font-size: 6.5px; font-weight: 800; letter-spacing: .04em; color: var(--muted-2); white-space: nowrap; }
+.om-dbar { flex: 1 1 auto; height: 4px; border-radius: 99px; background: var(--bar-bg); overflow: hidden; min-width: 30px; }
+.om-dbar i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--accent-2), var(--accent)); }
+.om-extra { display: none; grid-column: 3; justify-self: end; font-size: 8px; font-weight: 700; color: var(--muted-2); }
+.om-extra b { color: var(--ink-2); font-weight: 800; }
+.om-extra span::before { content: "·"; margin: 0 5px; opacity: .5; }
+
+/* ---------- 팀 오브젝트 요약 (데스크톱) ---------- */
+.om-strip { display: none; }
+
+/* ---------- 빈 상태 · VOD ---------- */
+.om-empty { text-align: left; }
+.om-empty .card-title { margin-top: 6px; }
+.om-empty .om-empty-go { display: inline-flex; margin-top: 10px; }
+.om-vod {
+  display: inline-flex; align-items: center; margin-top: 10px;
+  font-size: 9px; font-weight: 800; color: var(--accent);
+  background: var(--accent-soft); border: 1px solid var(--accent-line);
+  border-radius: 999px; padding: 6px 11px;
+}
+.cal-day-go.is-om { cursor: pointer; font-family: inherit; }
+
+/* ---------- 오늘 요약 카드: 세트 선택 ---------- */
+.sc-sets { display: flex; gap: 6px; margin: 0 0 10px; }
+.sc-sets[hidden] { display: none; }
+.sc-set {
+  flex: 1 1 0; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 7px 4px; border-radius: 10px; cursor: pointer; font-family: inherit;
+  background: var(--chip-bg); border: 1px solid var(--line); color: var(--ink-2);
+  font-size: 10px; font-weight: 800; letter-spacing: -.02em;
+}
+.sc-set em { font-style: normal; font-size: 8.5px; font-weight: 900; }
+.sc-set em.is-w { color: var(--win); }
+.sc-set em.is-l { color: var(--lose); }
+.sc-set.is-on { border-color: var(--accent-line); background: var(--tab-active-bg); color: var(--tab-active-ink); }
+
+@media (max-width: 374px) {
+  .om-mc { flex-basis: 126px; }
+  .om-ban-img { width: 27px; height: 27px; }
+  .om-sl { top: 13px; width: 33px; }
+  .om-who { width: 50px; flex-basis: 50px; }
+  .ml-sum span { display: none; }
+  .ml-sum { width: 30px; padding: 0; justify-content: center; }
+}
+
 </style>
 <style>
 /* =========================================================================
@@ -3045,6 +3275,110 @@ html[data-theme="mint"] .sc-stage { background: rgba(18, 60, 52, .05); }
   .video-card > .vc-list { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
   .dv-top { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); }
   .pl-grid.is-strip { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; }
+}
+
+/* =========================================================================
+   경기로그 · 공식 경기 (≥1024px): 좌 = 경기 목록·스코어·밴 / 우 = 세트·5인 스탯
+   ========================================================================= */
+@media (min-width: 1024px) {
+  #panel-solo { max-width: 1180px; }
+  #panel-solo .panel-head { padding: 16px 2px 0; }
+  .ml-sum { height: 34px; padding: 0 14px; font-size: 10.5px; gap: 6px; margin-top: 4px; }
+  .ml-sum svg { width: 15px; height: 15px; }
+  .match-switch { margin: 12px 0 0; width: 340px; padding: 4px; }
+  .match-switch .vs-btn { padding: 9px 4px; font-size: 11.5px; }
+
+  .om-pane { margin-top: 2px; }
+  .om-feed {
+    display: grid;
+    grid-template-columns: 420px minmax(0, 1fr);
+    column-gap: 14px;
+    align-items: start;
+  }
+  .om-col-a, .om-col-b { display: flex; flex-direction: column; min-width: 0; }
+  .om-pool-card { margin-top: 12px; padding: 14px 14px 12px; }
+  /* 경기 목록은 최근 4~5경기까지만 보이고 나머지는 이 카드 안에서 스크롤합니다. */
+  .om-pool {
+    flex-direction: column; gap: 6px; padding: 10px 4px 2px 0;
+    max-height: 316px; overflow-y: auto; scrollbar-width: thin;
+  }
+  .om-mc { flex: none; width: 100%; height: 66px; padding: 8px 12px; }
+  .om-mc-mid { font-size: 15px; }
+  .om-mc-top { font-size: 9px; }
+  .om-mc-bot { font-size: 8.5px; }
+  .om-pool-hd b { font-size: 12.5px; }
+
+  .om-bar-card { margin-top: 12px; padding: 14px 18px; }
+  .om-score { font-size: 30px; gap: 6px; }
+  .om-score i { font-size: 18px; }
+  .om-score.is-vs b { font-size: 24px; }
+  .om-side b { font-size: 15px; }
+  .om-logo { height: 30px; max-width: 46px; }
+  .om-cap { font-size: 9px; }
+
+  .om-sets { margin: 12px 0 0; gap: 7px; }
+  .om-set { padding: 10px 6px; border-radius: 12px; }
+  .om-set-l { font-size: 12.5px; gap: 6px; }
+  .om-side-b { font-size: 9px; }
+  .om-set-s { gap: 6px; }
+
+  .om-ban-card { margin-top: 12px; padding: 14px 16px 16px; }
+  .om-ban-hd b { font-size: 13px; }
+  .om-ban-row { margin-top: 12px; gap: 12px; }
+  .om-who { width: 74px; flex-basis: 74px; gap: 5px; }
+  .om-who b { font-size: 9.5px; }
+  .om-mini { height: 18px; max-width: 26px; }
+  .om-bans { gap: 9px; }
+  .om-ban-img { width: 40px; height: 40px; border-radius: 9px; }
+  .om-sl { top: 20px; width: 48px; }
+  .om-ban em { font-size: 9px; max-width: 52px; }
+
+  .om-board-card { margin-top: 12px; padding: 14px 16px 16px; display: flex; flex-direction: column; }
+  .om-board-hd b { font-size: 14.5px; }
+  .om-board-hd span { font-size: 9px; }
+  .om-board { flex: 1; }
+  .om-bhead {
+    display: grid; grid-template-columns: 44px minmax(0, 1fr) 128px 96px 168px;
+    column-gap: 14px; align-items: center; padding: 9px 16px 8px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .om-bhead span { font-size: 7.5px; font-weight: 900; letter-spacing: .12em; color: var(--muted-2); }
+  .om-bhead span:nth-child(n+3) { text-align: right; }
+  .om-row {
+    grid-template-columns: 44px minmax(0, 1fr) 128px 96px 168px;
+    grid-template-rows: auto; column-gap: 14px; row-gap: 0;
+    padding: 12px 16px; align-items: center;
+  }
+  .om-champ { grid-column: 1; grid-row: 1; width: 44px; height: 44px; border-radius: 10px; }
+  .om-id { grid-column: 2; gap: 4px; }
+  .om-nm { font-size: 14.5px; gap: 7px; }
+  .om-sub { font-size: 9px; }
+  .om-extra { display: flex; grid-column: 3; grid-row: 1; justify-self: end; flex-direction: column; align-items: flex-end; gap: 3px; }
+  .om-extra b { font-size: 10.5px; }
+  .om-extra span { font-size: 8.5px; }
+  .om-extra span::before { content: none; }
+  .om-kda { grid-column: 4; grid-row: 1; font-size: 15px; gap: 3px; }
+  .om-kda i { font-size: 11px; }
+  .om-dmg { grid-column: 5; grid-row: 1; flex-wrap: wrap; gap: 4px 6px; justify-content: flex-end; }
+  .om-dmg b { font-size: 14px; }
+  .om-dmg-l { display: none; }
+  .om-dbar { flex-basis: 100%; height: 5px; }
+
+  .om-strip {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    margin-top: 12px; border-radius: 14px; background: var(--card);
+    border: 1px solid var(--card-border); overflow: hidden;
+  }
+  .om-cell { display: flex; flex-direction: column; gap: 3px; padding: 10px 16px; }
+  .om-cell + .om-cell { border-left: 1px solid var(--line-soft); }
+  .om-cell em { font-style: normal; font-size: 7.5px; font-weight: 900; letter-spacing: .12em; color: var(--muted-2); }
+  .om-cell b { font-size: 12.5px; font-weight: 900; letter-spacing: -.02em; color: var(--ink); }
+  .om-cell i { font-style: normal; margin: 0 4px; color: var(--accent); opacity: .6; }
+  .om-src-foot { padding: 0 2px; }
+  .om-vod-row { padding: 0 2px; }
+
+  .sc-sets { margin: 2px 0 12px; }
+  .sc-set { font-size: 11.5px; padding: 9px 6px; }
 }
 
 </style>
@@ -3781,33 +4115,52 @@ html[data-theme="mint"] .lp-item.is-on {
 
     <!-- ================= 경기로그 ================= -->
     <section class="panel" id="panel-solo" role="tabpanel" data-i18n-attr="aria-label:tab.solo" aria-label="경기로그" hidden>
-      <div class="panel-head">
-        <div class="eyebrow">MATCH LOG</div>
-        <h2 class="panel-title" data-i18n="tab.solo">경기로그</h2>
-        <p class="panel-sub" id="soloPanelMeta">선수를 고르면 솔로랭크 최근 경기가 바뀌어요.</p>
+      <div class="panel-head ml-head">
+        <div class="ml-head-l">
+          <div class="eyebrow">MATCH LOG</div>
+          <h2 class="panel-title" data-i18n="tab.solo">경기로그</h2>
+          <p class="panel-sub" id="soloPanelMeta">선수를 고르면 솔로랭크 최근 경기가 바뀌어요.</p>
+        </div>
+        <button class="sum-btn ml-sum" id="summaryBtn2" type="button" data-i18n-attr="aria-label:summary.aria" aria-label="오늘의 DK 요약 카드 만들기">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="6.2" width="18" height="13" rx="3.2" stroke="currentColor" stroke-width="1.8"/><path d="M8.4 6.2 9.7 4.3h4.6l1.3 1.9" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="12.6" r="3.5" stroke="currentColor" stroke-width="1.8"/></svg><span data-i18n="summary.btn">오늘 요약 카드</span>
+        </button>
       </div>
-      <div class="pills pills-flat" id="pillsSolo" role="tablist" aria-label="선수 선택"></div>
-      <section class="card solo-card">
-        <div class="card-head">
-          <div>
-            <div class="eyebrow">RANKED SOLO / DUO</div>
-            <h2 class="section-title" id="soloTitle">최근 솔로랭크 전적</h2>
+
+      <div class="view-switch match-switch" id="matchSwitch" role="tablist" data-i18n-attr="aria-label:mt.switchAria" aria-label="경기로그 보기 선택">
+        <button class="vs-btn is-on" type="button" role="tab" aria-selected="true" data-match-view="solo">
+          <span data-i18n="mt.tabSolo">솔로랭크</span><span class="vs-count">5</span>
+        </button>
+        <button class="vs-btn" type="button" role="tab" aria-selected="false" data-match-view="official">
+          <span data-i18n="mt.tabOfficial">공식 경기</span><span class="vs-count">DK</span>
+        </button>
+      </div>
+
+      <div id="soloPane">
+        <div class="pills pills-flat" id="pillsSolo" role="tablist" aria-label="선수 선택"></div>
+        <section class="card solo-card">
+          <div class="card-head">
+            <div>
+              <div class="eyebrow">RANKED SOLO / DUO</div>
+              <h2 class="section-title" id="soloTitle">최근 솔로랭크 전적</h2>
+            </div>
+            <a class="ghost-btn" id="soloOpgg2" href="#" target="_blank" rel="noopener">OP.GG ↗</a>
           </div>
-          <a class="ghost-btn" id="soloOpgg2" href="#" target="_blank" rel="noopener">OP.GG ↗</a>
-        </div>
-        <p class="meta" id="soloMeta2"></p>
-        <div class="link-row" id="soloLinks"></div>
-        <p class="solo-note" id="soloNote"></p>
-        <p class="live-line" id="soloLive"></p>
-        <div class="chip-row" id="filterRow">
-          <button class="chip is-active" type="button" data-filter="all" data-i18n="solo.filter.all">전체</button>
-          <button class="chip" type="button" data-filter="win" data-i18n="solo.filter.win">승리</button>
-          <button class="chip" type="button" data-filter="lose" data-i18n="solo.filter.lose">패배</button>
-        </div>
-        <div class="table-wrap" id="soloTable2"></div>
-        <a class="table-more" id="soloMore2" href="#" target="_blank" rel="noopener">OP.GG에서 전체 전적 보기 ↗</a>
-      </section>
-      <footer class="foot"><p id="soloFooter">솔로랭크 기록은 각 선수 계정의 공개 전적을 기준으로 표시합니다.</p></footer>
+          <p class="meta" id="soloMeta2"></p>
+          <div class="link-row" id="soloLinks"></div>
+          <p class="solo-note" id="soloNote"></p>
+          <p class="live-line" id="soloLive"></p>
+          <div class="chip-row" id="filterRow">
+            <button class="chip is-active" type="button" data-filter="all" data-i18n="solo.filter.all">전체</button>
+            <button class="chip" type="button" data-filter="win" data-i18n="solo.filter.win">승리</button>
+            <button class="chip" type="button" data-filter="lose" data-i18n="solo.filter.lose">패배</button>
+          </div>
+          <div class="table-wrap" id="soloTable2"></div>
+          <a class="table-more" id="soloMore2" href="#" target="_blank" rel="noopener">OP.GG에서 전체 전적 보기 ↗</a>
+        </section>
+        <footer class="foot"><p id="soloFooter">솔로랭크 기록은 각 선수 계정의 공개 전적을 기준으로 표시합니다.</p></footer>
+      </div>
+
+      <div id="officialPane" class="om-pane" hidden></div>
     </section>
 
     <!-- ================= 기록실 ================= -->
@@ -3954,6 +4307,7 @@ html[data-theme="mint"] .lp-item.is-on {
       <b class="lg-title" id="scTitle" data-i18n="summary.prevTitle">오늘 요약 카드 미리보기</b>
       <button class="lg-close" id="summaryClose" type="button" data-i18n-attr="aria-label:summary.close" aria-label="닫기">✕</button>
     </div>
+    <div class="sc-sets" id="scSets" role="tablist" data-i18n-attr="aria-label:summary.setAria" aria-label="저장할 세트 선택" hidden></div>
     <div class="sc-stage" id="scStage" aria-live="polite">
       <p class="sc-loading" id="scLoading" data-i18n="summary.building">카드를 만드는 중…</p>
       <img class="sc-img" id="scImg" alt="" hidden>
@@ -4618,6 +4972,12 @@ html[data-theme="mint"] .lp-item.is-on {
       'install.cardBody': '10초면 끝나요. 아이콘만 누르면 앱처럼 열려요.',
       'install.cardCta': '설치 방법',
       'install.dismiss': '설치 안내 닫기',
+      'summary.watchLine': '생중계 SOOP · 유튜브',
+      'summary.liveNow': '지금 생중계 중',
+      'mt.shortWin': '승',
+      'mt.shortLose': '패',
+      'summary.noticeTitle': 'LATEST NOTICE',
+      'mt.panelSub': '최근 공식 경기의 세트별 진영·밴픽·K/D/A·딜 비중을 봐요.',
     },
 
     /* ================= English ================= */
@@ -5191,6 +5551,12 @@ html[data-theme="mint"] .lp-item.is-on {
       'install.cardBody': 'Ten seconds. Tap the icon and it opens like an app.',
       'install.cardCta': 'How to install',
       'install.dismiss': 'Dismiss install tip',
+      'summary.watchLine': 'Live on SOOP · YouTube',
+      'summary.liveNow': 'Live now',
+      'mt.shortWin': 'W',
+      'mt.shortLose': 'L',
+      'summary.noticeTitle': 'LATEST NOTICE',
+      'mt.panelSub': 'Sides, picks and bans, K/D/A and damage share for each set of the latest official matches.',
     },
 
     /* ================= 日本語 ================= */
@@ -5764,6 +6130,12 @@ html[data-theme="mint"] .lp-item.is-on {
       'install.cardBody': '10秒で完了。アイコンを押せばアプリのように開きます。',
       'install.cardCta': '追加のしかた',
       'install.dismiss': '追加の案内を閉じる',
+      'summary.watchLine': '生配信 SOOP · YouTube',
+      'summary.liveNow': '配信中',
+      'mt.shortWin': '勝',
+      'mt.shortLose': '敗',
+      'summary.noticeTitle': 'LATEST NOTICE',
+      'mt.panelSub': '最近の公式戦のセット別陣営・ピック&バン・K/D/A・ダメージ比率を見られます。',
     },
     zh: {
       'app.title': 'DK SIGNAL · 迪普基信号',
@@ -6318,6 +6690,12 @@ html[data-theme="mint"] .lp-item.is-on {
       'install.cardBody': '10 秒就好。点图标就能像应用一样打开。',
       'install.cardCta': '安装方法',
       'install.dismiss': '关闭安装提示',
+      'summary.watchLine': '直播 SOOP · YouTube',
+      'summary.liveNow': '正在直播',
+      'mt.shortWin': '胜',
+      'mt.shortLose': '负',
+      'summary.noticeTitle': 'LATEST NOTICE',
+      'mt.panelSub': '查看最近官方比赛每局的阵营、BP、K/D/A 和伤害占比。',
     },
     vi: {
       'app.title': 'DK SIGNAL · Tín hiệu DK',
@@ -6870,6 +7248,12 @@ html[data-theme="mint"] .lp-item.is-on {
       'install.cardBody': 'Mười giây là xong. Chạm biểu tượng là mở như app.',
       'install.cardCta': 'Cách cài',
       'install.dismiss': 'Đóng gợi ý cài đặt',
+      'summary.watchLine': 'Trực tiếp SOOP · YouTube',
+      'summary.liveNow': 'Đang trực tiếp',
+      'mt.shortWin': 'T',
+      'mt.shortLose': 'B',
+      'summary.noticeTitle': 'LATEST NOTICE',
+      'mt.panelSub': 'Xem phe, cấm/chọn, K/D/A và tỉ lệ sát thương từng ván của các trận chính thức gần đây.',
     },
 
     /* ================= TW ================= */
@@ -7441,6 +7825,12 @@ html[data-theme="mint"] .lp-item.is-on {
       'install.cardBody': '10 秒就好。點圖示就能像應用程式一樣開啟。',
       'install.cardCta': '安裝方法',
       'install.dismiss': '關閉安裝提示',
+      'summary.watchLine': '直播 SOOP · YouTube',
+      'summary.liveNow': '正在直播',
+      'mt.shortWin': '勝',
+      'mt.shortLose': '敗',
+      'summary.noticeTitle': 'LATEST NOTICE',
+      'mt.panelSub': '查看最近官方賽事每局的陣營、BP、K/D/A 和傷害佔比。',
     },
 
     /* ================= ES ================= */
@@ -8013,6 +8403,12 @@ html[data-theme="mint"] .lp-item.is-on {
       'install.cardBody': 'Son 10 segundos. Pulsa el icono y se abre como una app.',
       'install.cardCta': 'Cómo instalar',
       'install.dismiss': 'Cerrar la guía de instalación',
+      'summary.watchLine': 'En directo SOOP · YouTube',
+      'summary.liveNow': 'En directo',
+      'mt.shortWin': 'V',
+      'mt.shortLose': 'D',
+      'summary.noticeTitle': 'LATEST NOTICE',
+      'mt.panelSub': 'Lado, picks y bans, K/D/A y daño por partida de las últimas partidas oficiales.',
     },
 
     /* ================= PT ================= */
@@ -8584,6 +8980,12 @@ html[data-theme="mint"] .lp-item.is-on {
       'install.cardBody': 'São 10 segundos. Toque no ícone e ele abre como um app.',
       'install.cardCta': 'Como instalar',
       'install.dismiss': 'Fechar o guia de instalação',
+      'summary.watchLine': 'Ao vivo na SOOP · YouTube',
+      'summary.liveNow': 'Ao vivo agora',
+      'mt.shortWin': 'V',
+      'mt.shortLose': 'D',
+      'summary.noticeTitle': 'LATEST NOTICE',
+      'mt.panelSub': 'Lado, picks e bans, K/D/A e dano por partida das últimas partidas oficiais.',
     },
 
     /* ================= TH ================= */
@@ -9154,6 +9556,12 @@ html[data-theme="mint"] .lp-item.is-on {
       'install.cardBody': 'ใช้เวลา 10 วินาที กดไอคอนก็เปิดเหมือนแอป',
       'install.cardCta': 'วิธีติดตั้ง',
       'install.dismiss': 'ปิดคู่มือติดตั้ง',
+      'summary.watchLine': 'ถ่ายทอดสด SOOP · YouTube',
+      'summary.liveNow': 'กำลังถ่ายทอดสด',
+      'mt.shortWin': 'ชนะ',
+      'mt.shortLose': 'แพ้',
+      'summary.noticeTitle': 'LATEST NOTICE',
+      'mt.panelSub': 'ดูฝั่ง แบน/พิก K/D/A และสัดส่วนดาเมจของแต่ละเกมในแมตช์ทางการล่าสุด',
     },
 
     /* ================= ID ================= */
@@ -9725,8 +10133,696 @@ html[data-theme="mint"] .lp-item.is-on {
       'install.cardBody': 'Cuma 10 detik. Ketuk ikonnya dan terbuka seperti app.',
       'install.cardCta': 'Cara memasang',
       'install.dismiss': 'Tutup panduan pemasangan',
+      'summary.watchLine': 'Siaran langsung SOOP · YouTube',
+      'summary.liveNow': 'Sedang live',
+      'mt.shortWin': 'M',
+      'mt.shortLose': 'K',
+      'summary.noticeTitle': 'LATEST NOTICE',
+      'mt.panelSub': 'Lihat sisi, pick & ban, K/D/A, dan porsi damage tiap game di laga resmi terbaru.',
     },
   };
+
+  /* ================= 경기로그 · 공식 경기 / 요약 카드 확장 문구 =================
+   * v3.14 에서 추가된 화면(공식 경기 밴픽 · 세트별 요약 카드)의 10개국어 문구입니다.
+   * DICT 본문을 건드리지 않고 같은 자리에 합쳐, 언어별 키가 어긋나지 않게 합니다. */
+  var EXTRA = {
+    ko: {
+      'mt.switchAria': '경기로그 보기 선택',
+      'mt.tabSolo': '솔로랭크',
+      'mt.tabOfficial': '공식 경기',
+      'mt.poolTitle': '최근 공식 경기',
+      'mt.poolCount': '총 {n}경기',
+      'mt.poolAria': '최근 공식 경기 선택',
+      'mt.vsShort': 'VS',
+      'mt.doneTag': '종료',
+      'mt.nextTag': '예정',
+      'mt.bo': 'BO{n}',
+      'mt.dkWin': 'DK WIN',
+      'mt.dkLoss': 'DK LOSS',
+      'mt.kst': 'KST',
+      'mt.setAria': '세트 선택',
+      'mt.blue': '블루(선픽)',
+      'mt.red': '레드',
+      'mt.setN': '{n}세트',
+      'mt.win': '승',
+      'mt.lose': '패',
+      'mt.duration': '{m}분 {s}초',
+      'mt.ban': 'BAN',
+      'mt.banTitle': '{n}세트 밴픽',
+      'mt.banSub': '양 팀 밴 5:5',
+      'mt.banEmpty': '정보 없음',
+      'mt.banNone': '이 세트의 밴 기록은 아직 위키에 등록되지 않았어요.',
+      'mt.banFrom': '밴 기록: Leaguepedia · 픽·스탯: LoL Esports',
+      'mt.statsTitle': '경기 스탯',
+      'mt.statsSub': '{n}세트 기준 · 챔피언 · K/D/A · 팀 내 딜 비중',
+      'mt.share': '딜 비중',
+      'mt.kdaLabel': 'K/D/A',
+      'mt.kp': '킬관여 {p}%',
+      'mt.csGold': 'CS {cs} · {g} 골드',
+      'mt.rosterNote': '2026 시즌 공식 로스터 기준이에요. 2027 5인의 공식 경기는 시즌이 시작되면 자동으로 채워져요.',
+      'mt.noStats': '세트 스탯을 아직 가져오지 못했어요.',
+      'mt.oKill': 'TOTAL KILL',
+      'mt.oGold': 'GOLD',
+      'mt.oDragon': 'DRAGON',
+      'mt.oBaron': 'BARON',
+      'mt.vod': '풀영상 다시보기',
+      'mt.source': '데이터: LoL Esports · Leaguepedia(밴) · 시즌이 시작되면 자동 갱신돼요',
+      'mt.loading': '공식 경기 기록을 가져오는 중…',
+      'mt.emptyTitle': '아직 공식 경기가 없어요',
+      'mt.emptyNote': '2027 시즌 첫 경기가 공개되면 이 화면이 자동으로 채워져요. 그 전에는 캘린더에서 다음 일정을 확인할 수 있어요.',
+      'mt.emptyCta': 'LoL Esports 일정 보기',
+      'mt.loadFail': '공식 경기 기록을 가져오지 못했어요',
+      'mt.retry': '다시 시도',
+      'mt.beforeNote': '아직 경기 전이에요. 경기가 끝나면 세트별 밴픽·K/D/A·딜 비중이 채워져요.',
+      'mt.colWho': '선수 · 챔피언',
+      'mt.colExtra': 'KDA · 킬관여 · CS/골드',
+      'mt.colShare': '딜 비중',
+      'cal.watchMatch': '밴픽 보기',
+      'summary.setAria': '저장할 세트 선택',
+      'summary.mkicker': 'MATCH DAY',
+      'summary.rkicker': 'MATCH RESULT',
+      'summary.todayMatch': 'TODAY MATCH',
+      'summary.finalTag': 'FINAL · 경기 종료',
+      'summary.finalScore': 'FINAL SCORE',
+      'summary.watch': 'WATCH',
+      'summary.startsIn': '경기 시작까지 {h}시간 {m}분',
+      'summary.startsSoon': '곧 경기가 시작돼요',
+      'summary.setCard': '{n}세트 카드',
+      'summary.matchAlert': 'MATCH ALERT',
+      'summary.alertBody': '공식 경기 알림을 켜 두면 경기 전에 알려드려요',
+      'summary.dmgLine': '팀 내 딜 {p}%',
+      'summary.cardHint': '세트를 고르면 그 세트의 진영·밴픽·스탯 카드를 저장할 수 있어요.'
+    },
+    en: {
+      'mt.switchAria': 'Choose match log view',
+      'mt.tabSolo': 'Ranked Solo',
+      'mt.tabOfficial': 'Official',
+      'mt.poolTitle': 'Recent official matches',
+      'mt.poolCount': '{n} matches',
+      'mt.poolAria': 'Choose a recent official match',
+      'mt.vsShort': 'VS',
+      'mt.doneTag': 'Final',
+      'mt.nextTag': 'Upcoming',
+      'mt.bo': 'BO{n}',
+      'mt.dkWin': 'DK WIN',
+      'mt.dkLoss': 'DK LOSS',
+      'mt.kst': 'KST',
+      'mt.setAria': 'Choose a set',
+      'mt.blue': 'Blue (first pick)',
+      'mt.red': 'Red',
+      'mt.setN': 'Set {n}',
+      'mt.win': 'W',
+      'mt.lose': 'L',
+      'mt.duration': '{m}m {s}s',
+      'mt.ban': 'BAN',
+      'mt.banTitle': 'Set {n} picks & bans',
+      'mt.banSub': 'Five bans each',
+      'mt.banEmpty': 'No data',
+      'mt.banNone': 'Bans for this set are not on the wiki yet.',
+      'mt.banFrom': 'Bans: Leaguepedia · Picks & stats: LoL Esports',
+      'mt.statsTitle': 'match stats',
+      'mt.statsSub': 'Set {n} · champion · K/D/A · damage share',
+      'mt.share': 'Damage share',
+      'mt.kdaLabel': 'K/D/A',
+      'mt.kp': 'Kill part. {p}%',
+      'mt.csGold': 'CS {cs} · {g} gold',
+      'mt.rosterNote': 'Showing the 2026 official roster. The 2027 five fill in automatically once the season starts.',
+      'mt.noStats': 'Set stats are not available yet.',
+      'mt.oKill': 'TOTAL KILL',
+      'mt.oGold': 'GOLD',
+      'mt.oDragon': 'DRAGON',
+      'mt.oBaron': 'BARON',
+      'mt.vod': 'Full match VOD',
+      'mt.source': 'Data: LoL Esports · Leaguepedia (bans) · updates automatically when the season starts',
+      'mt.loading': 'Loading official match data…',
+      'mt.emptyTitle': 'No official matches yet',
+      'mt.emptyNote': 'This screen fills in automatically when the first 2027 match is published. Until then, check the calendar for the next fixture.',
+      'mt.emptyCta': 'LoL Esports schedule',
+      'mt.loadFail': 'Could not load the official match',
+      'mt.retry': 'Try again',
+      'mt.beforeNote': 'This match has not started. Picks, bans, K/D/A and damage share appear once it ends.',
+      'mt.colWho': 'Player · Champion',
+      'mt.colExtra': 'KDA · Kill part. · CS/Gold',
+      'mt.colShare': 'Damage share',
+      'cal.watchMatch': 'Picks & bans',
+      'summary.setAria': 'Choose a set to save',
+      'summary.mkicker': 'MATCH DAY',
+      'summary.rkicker': 'MATCH RESULT',
+      'summary.todayMatch': 'TODAY MATCH',
+      'summary.finalTag': 'FINAL · MATCH OVER',
+      'summary.finalScore': 'FINAL SCORE',
+      'summary.watch': 'WATCH',
+      'summary.startsIn': 'Starts in {h}h {m}m',
+      'summary.startsSoon': 'Starting soon',
+      'summary.setCard': 'Set {n}',
+      'summary.matchAlert': 'MATCH ALERT',
+      'summary.alertBody': 'Turn on official match alerts and we will ping you before the game',
+      'summary.dmgLine': 'Team damage {p}%',
+      'summary.cardHint': 'Pick a set to save that set with its side, bans and stats.'
+    },
+    ja: {
+      'mt.switchAria': 'マッチログの表示選択',
+      'mt.tabSolo': 'ソロランク',
+      'mt.tabOfficial': '公式戦',
+      'mt.poolTitle': '最近の公式戦',
+      'mt.poolCount': '全{n}試合',
+      'mt.poolAria': '最近の公式戦を選択',
+      'mt.vsShort': 'VS',
+      'mt.doneTag': '終了',
+      'mt.nextTag': '予定',
+      'mt.bo': 'BO{n}',
+      'mt.dkWin': 'DK WIN',
+      'mt.dkLoss': 'DK LOSS',
+      'mt.kst': 'KST',
+      'mt.setAria': 'セット選択',
+      'mt.blue': 'ブルー(先ピック)',
+      'mt.red': 'レッド',
+      'mt.setN': '第{n}セット',
+      'mt.win': '勝',
+      'mt.lose': '敗',
+      'mt.duration': '{m}分{s}秒',
+      'mt.ban': 'BAN',
+      'mt.banTitle': '第{n}セット ピック&バン',
+      'mt.banSub': '両チーム5バンずつ',
+      'mt.banEmpty': '情報なし',
+      'mt.banNone': 'このセットのバン記録はまだWikiに登録されていません。',
+      'mt.banFrom': 'バン: Leaguepedia · ピック・スタッツ: LoL Esports',
+      'mt.statsTitle': '試合スタッツ',
+      'mt.statsSub': '第{n}セット基準 · チャンピオン · K/D/A · ダメージ比率',
+      'mt.share': 'ダメ比率',
+      'mt.kdaLabel': 'K/D/A',
+      'mt.kp': 'キル関与 {p}%',
+      'mt.csGold': 'CS {cs} · {g} ゴールド',
+      'mt.rosterNote': '2026シーズンの公式ロスターです。2027の5人はシーズン開始後に自動で反映されます。',
+      'mt.noStats': 'セットスタッツをまだ取得できていません。',
+      'mt.oKill': 'TOTAL KILL',
+      'mt.oGold': 'GOLD',
+      'mt.oDragon': 'DRAGON',
+      'mt.oBaron': 'BARON',
+      'mt.vod': 'フルマッチVOD',
+      'mt.source': 'データ: LoL Esports · Leaguepedia(バン) · シーズン開始後に自動更新',
+      'mt.loading': '公式戦データを読み込み中…',
+      'mt.emptyTitle': '公式戦はまだありません',
+      'mt.emptyNote': '2027シーズンの初戦が公開されると、この画面は自動で反映されます。それまではカレンダーで次の日程を確認できます。',
+      'mt.emptyCta': 'LoL Esports 日程を見る',
+      'mt.loadFail': '公式戦データを取得できませんでした',
+      'mt.retry': '再試行',
+      'mt.beforeNote': 'まだ試合前です。試合が終わるとセット別のピック&バン・K/D/A・ダメージ比率が反映されます。',
+      'mt.colWho': '選手 · チャンピオン',
+      'mt.colExtra': 'KDA · キル関与 · CS/ゴールド',
+      'mt.colShare': 'ダメ比率',
+      'cal.watchMatch': 'ピック&バン',
+      'summary.setAria': '保存するセット選択',
+      'summary.mkicker': 'MATCH DAY',
+      'summary.rkicker': 'MATCH RESULT',
+      'summary.todayMatch': 'TODAY MATCH',
+      'summary.finalTag': 'FINAL · 試合終了',
+      'summary.finalScore': 'FINAL SCORE',
+      'summary.watch': 'WATCH',
+      'summary.startsIn': '試合開始まで {h}時間{m}分',
+      'summary.startsSoon': 'まもなく試合開始',
+      'summary.setCard': '第{n}セット',
+      'summary.matchAlert': 'MATCH ALERT',
+      'summary.alertBody': '公式戦の通知をONにすると試合前に知らせます',
+      'summary.dmgLine': 'チーム内ダメ {p}%',
+      'summary.cardHint': 'セットを選ぶと、そのセットの陣営・ピック&バン・スタッツを画像で保存できます。'
+    },
+    zh: {
+      'mt.switchAria': '选择战绩视图',
+      'mt.tabSolo': '单双排',
+      'mt.tabOfficial': '官方比赛',
+      'mt.poolTitle': '最近的官方比赛',
+      'mt.poolCount': '共{n}场',
+      'mt.poolAria': '选择最近的官方比赛',
+      'mt.vsShort': 'VS',
+      'mt.doneTag': '已结束',
+      'mt.nextTag': '未开始',
+      'mt.bo': 'BO{n}',
+      'mt.dkWin': 'DK WIN',
+      'mt.dkLoss': 'DK LOSS',
+      'mt.kst': 'KST',
+      'mt.setAria': '选择小局',
+      'mt.blue': '蓝色方(先选)',
+      'mt.red': '红色方',
+      'mt.setN': '第{n}局',
+      'mt.win': '胜',
+      'mt.lose': '负',
+      'mt.duration': '{m}分{s}秒',
+      'mt.ban': 'BAN',
+      'mt.banTitle': '第{n}局 BP',
+      'mt.banSub': '双方各 5 个禁用',
+      'mt.banEmpty': '暂无数据',
+      'mt.banNone': '该局的禁用记录还没有收录到 Wiki。',
+      'mt.banFrom': '禁用: Leaguepedia · 选取与数据: LoL Esports',
+      'mt.statsTitle': '比赛数据',
+      'mt.statsSub': '第{n}局 · 英雄 · K/D/A · 伤害占比',
+      'mt.share': '伤害占比',
+      'mt.kdaLabel': 'K/D/A',
+      'mt.kp': '参团率 {p}%',
+      'mt.csGold': '补刀 {cs} · {g} 金币',
+      'mt.rosterNote': '显示的是 2026 赛季官方阵容。2027 五人阵容会在赛季开始后自动更新。',
+      'mt.noStats': '还没有获取到该局数据。',
+      'mt.oKill': 'TOTAL KILL',
+      'mt.oGold': 'GOLD',
+      'mt.oDragon': 'DRAGON',
+      'mt.oBaron': 'BARON',
+      'mt.vod': '全场回放',
+      'mt.source': '数据: LoL Esports · Leaguepedia(禁用) · 赛季开始后自动更新',
+      'mt.loading': '正在加载官方比赛数据…',
+      'mt.emptyTitle': '还没有官方比赛',
+      'mt.emptyNote': '2027 赛季首场比赛公布后，这个页面会自动填充。之前可以在日历里查看下一场赛程。',
+      'mt.emptyCta': '查看 LoL Esports 赛程',
+      'mt.loadFail': '无法获取官方比赛数据',
+      'mt.retry': '重试',
+      'mt.beforeNote': '比赛还没开始。结束后会显示每局的 BP、K/D/A 和伤害占比。',
+      'mt.colWho': '选手 · 英雄',
+      'mt.colExtra': 'KDA · 参团率 · 补刀/金币',
+      'mt.colShare': '伤害占比',
+      'cal.watchMatch': '查看 BP',
+      'summary.setAria': '选择要保存的小局',
+      'summary.mkicker': 'MATCH DAY',
+      'summary.rkicker': 'MATCH RESULT',
+      'summary.todayMatch': 'TODAY MATCH',
+      'summary.finalTag': 'FINAL · 比赛结束',
+      'summary.finalScore': 'FINAL SCORE',
+      'summary.watch': 'WATCH',
+      'summary.startsIn': '距开赛 {h}小时{m}分',
+      'summary.startsSoon': '即将开赛',
+      'summary.setCard': '第{n}局',
+      'summary.matchAlert': 'MATCH ALERT',
+      'summary.alertBody': '开启官方比赛提醒，赛前会通知你',
+      'summary.dmgLine': '队内伤害 {p}%',
+      'summary.cardHint': '选择一局，就能保存该局的阵营、BP 和数据卡片。'
+    },
+    tw: {
+      'mt.switchAria': '選擇戰績檢視',
+      'mt.tabSolo': '單雙排',
+      'mt.tabOfficial': '官方賽事',
+      'mt.poolTitle': '最近的官方賽事',
+      'mt.poolCount': '共{n}場',
+      'mt.poolAria': '選擇最近的官方賽事',
+      'mt.vsShort': 'VS',
+      'mt.doneTag': '已結束',
+      'mt.nextTag': '未開始',
+      'mt.bo': 'BO{n}',
+      'mt.dkWin': 'DK WIN',
+      'mt.dkLoss': 'DK LOSS',
+      'mt.kst': 'KST',
+      'mt.setAria': '選擇小局',
+      'mt.blue': '藍方(先選)',
+      'mt.red': '紅方',
+      'mt.setN': '第{n}局',
+      'mt.win': '勝',
+      'mt.lose': '敗',
+      'mt.duration': '{m}分{s}秒',
+      'mt.ban': 'BAN',
+      'mt.banTitle': '第{n}局 BP',
+      'mt.banSub': '雙方各 5 個禁用',
+      'mt.banEmpty': '暫無資料',
+      'mt.banNone': '這局的禁用紀錄還沒收錄到 Wiki。',
+      'mt.banFrom': '禁用: Leaguepedia · 選角與數據: LoL Esports',
+      'mt.statsTitle': '賽事數據',
+      'mt.statsSub': '第{n}局 · 英雄 · K/D/A · 傷害佔比',
+      'mt.share': '傷害佔比',
+      'mt.kdaLabel': 'K/D/A',
+      'mt.kp': '參團率 {p}%',
+      'mt.csGold': '吃兵 {cs} · {g} 金幣',
+      'mt.rosterNote': '顯示的是 2026 賽季官方陣容。2027 五人陣容會在賽季開始後自動更新。',
+      'mt.noStats': '還沒有取得這局的數據。',
+      'mt.oKill': 'TOTAL KILL',
+      'mt.oGold': 'GOLD',
+      'mt.oDragon': 'DRAGON',
+      'mt.oBaron': 'BARON',
+      'mt.vod': '全場回放',
+      'mt.source': '數據: LoL Esports · Leaguepedia(禁用) · 賽季開始後自動更新',
+      'mt.loading': '正在載入官方賽事資料…',
+      'mt.emptyTitle': '還沒有官方賽事',
+      'mt.emptyNote': '2027 賽季首場比賽公布後，這個頁面會自動填入。之前可以在行事曆查看下一場賽程。',
+      'mt.emptyCta': '查看 LoL Esports 賽程',
+      'mt.loadFail': '無法取得官方賽事資料',
+      'mt.retry': '重試',
+      'mt.beforeNote': '比賽還沒開始。結束後會顯示每局的 BP、K/D/A 和傷害佔比。',
+      'mt.colWho': '選手 · 英雄',
+      'mt.colExtra': 'KDA · 參團率 · 吃兵/金幣',
+      'mt.colShare': '傷害佔比',
+      'cal.watchMatch': '查看 BP',
+      'summary.setAria': '選擇要儲存的小局',
+      'summary.mkicker': 'MATCH DAY',
+      'summary.rkicker': 'MATCH RESULT',
+      'summary.todayMatch': 'TODAY MATCH',
+      'summary.finalTag': 'FINAL · 比賽結束',
+      'summary.finalScore': 'FINAL SCORE',
+      'summary.watch': 'WATCH',
+      'summary.startsIn': '距開賽 {h}小時{m}分',
+      'summary.startsSoon': '即將開賽',
+      'summary.setCard': '第{n}局',
+      'summary.matchAlert': 'MATCH ALERT',
+      'summary.alertBody': '開啟官方賽事提醒，賽前會通知你',
+      'summary.dmgLine': '隊內傷害 {p}%',
+      'summary.cardHint': '選擇一局，就能儲存該局的陣營、BP 和數據卡片。'
+    },
+    vi: {
+      'mt.switchAria': 'Chọn chế độ xem lịch sử đấu',
+      'mt.tabSolo': 'Xếp hạng đơn',
+      'mt.tabOfficial': 'Trận chính thức',
+      'mt.poolTitle': 'Trận chính thức gần đây',
+      'mt.poolCount': '{n} trận',
+      'mt.poolAria': 'Chọn trận chính thức gần đây',
+      'mt.vsShort': 'VS',
+      'mt.doneTag': 'Kết thúc',
+      'mt.nextTag': 'Sắp tới',
+      'mt.bo': 'BO{n}',
+      'mt.dkWin': 'DK WIN',
+      'mt.dkLoss': 'DK LOSS',
+      'mt.kst': 'KST',
+      'mt.setAria': 'Chọn ván',
+      'mt.blue': 'Xanh (chọn trước)',
+      'mt.red': 'Đỏ',
+      'mt.setN': 'Ván {n}',
+      'mt.win': 'Thắng',
+      'mt.lose': 'Thua',
+      'mt.duration': '{m}p {s}s',
+      'mt.ban': 'BAN',
+      'mt.banTitle': 'Cấm & chọn ván {n}',
+      'mt.banSub': 'Mỗi đội 5 cấm',
+      'mt.banEmpty': 'Không có dữ liệu',
+      'mt.banNone': 'Dữ liệu cấm của ván này chưa có trên wiki.',
+      'mt.banFrom': 'Cấm: Leaguepedia · Chọn & chỉ số: LoL Esports',
+      'mt.statsTitle': 'chỉ số trận',
+      'mt.statsSub': 'Ván {n} · tướng · K/D/A · tỉ lệ sát thương',
+      'mt.share': 'Tỉ lệ sát thương',
+      'mt.kdaLabel': 'K/D/A',
+      'mt.kp': 'Tham gia hạ gục {p}%',
+      'mt.csGold': 'Lính {cs} · {g} vàng',
+      'mt.rosterNote': 'Đang hiển thị đội hình chính thức mùa 2026. Bộ 5 người 2027 sẽ tự cập nhật khi mùa giải bắt đầu.',
+      'mt.noStats': 'Chưa lấy được chỉ số của ván này.',
+      'mt.oKill': 'TOTAL KILL',
+      'mt.oGold': 'GOLD',
+      'mt.oDragon': 'DRAGON',
+      'mt.oBaron': 'BARON',
+      'mt.vod': 'Xem lại toàn trận',
+      'mt.source': 'Dữ liệu: LoL Esports · Leaguepedia (cấm) · tự cập nhật khi mùa giải bắt đầu',
+      'mt.loading': 'Đang tải dữ liệu trận chính thức…',
+      'mt.emptyTitle': 'Chưa có trận chính thức',
+      'mt.emptyNote': 'Màn hình này sẽ tự điền khi trận đầu tiên của mùa 2027 được công bố. Trước đó bạn xem lịch ở tab lịch.',
+      'mt.emptyCta': 'Xem lịch LoL Esports',
+      'mt.loadFail': 'Không tải được dữ liệu trận chính thức',
+      'mt.retry': 'Thử lại',
+      'mt.beforeNote': 'Trận chưa bắt đầu. Khi kết thúc sẽ có cấm/chọn, K/D/A và tỉ lệ sát thương từng ván.',
+      'mt.colWho': 'Tuyển thủ · Tướng',
+      'mt.colExtra': 'KDA · Tham gia · Lính/Vàng',
+      'mt.colShare': 'Tỉ lệ sát thương',
+      'cal.watchMatch': 'Xem cấm & chọn',
+      'summary.setAria': 'Chọn ván để lưu',
+      'summary.mkicker': 'MATCH DAY',
+      'summary.rkicker': 'MATCH RESULT',
+      'summary.todayMatch': 'TODAY MATCH',
+      'summary.finalTag': 'FINAL · KẾT THÚC',
+      'summary.finalScore': 'FINAL SCORE',
+      'summary.watch': 'WATCH',
+      'summary.startsIn': 'Còn {h} giờ {m} phút',
+      'summary.startsSoon': 'Sắp bắt đầu',
+      'summary.setCard': 'Ván {n}',
+      'summary.matchAlert': 'MATCH ALERT',
+      'summary.alertBody': 'Bật thông báo trận chính thức để được nhắc trước giờ đấu',
+      'summary.dmgLine': 'Sát thương đội {p}%',
+      'summary.cardHint': 'Chọn một ván để lưu ảnh có phe, cấm/chọn và chỉ số của ván đó.'
+    },
+    es: {
+      'mt.switchAria': 'Elegir vista del historial',
+      'mt.tabSolo': 'Solo/Dúo',
+      'mt.tabOfficial': 'Partidas oficiales',
+      'mt.poolTitle': 'Partidas oficiales recientes',
+      'mt.poolCount': '{n} partidas',
+      'mt.poolAria': 'Elegir una partida oficial reciente',
+      'mt.vsShort': 'VS',
+      'mt.doneTag': 'Final',
+      'mt.nextTag': 'Próxima',
+      'mt.bo': 'BO{n}',
+      'mt.dkWin': 'DK WIN',
+      'mt.dkLoss': 'DK LOSS',
+      'mt.kst': 'KST',
+      'mt.setAria': 'Elegir partida',
+      'mt.blue': 'Azul (primera elección)',
+      'mt.red': 'Rojo',
+      'mt.setN': 'Partida {n}',
+      'mt.win': 'V',
+      'mt.lose': 'D',
+      'mt.duration': '{m}m {s}s',
+      'mt.ban': 'BAN',
+      'mt.banTitle': 'Picks y bans de la partida {n}',
+      'mt.banSub': 'Cinco bans por equipo',
+      'mt.banEmpty': 'Sin datos',
+      'mt.banNone': 'Los bans de esta partida aún no están en la wiki.',
+      'mt.banFrom': 'Bans: Leaguepedia · Picks y datos: LoL Esports',
+      'mt.statsTitle': 'estadísticas',
+      'mt.statsSub': 'Partida {n} · campeón · K/D/A · daño del equipo',
+      'mt.share': 'Cuota de daño',
+      'mt.kdaLabel': 'K/D/A',
+      'mt.kp': 'Participación {p}%',
+      'mt.csGold': 'CS {cs} · {g} de oro',
+      'mt.rosterNote': 'Se muestra la plantilla oficial de 2026. Los cinco de 2027 aparecerán solos cuando empiece la temporada.',
+      'mt.noStats': 'Todavía no hay estadísticas de esta partida.',
+      'mt.oKill': 'TOTAL KILL',
+      'mt.oGold': 'GOLD',
+      'mt.oDragon': 'DRAGON',
+      'mt.oBaron': 'BARON',
+      'mt.vod': 'Ver la partida completa',
+      'mt.source': 'Datos: LoL Esports · Leaguepedia (bans) · se actualiza al empezar la temporada',
+      'mt.loading': 'Cargando datos de la partida…',
+      'mt.emptyTitle': 'Aún no hay partidas oficiales',
+      'mt.emptyNote': 'Esta pantalla se llenará sola cuando se publique la primera partida de 2027. Mientras tanto, mira el calendario.',
+      'mt.emptyCta': 'Ver calendario de LoL Esports',
+      'mt.loadFail': 'No se pudo cargar la partida oficial',
+      'mt.retry': 'Reintentar',
+      'mt.beforeNote': 'La partida aún no ha empezado. Al terminar verás picks, bans, K/D/A y daño por partida.',
+      'mt.colWho': 'Jugador · Campeón',
+      'mt.colExtra': 'KDA · Participación · CS/Oro',
+      'mt.colShare': 'Cuota de daño',
+      'cal.watchMatch': 'Ver picks y bans',
+      'summary.setAria': 'Elegir partida para guardar',
+      'summary.mkicker': 'MATCH DAY',
+      'summary.rkicker': 'MATCH RESULT',
+      'summary.todayMatch': 'TODAY MATCH',
+      'summary.finalTag': 'FINAL · PARTIDA TERMINADA',
+      'summary.finalScore': 'FINAL SCORE',
+      'summary.watch': 'WATCH',
+      'summary.startsIn': 'Empieza en {h}h {m}m',
+      'summary.startsSoon': 'Empieza pronto',
+      'summary.setCard': 'Partida {n}',
+      'summary.matchAlert': 'MATCH ALERT',
+      'summary.alertBody': 'Activa los avisos de partidas oficiales y te avisamos antes',
+      'summary.dmgLine': 'Daño del equipo {p}%',
+      'summary.cardHint': 'Elige una partida para guardar su lado, bans y estadísticas en una imagen.'
+    },
+    pt: {
+      'mt.switchAria': 'Escolher visão do histórico',
+      'mt.tabSolo': 'Solo/Duo',
+      'mt.tabOfficial': 'Partidas oficiais',
+      'mt.poolTitle': 'Partidas oficiais recentes',
+      'mt.poolCount': '{n} partidas',
+      'mt.poolAria': 'Escolher uma partida oficial recente',
+      'mt.vsShort': 'VS',
+      'mt.doneTag': 'Final',
+      'mt.nextTag': 'Próxima',
+      'mt.bo': 'BO{n}',
+      'mt.dkWin': 'DK WIN',
+      'mt.dkLoss': 'DK LOSS',
+      'mt.kst': 'KST',
+      'mt.setAria': 'Escolher partida',
+      'mt.blue': 'Azul (primeira escolha)',
+      'mt.red': 'Vermelho',
+      'mt.setN': 'Partida {n}',
+      'mt.win': 'V',
+      'mt.lose': 'D',
+      'mt.duration': '{m}m {s}s',
+      'mt.ban': 'BAN',
+      'mt.banTitle': 'Picks e bans da partida {n}',
+      'mt.banSub': 'Cinco bans por time',
+      'mt.banEmpty': 'Sem dados',
+      'mt.banNone': 'Os bans desta partida ainda não estão na wiki.',
+      'mt.banFrom': 'Bans: Leaguepedia · Picks e dados: LoL Esports',
+      'mt.statsTitle': 'estatísticas',
+      'mt.statsSub': 'Partida {n} · campeão · K/D/A · dano do time',
+      'mt.share': 'Fatia de dano',
+      'mt.kdaLabel': 'K/D/A',
+      'mt.kp': 'Participação {p}%',
+      'mt.csGold': 'CS {cs} · {g} de ouro',
+      'mt.rosterNote': 'Mostrando o elenco oficial de 2026. Os cinco de 2027 entram automaticamente quando a temporada começar.',
+      'mt.noStats': 'Ainda não há estatísticas desta partida.',
+      'mt.oKill': 'TOTAL KILL',
+      'mt.oGold': 'GOLD',
+      'mt.oDragon': 'DRAGON',
+      'mt.oBaron': 'BARON',
+      'mt.vod': 'Ver partida completa',
+      'mt.source': 'Dados: LoL Esports · Leaguepedia (bans) · atualiza sozinho quando a temporada começar',
+      'mt.loading': 'Carregando dados da partida…',
+      'mt.emptyTitle': 'Ainda não há partidas oficiais',
+      'mt.emptyNote': 'Esta tela se preenche sozinha quando a primeira partida de 2027 for publicada. Até lá, veja o calendário.',
+      'mt.emptyCta': 'Ver calendário da LoL Esports',
+      'mt.loadFail': 'Não foi possível carregar a partida oficial',
+      'mt.retry': 'Tentar de novo',
+      'mt.beforeNote': 'A partida ainda não começou. Quando acabar, aparecem picks, bans, K/D/A e dano por partida.',
+      'mt.colWho': 'Jogador · Campeão',
+      'mt.colExtra': 'KDA · Participação · CS/Ouro',
+      'mt.colShare': 'Fatia de dano',
+      'cal.watchMatch': 'Ver picks e bans',
+      'summary.setAria': 'Escolher partida para salvar',
+      'summary.mkicker': 'MATCH DAY',
+      'summary.rkicker': 'MATCH RESULT',
+      'summary.todayMatch': 'TODAY MATCH',
+      'summary.finalTag': 'FINAL · PARTIDA ENCERRADA',
+      'summary.finalScore': 'FINAL SCORE',
+      'summary.watch': 'WATCH',
+      'summary.startsIn': 'Começa em {h}h {m}m',
+      'summary.startsSoon': 'Começa em breve',
+      'summary.setCard': 'Partida {n}',
+      'summary.matchAlert': 'MATCH ALERT',
+      'summary.alertBody': 'Ative os avisos de partidas oficiais e avisamos antes do jogo',
+      'summary.dmgLine': 'Dano do time {p}%',
+      'summary.cardHint': 'Escolha uma partida para salvar o lado, os bans e as estatísticas dela em imagem.'
+    },
+    th: {
+      'mt.switchAria': 'เลือกมุมมองประวัติการแข่ง',
+      'mt.tabSolo': 'แรงค์เดี่ยว',
+      'mt.tabOfficial': 'แมตช์ทางการ',
+      'mt.poolTitle': 'แมตช์ทางการล่าสุด',
+      'mt.poolCount': 'ทั้งหมด {n} แมตช์',
+      'mt.poolAria': 'เลือกแมตช์ทางการล่าสุด',
+      'mt.vsShort': 'VS',
+      'mt.doneTag': 'จบแล้ว',
+      'mt.nextTag': 'ถัดไป',
+      'mt.bo': 'BO{n}',
+      'mt.dkWin': 'DK WIN',
+      'mt.dkLoss': 'DK LOSS',
+      'mt.kst': 'KST',
+      'mt.setAria': 'เลือกเกม',
+      'mt.blue': 'น้ำเงิน (เลือกก่อน)',
+      'mt.red': 'แดง',
+      'mt.setN': 'เกม {n}',
+      'mt.win': 'ชนะ',
+      'mt.lose': 'แพ้',
+      'mt.duration': '{m}น {s}วิ',
+      'mt.ban': 'BAN',
+      'mt.banTitle': 'แบน/พิก เกม {n}',
+      'mt.banSub': 'แบนฝั่งละ 5 ตัว',
+      'mt.banEmpty': 'ไม่มีข้อมูล',
+      'mt.banNone': 'ข้อมูลแบนของเกมนี้ยังไม่ถูกบันทึกในวิกิ',
+      'mt.banFrom': 'แบน: Leaguepedia · พิกและสถิติ: LoL Esports',
+      'mt.statsTitle': 'สถิติแมตช์',
+      'mt.statsSub': 'เกม {n} · แชมเปี้ยน · K/D/A · สัดส่วนดาเมจ',
+      'mt.share': 'สัดส่วนดาเมจ',
+      'mt.kdaLabel': 'K/D/A',
+      'mt.kp': 'มีส่วนร่วมสังหาร {p}%',
+      'mt.csGold': 'CS {cs} · {g} โกลด์',
+      'mt.rosterNote': 'แสดงรายชื่อทางการของซีซัน 2026 ห้าคนของ 2027 จะอัปเดตเองเมื่อซีซันเริ่ม',
+      'mt.noStats': 'ยังดึงสถิติของเกมนี้ไม่ได้',
+      'mt.oKill': 'TOTAL KILL',
+      'mt.oGold': 'GOLD',
+      'mt.oDragon': 'DRAGON',
+      'mt.oBaron': 'BARON',
+      'mt.vod': 'ดูย้อนหลังทั้งแมตช์',
+      'mt.source': 'ข้อมูล: LoL Esports · Leaguepedia (แบน) · อัปเดตเองเมื่อซีซันเริ่ม',
+      'mt.loading': 'กำลังโหลดข้อมูลแมตช์ทางการ…',
+      'mt.emptyTitle': 'ยังไม่มีแมตช์ทางการ',
+      'mt.emptyNote': 'หน้านี้จะเติมเองเมื่อแมตช์แรกของซีซัน 2027 ถูกประกาศ ระหว่างนี้ดูตารางได้ที่ปฏิทิน',
+      'mt.emptyCta': 'ดูตาราง LoL Esports',
+      'mt.loadFail': 'โหลดข้อมูลแมตช์ทางการไม่ได้',
+      'mt.retry': 'ลองอีกครั้ง',
+      'mt.beforeNote': 'ยังไม่เริ่มแข่ง เมื่อจบแล้วจะแสดงแบน/พิก K/D/A และสัดส่วนดาเมจของแต่ละเกม',
+      'mt.colWho': 'ผู้เล่น · แชมเปี้ยน',
+      'mt.colExtra': 'KDA · มีส่วนร่วม · CS/โกลด์',
+      'mt.colShare': 'สัดส่วนดาเมจ',
+      'cal.watchMatch': 'ดูแบน/พิก',
+      'summary.setAria': 'เลือกเกมที่จะบันทึก',
+      'summary.mkicker': 'MATCH DAY',
+      'summary.rkicker': 'MATCH RESULT',
+      'summary.todayMatch': 'TODAY MATCH',
+      'summary.finalTag': 'FINAL · แข่งจบแล้ว',
+      'summary.finalScore': 'FINAL SCORE',
+      'summary.watch': 'WATCH',
+      'summary.startsIn': 'อีก {h} ชม. {m} นาที',
+      'summary.startsSoon': 'ใกล้เริ่มแล้ว',
+      'summary.setCard': 'เกม {n}',
+      'summary.matchAlert': 'MATCH ALERT',
+      'summary.alertBody': 'เปิดแจ้งเตือนแมตช์ทางการแล้วเราจะแจ้งก่อนแข่ง',
+      'summary.dmgLine': 'ดาเมจในทีม {p}%',
+      'summary.cardHint': 'เลือกเกมเพื่อบันทึกฝั่ง แบน/พิก และสถิติของเกมนั้นเป็นรูปภาพ'
+    },
+    id: {
+      'mt.switchAria': 'Pilih tampilan riwayat',
+      'mt.tabSolo': 'Solo/Duo',
+      'mt.tabOfficial': 'Pertandingan resmi',
+      'mt.poolTitle': 'Pertandingan resmi terbaru',
+      'mt.poolCount': '{n} pertandingan',
+      'mt.poolAria': 'Pilih pertandingan resmi terbaru',
+      'mt.vsShort': 'VS',
+      'mt.doneTag': 'Selesai',
+      'mt.nextTag': 'Berikutnya',
+      'mt.bo': 'BO{n}',
+      'mt.dkWin': 'DK WIN',
+      'mt.dkLoss': 'DK LOSS',
+      'mt.kst': 'KST',
+      'mt.setAria': 'Pilih game',
+      'mt.blue': 'Biru (pilih dulu)',
+      'mt.red': 'Merah',
+      'mt.setN': 'Game {n}',
+      'mt.win': 'M',
+      'mt.lose': 'K',
+      'mt.duration': '{m}m {s}d',
+      'mt.ban': 'BAN',
+      'mt.banTitle': 'Pick & ban game {n}',
+      'mt.banSub': 'Lima ban per tim',
+      'mt.banEmpty': 'Tidak ada data',
+      'mt.banNone': 'Ban game ini belum tercatat di wiki.',
+      'mt.banFrom': 'Ban: Leaguepedia · Pick & statistik: LoL Esports',
+      'mt.statsTitle': 'statistik laga',
+      'mt.statsSub': 'Game {n} · champion · K/D/A · porsi damage',
+      'mt.share': 'Porsi damage',
+      'mt.kdaLabel': 'K/D/A',
+      'mt.kp': 'Partisipasi kill {p}%',
+      'mt.csGold': 'CS {cs} · {g} gold',
+      'mt.rosterNote': 'Menampilkan roster resmi musim 2026. Lima pemain 2027 terisi otomatis saat musim dimulai.',
+      'mt.noStats': 'Statistik game ini belum tersedia.',
+      'mt.oKill': 'TOTAL KILL',
+      'mt.oGold': 'GOLD',
+      'mt.oDragon': 'DRAGON',
+      'mt.oBaron': 'BARON',
+      'mt.vod': 'Tonton ulang laga penuh',
+      'mt.source': 'Data: LoL Esports · Leaguepedia (ban) · diperbarui otomatis saat musim dimulai',
+      'mt.loading': 'Memuat data pertandingan resmi…',
+      'mt.emptyTitle': 'Belum ada pertandingan resmi',
+      'mt.emptyNote': 'Halaman ini terisi otomatis saat laga pertama musim 2027 diumumkan. Sementara itu cek kalender.',
+      'mt.emptyCta': 'Lihat jadwal LoL Esports',
+      'mt.loadFail': 'Gagal memuat pertandingan resmi',
+      'mt.retry': 'Coba lagi',
+      'mt.beforeNote': 'Laga belum dimulai. Setelah selesai, pick, ban, K/D/A, dan porsi damage tiap game akan muncul.',
+      'mt.colWho': 'Pemain · Champion',
+      'mt.colExtra': 'KDA · Partisipasi · CS/Gold',
+      'mt.colShare': 'Porsi damage',
+      'cal.watchMatch': 'Lihat pick & ban',
+      'summary.setAria': 'Pilih game untuk disimpan',
+      'summary.mkicker': 'MATCH DAY',
+      'summary.rkicker': 'MATCH RESULT',
+      'summary.todayMatch': 'TODAY MATCH',
+      'summary.finalTag': 'FINAL · LAGA SELESAI',
+      'summary.finalScore': 'FINAL SCORE',
+      'summary.watch': 'WATCH',
+      'summary.startsIn': 'Mulai dalam {h}j {m}m',
+      'summary.startsSoon': 'Segera mulai',
+      'summary.setCard': 'Game {n}',
+      'summary.matchAlert': 'MATCH ALERT',
+      'summary.alertBody': 'Nyalakan notifikasi laga resmi dan kami beri tahu sebelum bertanding',
+      'summary.dmgLine': 'Damage tim {p}%',
+      'summary.cardHint': 'Pilih game untuk menyimpan sisi, ban, dan statistiknya sebagai gambar.'
+    }
+  };
+  Object.keys(EXTRA).forEach(function (code) {
+    if (!DICT[code]) return;
+    Object.keys(EXTRA[code]).forEach(function (k) { DICT[code][k] = EXTRA[code][k]; });
+  });
+
+  /* 표시용 날짜·시간 */
 
   /* 표시용 날짜·시간 */
   var MONTH_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -9943,6 +11039,8 @@ html[data-theme="mint"] .lp-item.is-on {
     LANGS: LANGS,
     get lang() { return lang; },
     t: t,
+    /* 검증용: 한 언어에 들어 있는 문구 키 목록 (10개국어 키가 모두 같은지 확인) */
+    keys: function (code) { return Object.keys(DICT[code || lang] || {}).sort(); },
     setLang: setLang,
     onChange: onChange,
     detect: detect,
@@ -12302,12 +13400,21 @@ const SPELL_IMG = {
 
     /* 2) 경기 — 저장된 2026 월즈 기록 + 서버 공식 일정 */
     (typeof MATCH_LOG !== 'undefined' ? MATCH_LOG : []).forEach(function (g) {
+      /* 같은 날짜의 공식 일정(getSchedule) 경기가 있으면 그 id 를 붙여
+       * 캘린더에서 '밴픽 보기'로 경기로그 공식 경기에 바로 갈 수 있게 합니다. */
+      var omHit = null;
+      var offNow = LIVE.official;
+      if (offNow && offNow.ok && Array.isArray(offNow.recent)) {
+        omHit = offNow.recent.filter(function (r) {
+          return r.startIso && String(r.startIso).slice(0, 10) === String(g.date).slice(0, 10);
+        })[0] || null;
+      }
       push({
         cat: 'match', start: g.date, end: g.date,
         bar: g.opp + ' ' + g.score.replace(/\s*:\s*/, ':') + (g.win ? ' W' : ' L'),
         title: L(g.league) + ' ' + L(g.round) + ' · DK ' + g.score + ' ' + g.opp,
         sub: T(g.win ? 'cal.gameWin' : 'cal.gameLoss', { opp: g.opp, score: g.score }),
-        url: g.url, action: 'cal.matchLink'
+        url: g.url, action: 'cal.matchLink', matchId: omHit ? omHit.id : ''
       });
     });
     var off = LIVE.official;
@@ -12322,7 +13429,7 @@ const SPELL_IMG = {
           bar: 'DK vs ' + oppN,
           title: 'DK vs ' + oppN,
           sub: [leagueName(off.next.league), blockText(off.next.block), off.next.time].filter(Boolean).join(' · '),
-          url: 'https://lolesports.com/ko-KR/schedule', action: 'cal.matchLink'
+          url: 'https://lolesports.com/ko-KR/schedule', action: 'cal.matchLink', matchId: off.next.id
         });
         seen[ymd(nd)] = true;
       }
@@ -12338,7 +13445,7 @@ const SPELL_IMG = {
           title: (leagueName(g.league) || 'LCK') + ' ' + (blockText(g.block) || '') + ' · DK ' + (g.score || '') + ' ' + opp,
           sub: g.win === true ? T('cal.gameWin', { opp: opp, score: g.score || '' })
             : (g.win === false ? T('cal.gameLoss', { opp: opp, score: g.score || '' }) : ''),
-          url: 'https://lolesports.com/ko-KR/schedule', action: 'cal.matchLink'
+          url: 'https://lolesports.com/ko-KR/schedule', action: 'cal.matchLink', matchId: g.id
         });
         seen[ymd(d)] = true;
       });
@@ -12497,8 +13604,10 @@ const SPELL_IMG = {
       return '<li class="cal-day-item">' +
         '<span class="cal-tag is-' + ev.cat + '">' + esc(tag) + '</span>' +
         '<span class="cal-day-body"><b>' + esc(ev.title) + '</b><span>' + esc(ev.sub) + '</span></span>' +
-        (ev.url ? '<a class="cal-day-go" href="' + esc(ev.url) + '" target="_blank" rel="noopener">' +
-          esc(T(ev.action || (ev.cat === 'cast' ? 'cal.noticeLink' : 'vote.cta'))) + '</a>' : '') +
+        (ev.matchId ? '<button class="cal-day-go is-om" type="button" data-om-open="' + esc(ev.matchId) + '">' +
+          esc(T('cal.watchMatch')) + '</button>'
+          : (ev.url ? '<a class="cal-day-go" href="' + esc(ev.url) + '" target="_blank" rel="noopener">' +
+          esc(T(ev.action || (ev.cat === 'cast' ? 'cal.noticeLink' : 'vote.cta'))) + '</a>' : '')) +
       '</li>';
     }).join('');
   }
@@ -12554,6 +13663,23 @@ const SPELL_IMG = {
   function champImg(name) {
     if (!name) return '';
     return (typeof DD_CDN !== 'undefined' ? DD_CDN : '') + '/img/champion/' + encodeURIComponent(name) + '.png';
+  }
+  /* Data Dragon 파일 이름(= CHAMPIONS 키)을 이름표에서 찾습니다.
+   * Leaguepedia 밴 데이터는 "Lee Sin" 처럼 표시 이름으로 오기 때문에 필요합니다. */
+  var CHAMP_KEYS = null;
+  function champKey(name) {
+    if (!name) return '';
+    if (!CHAMP_KEYS) {
+      CHAMP_KEYS = {};
+      Object.keys(CHAMPIONS || {}).forEach(function (k) {
+        CHAMP_KEYS[normChamp(k)] = k;
+        var row = CHAMPIONS[k];
+        if (!row) return;
+        if (row[0]) CHAMP_KEYS[normChamp(row[0])] = k;
+        if (row[1]) CHAMP_KEYS[normChamp(row[1])] = k;
+      });
+    }
+    return CHAMP_KEYS[normChamp(name)] || name;
   }
   function spellImg(name) {
     if (!name) return '';
@@ -13723,28 +14849,793 @@ const SPELL_IMG = {
     return canvas;
   }
 
+  /* ---------- 카드 3종: 경기 없는 날 · 경기 전 · 경기 결과(세트별) ---------- */
+  var scState = { mode: 'solo', matchId: '', sets: [], idx: 0, loading: false, failed: '' };
+
+  function kstTodayKey() {
+    var n = new Date();
+    return n.getFullYear() + '-' + pad(n.getMonth() + 1) + '-' + pad(n.getDate());
+  }
+  function summaryMatch() {
+    var today = kstTodayKey();
+    var list = mtList();
+    for (var i = 0; i < list.length; i++) {
+      var iso = String(list[i].startIso || '');
+      if (iso.slice(0, 10) === today) return list[i];
+    }
+    return null;
+  }
+  function summarySet() {
+    if (!scState.sets.length) return null;
+    var idx = Math.max(0, Math.min(scState.sets.length - 1, scState.idx));
+    return scState.sets[idx];
+  }
+
+  /* 챔피언 아이콘은 Data Dragon 이 CORS 를 허용해 캔버스에 그릴 수 있습니다. */
+  var SC_IMG_CACHE = {};
+  function loadImageCors(src) {
+    if (!src) return Promise.resolve(null);
+    if (SC_IMG_CACHE[src]) return Promise.resolve(SC_IMG_CACHE[src]);
+    return new Promise(function (resolve) {
+      var im = new Image();
+      im.crossOrigin = 'anonymous';
+      im.onload = function () { SC_IMG_CACHE[src] = im; resolve(im); };
+      im.onerror = function () { resolve(null); };
+      im.src = src;
+    });
+  }
+  function loadChampIcons(names) {
+    var uniq = {};
+    (names || []).forEach(function (n) { if (n) uniq[n] = true; });
+    var keys = Object.keys(uniq);
+    return Promise.all(keys.map(function (n) { return loadImageCors(champImg(champKey(n))); })).then(function (list) {
+      var map = {};
+      keys.forEach(function (n, i) { map[n] = list[i]; });
+      return map;
+    });
+  }
+
+  function scBg(ctx, W, H) {
+    var bg = ctx.createLinearGradient(0, 0, W, H);
+    bg.addColorStop(0, '#04120F'); bg.addColorStop(.42, '#061A1A'); bg.addColorStop(1, '#03251F');
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+    var glow = ctx.createRadialGradient(960, 40, 20, 960, 40, 620);
+    glow.addColorStop(0, 'rgba(0,245,196,.20)'); glow.addColorStop(1, 'rgba(0,245,196,0)');
+    ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+    var glow2 = ctx.createRadialGradient(80, 1240, 20, 80, 1240, 520);
+    glow2.addColorStop(0, 'rgba(0,196,154,.10)'); glow2.addColorStop(1, 'rgba(0,196,154,0)');
+    ctx.fillStyle = glow2; ctx.fillRect(0, 0, W, H);
+  }
+  function scColors() {
+    return {
+      ink: '#EAF6F3', ink2: '#A9C3BD', muted: '#78938D', dim: '#5A736D',
+      mint: '#00F5C4', mint2: '#00C49A', red: '#FF6B7A', line: 'rgba(255,255,255,.09)'
+    };
+  }
+  function scHeader(ctx, logo, C, kicker, dateStr) {
+    var W = 1080;
+    if (logo) {
+      ctx.save();
+      try { ctx.filter = 'brightness(0) invert(1)'; } catch (e) {}
+      ctx.drawImage(logo, 64, 56, 124, 72);
+      ctx.restore();
+    } else {
+      ctx.fillStyle = 'rgba(255,255,255,.10)';
+      roundRect(ctx, 64, 56, 124, 72, 14); ctx.fill();
+      ctx.fillStyle = C.ink; ctx.font = scFont(34, 900); ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('DK', 126, 92);
+      ctx.textAlign = 'left';
+    }
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillStyle = C.ink; ctx.font = scFont(32, 900);
+    ctx.fillText('DK', 212, 96);
+    var dkW = ctx.measureText('DK ').width;
+    ctx.fillStyle = C.mint; ctx.fillText('SIGNAL', 212 + dkW, 96);
+    ctx.fillStyle = C.muted; ctx.font = scFont(18, 600);
+    ctx.fillText(T('brand.sub'), 213, 124);
+
+    ctx.textAlign = 'right';
+    ctx.fillStyle = C.mint; ctx.font = scFont(17, 800);
+    ctx.fillText('●  ' + kicker, 1016, 78);
+    ctx.fillStyle = C.ink; ctx.font = scFont(26, 800);
+    ctx.fillText(dateStr, 1016, 116);
+    ctx.textAlign = 'left';
+
+    ctx.strokeStyle = C.line; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(64, 168); ctx.lineTo(1016, 168); ctx.stroke();
+    void W;
+  }
+  /* 상대팀은 이미지 CORS 가 막혀 있어 팀 코드 배지로 그립니다. */
+  function scTeamBadge(ctx, C, label, x, y, w, h, accent) {
+    ctx.fillStyle = accent ? 'rgba(255,107,122,.12)' : 'rgba(0,245,196,.10)';
+    roundRect(ctx, x, y, w, h, Math.min(18, h / 2)); ctx.fill();
+    ctx.strokeStyle = accent ? 'rgba(255,107,122,.42)' : 'rgba(0,245,196,.42)';
+    ctx.lineWidth = 1.6;
+    roundRect(ctx, x, y, w, h, Math.min(18, h / 2)); ctx.stroke();
+    ctx.fillStyle = accent ? C.red : C.mint;
+    ctx.font = scFont(Math.min(46, h * 0.5), 900);
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(String(label || '').toUpperCase(), x + w / 2, y + h / 2 + 1);
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+  }
+
+  /* 경기 있는 날(경기 전): D-DAY · 시간 · 상대팀 + 오늘의 5인 솔랭 요약 */
+  function drawMatchDayCard(logo, m, d) {
+    var W = 1080, H = 1350;
+    var canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = H;
+    var ctx = canvas.getContext('2d');
+    var C = scColors();
+    var now = new Date();
+    scBg(ctx, W, H);
+    scHeader(ctx, logo, C, T('summary.mkicker'), window.I18N.feedDate(now));
+
+    /* TODAY'S MATCH 패널 */
+    var px = 64, pw = 952, py = 186, ph = 212;
+    var g = ctx.createLinearGradient(px, py, px + pw, py + ph);
+    g.addColorStop(0, 'rgba(0,245,196,.10)'); g.addColorStop(.5, 'rgba(9,32,30,.92)'); g.addColorStop(1, 'rgba(6,20,20,.96)');
+    ctx.fillStyle = g;
+    roundRect(ctx, px, py, pw, ph, 28); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,245,196,.32)'; ctx.lineWidth = 1.8;
+    roundRect(ctx, px, py, pw, ph, 28); ctx.stroke();
+
+    ctx.fillStyle = C.mint; ctx.font = scFont(15, 900);
+    ctx.fillText('●  ' + T('summary.todayMatch'), px + 30, py + 36);
+    var league = [leagueName(m.league), blockText(m.block)].filter(Boolean).join(' · ');
+    if (league) {
+      ctx.font = scFont(17, 800);
+      var lw = ctx.measureText(league).width;
+      ctx.fillStyle = 'rgba(0,245,196,.10)';
+      roundRect(ctx, px + pw - 30 - lw - 30, py + 16, lw + 30, 34, 17); ctx.fill();
+      ctx.strokeStyle = 'rgba(0,245,196,.34)'; ctx.lineWidth = 1.4;
+      roundRect(ctx, px + pw - 30 - lw - 30, py + 16, lw + 30, 34, 17); ctx.stroke();
+      ctx.fillStyle = C.mint; ctx.textAlign = 'center';
+      ctx.fillText(league, px + pw - 30 - lw / 2 - 15, py + 39);
+      ctx.textAlign = 'left';
+    }
+
+    /* 왼쪽 DK */
+    if (logo) {
+      ctx.save();
+      try { ctx.filter = 'brightness(0) invert(1)'; } catch (e) {}
+      ctx.drawImage(logo, px + 66, py + 46, 138, 80);
+      ctx.restore();
+    }
+    ctx.fillStyle = C.ink2; ctx.font = scFont(16, 800); ctx.textAlign = 'center';
+    ctx.fillText((m.dk && m.dk.name) || 'DPLUS KIA', px + 137, py + 150);
+    ctx.textAlign = 'left';
+
+    /* 가운데 시간 */
+    var cx = px + pw / 2;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = C.mint; ctx.font = scFont(16, 900);
+    ctx.fillText('V S', cx, py + 58);
+    ctx.fillStyle = C.ink; ctx.font = scFont(74, 900);
+    ctx.fillText(m.time || 'TBD', cx, py + 126);
+    ctx.fillStyle = C.muted; ctx.font = scFont(17, 800);
+    ctx.fillText([m.bo ? T('mt.bo', { n: m.bo }) : '', m.weekday ? '(' + m.weekday + ')' : ''].filter(Boolean).join('  '), cx, py + 154);
+    ctx.textAlign = 'left';
+
+    /* 오른쪽 상대 */
+    var opp = m.opponent || {};
+    var oppLabel = opp.code || opp.name || 'TBD';
+    scTeamBadge(ctx, C, oppLabel, px + pw - 212, py + 46, 150, 84, true);
+    ctx.fillStyle = C.ink2; ctx.font = scFont(16, 800); ctx.textAlign = 'center';
+    ctx.fillText(String(opp.name || oppLabel), px + pw - 137, py + 150);
+    ctx.textAlign = 'left';
+
+    /* 아래줄: WATCH + 시작까지 */
+    ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(px + 24, py + ph - 42); ctx.lineTo(px + pw - 24, py + ph - 42); ctx.stroke();
+    ctx.fillStyle = C.mint; ctx.font = scFont(13, 900);
+    ctx.fillText(T('summary.watch'), px + 30, py + ph - 16);
+    ctx.fillStyle = C.muted; ctx.font = scFont(15, 700);
+    ctx.fillText(T('summary.watchLine'), px + 118, py + ph - 16);
+    var left = m.startIso ? Date.parse(m.startIso) - Date.now() : NaN;
+    var countdown = T('summary.startsSoon');
+    if (Number.isFinite(left) && left > 0) {
+      var hh = Math.floor(left / 3600000), mm = Math.round((left % 3600000) / 60000);
+      countdown = hh > 0 ? T('summary.startsIn', { h: hh, m: mm }) : T('summary.startsSoon');
+    } else if (Number.isFinite(left)) {
+      countdown = T('summary.liveNow');
+    }
+    ctx.font = scFont(16, 900);
+    var cw2 = ctx.measureText(countdown).width;
+    ctx.fillStyle = 'rgba(0,245,196,.12)';
+    roundRect(ctx, px + pw - 30 - cw2 - 32, py + ph - 40, cw2 + 32, 32, 16); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,245,196,.44)'; ctx.lineWidth = 1.4;
+    roundRect(ctx, px + pw - 30 - cw2 - 32, py + ph - 40, cw2 + 32, 32, 16); ctx.stroke();
+    ctx.fillStyle = C.mint; ctx.textAlign = 'center';
+    ctx.fillText(countdown, px + pw - 30 - cw2 / 2 - 16, py + ph - 19);
+    ctx.textAlign = 'left';
+
+    /* 오늘의 DK 요약 */
+    var ty = 452;
+    ctx.font = scFont(52, 900);
+    ctx.fillStyle = C.ink;
+    var base = T('summary.title');
+    var parts = base.split('DK');
+    var tx = 64;
+    if (parts.length > 1) {
+      ctx.fillStyle = C.ink; ctx.fillText(parts[0], tx, ty);
+      tx += ctx.measureText(parts[0]).width;
+      ctx.fillStyle = C.mint; ctx.fillText('DK', tx, ty);
+      tx += ctx.measureText('DK').width;
+      ctx.fillStyle = C.ink; ctx.fillText(parts.slice(1).join('DK'), tx, ty);
+    } else {
+      ctx.fillStyle = C.ink; ctx.fillText(base, tx, ty);
+    }
+    ctx.textAlign = 'right'; ctx.fillStyle = C.muted; ctx.font = scFont(20, 700);
+    ctx.fillText(T('summary.sub', { w: d.w, l: d.l }), 1016, ty - 4);
+    ctx.textAlign = 'left';
+
+    scPlayerRows(ctx, C, d, 64, 488, 952, 148, 6);
+    scFoot(ctx, C, d, 1252, true, m);
+    return canvas;
+  }
+
+  /* 5인 솔로랭크 요약줄 (두 카드가 같이 씀) */
+  function scPlayerRows(ctx, C, d, px, py, pw, rh, gap) {
+    var ph = rh * 5 + gap * 2;
+    var panelGrad = ctx.createLinearGradient(px, py, px + pw, py + ph);
+    panelGrad.addColorStop(0, 'rgba(9,38,34,.84)'); panelGrad.addColorStop(1, 'rgba(5,22,22,.80)');
+    ctx.fillStyle = panelGrad;
+    roundRect(ctx, px, py, pw, ph, 28); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,245,196,.20)'; ctx.lineWidth = 1.6;
+    roundRect(ctx, px, py, pw, ph, 28); ctx.stroke();
+
+    var k = rh / 168;
+    d.rows.forEach(function (row, i) {
+      var y = py + 7 + i * rh;
+      var p = row.p, t = row.t;
+      if (i) {
+        ctx.strokeStyle = 'rgba(255,255,255,.06)'; ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.moveTo(px + 22, y - 4); ctx.lineTo(px + pw - 22, y - 4); ctx.stroke();
+      }
+      var cy = y + 76 * k;
+      var ring = ctx.createLinearGradient(96, cy - 46, 184, cy + 46);
+      ring.addColorStop(0, 'rgba(0,245,196,.55)'); ring.addColorStop(1, 'rgba(0,245,196,.12)');
+      ctx.beginPath(); ctx.arc(140, cy, 44 * k, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(0,245,196,.10)'; ctx.fill();
+      ctx.strokeStyle = ring; ctx.lineWidth = 2.4; ctx.stroke();
+      var initial = (p.nameKo || p.nameEn || '?').slice(0, 1);
+      ctx.fillStyle = C.mint; ctx.font = scFont(40 * k, 900);
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(initial, 140, cy + 2);
+      ctx.textBaseline = 'alphabetic';
+      ctx.textAlign = 'center'; ctx.fillStyle = C.dim; ctx.font = scFont(14, 800);
+      ctx.fillText(p.pos || '', 140, y + 152 * k);
+      ctx.textAlign = 'left';
+
+      ctx.fillStyle = C.ink; ctx.font = scFont(40 * k, 900);
+      ctx.fillText(pName(p), 210, y + 58 * k);
+      var nameW = ctx.measureText(pName(p)).width;
+      if (p.key === myPick) {
+        var cw = 118, chh = 30, cx = 210 + nameW + 14, cyy = y + 32 * k;
+        ctx.fillStyle = 'rgba(0,245,196,.16)';
+        roundRect(ctx, cx, cyy, cw, chh, 15); ctx.fill();
+        ctx.strokeStyle = 'rgba(0,245,196,.5)'; ctx.lineWidth = 1.4; ctx.stroke();
+        ctx.fillStyle = C.mint; ctx.font = scFont(15, 900);
+        ctx.fillText('★ MY PICK', cx + 13, cyy + 21);
+      }
+
+      ctx.fillStyle = C.muted; ctx.font = scFont(21 * k, 600);
+      ctx.fillText(pReal(p) + ' · ' + T('pos.' + (p.pos || 'TOP')), 210, y + 94 * k);
+      ctx.fillStyle = C.ink2; ctx.font = scFont(23 * k, 700);
+      ctx.fillText(tierText(p), 210, y + 132 * k);
+      var tw = ctx.measureText(tierText(p)).width;
+      ctx.fillStyle = C.mint; ctx.font = scFont(23 * k, 800);
+      ctx.fillText(lpText(p), 210 + tw + 14, y + 132 * k);
+      var lw = ctx.measureText(lpText(p)).width;
+      ctx.fillStyle = C.dim; ctx.font = scFont(19 * k, 600);
+      ctx.fillText('· ' + winRateText(p), 210 + tw + 14 + lw + 12, y + 132 * k);
+
+      ctx.fillStyle = C.dim; ctx.font = scFont(15, 700);
+      ctx.fillText(T('summary.recent'), 510, y + 36 * k);
+      var bw = 34, bgap = 12, baseY = y + 112 * k;
+      row.m.slice().reverse().forEach(function (mg, bi) {
+        var bx = 510 + bi * (bw + bgap);
+        var hgt = barHeight(mg) * 4.6 * k;
+        var grd = ctx.createLinearGradient(bx, baseY - hgt, bx, baseY);
+        if (mg.win) { grd.addColorStop(0, '#00F5C4'); grd.addColorStop(1, '#00A783'); }
+        else { grd.addColorStop(0, '#FF8C97'); grd.addColorStop(1, '#C44756'); }
+        ctx.fillStyle = grd;
+        roundRect(ctx, bx, baseY - hgt, bw, hgt, 7); ctx.fill();
+        ctx.fillStyle = C.dim; ctx.font = scFont(12, 600);
+        ctx.textAlign = 'center';
+        ctx.fillText(String(mg.kda || ''), bx + bw / 2, y + 136 * k);
+        ctx.textAlign = 'left';
+      });
+
+      var full = T('summary.winLose', { w: t.w, l: t.l });
+      ctx.font = scFont(36 * k, 900);
+      var fm = full.match(/^(.*?\d+\D+?)(\d+\D*)$/);
+      if (fm) {
+        var w1 = ctx.measureText(fm[1]).width, w2 = ctx.measureText(fm[2]).width;
+        var sx = 992 - (w1 + w2);
+        ctx.fillStyle = t.w >= t.l ? C.mint : C.ink;
+        ctx.fillText(fm[1], sx, y + 66 * k);
+        ctx.fillStyle = t.l > t.w ? C.red : C.ink2;
+        ctx.fillText(fm[2], sx + w1, y + 66 * k);
+      } else {
+        ctx.textAlign = 'right'; ctx.fillStyle = C.ink;
+        ctx.fillText(full, 992, y + 66 * k); ctx.textAlign = 'left';
+      }
+      var lastM = row.m[0];
+      var lastD = '';
+      if (lastM && lastM.date) {
+        var pm = /(\d{4})-(\d{2})-(\d{2})/.exec(String(lastM.date));
+        if (pm) lastD = pm[2] + '.' + pm[3];
+      }
+      ctx.textAlign = 'right'; ctx.fillStyle = C.dim; ctx.font = scFont(16, 600);
+      ctx.fillText(lastD ? T('summary.lastGame', { date: lastD }) : '', 992, y + 104 * k);
+      ctx.textAlign = 'left';
+    });
+  }
+
+  function scFoot(ctx, C, d, fy, withAlert, m) {
+    ctx.fillStyle = 'rgba(255,255,255,.035)';
+    roundRect(ctx, 64, fy, 730, 78, 20); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,245,196,.22)'; ctx.lineWidth = 1.4;
+    roundRect(ctx, 64, fy, 730, 78, 20); ctx.stroke();
+    ctx.fillStyle = C.mint; ctx.font = scFont(12, 900);
+    ctx.fillText(withAlert ? T('summary.matchAlert') : T('summary.next'), 92, fy + 28);
+    ctx.fillStyle = C.ink; ctx.font = scFont(21, 800);
+    if (withAlert && m) {
+      ctx.fillText(fitText(ctx, 'DK vs ' + ((m.opponent && (m.opponent.code || m.opponent.name)) || 'TBD') + ' · ' + (m.time || 'TBD'), 320, 21, 800), 92, fy + 58);
+    } else {
+      ctx.fillText(fitText(ctx, d.nextMain, 320, 21, 800), 92, fy + 56);
+      ctx.fillStyle = C.dim; ctx.font = scFont(13, 600);
+      ctx.fillText(fitText(ctx, d.nextSub, 320, 13, 600), 92, fy + 74);
+    }
+    ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(430, fy + 14); ctx.lineTo(430, fy + 64); ctx.stroke();
+    ctx.fillStyle = C.mint; ctx.font = scFont(12, 900);
+    ctx.fillText(T('summary.noticeTitle') || T('summary.notice'), 456, fy + 28);
+    ctx.fillStyle = C.ink2; ctx.font = scFont(18, 700);
+    ctx.fillText(fitText(ctx, d.notice || T('summary.noticeNone'), 300, 18, 700), 456, fy + 58);
+
+    ctx.textAlign = 'right';
+    ctx.fillStyle = C.mint; ctx.font = scFont(17, 800);
+    ctx.fillText('dk-signal.vercel.app', 1016, fy + 32);
+    ctx.fillStyle = C.dim; ctx.font = scFont(12, 600);
+    var now = new Date();
+    ctx.fillText(T('summary.basis', { time: pad(now.getHours()) + ':' + pad(now.getMinutes()) }), 1016, fy + 56);
+    ctx.textAlign = 'left';
+  }
+
+  /* 경기 결과(세트 선택): 진영 · 양 팀 밴 · DK 5인 픽 · K/D/A · 팀 내 딜 비중 */
+  function drawMatchResultCard(logo, m, d, set, icons) {
+    var W = 1080, H = 1350;
+    var canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = H;
+    var ctx = canvas.getContext('2d');
+    var C = scColors();
+    var now = new Date();
+    scBg(ctx, W, H);
+    scHeader(ctx, logo, C, T('summary.rkicker'), window.I18N.feedDate(now));
+
+    var px = 64, pw = 952;
+    var dkWins = d.dk && d.dk.wins != null ? d.dk.wins : (m.dk && m.dk.gameWins);
+    var opWins = d.opponent && d.opponent.wins != null ? d.opponent.wins : (m.opponent && m.opponent.gameWins);
+    var outcome = d.win != null ? d.win : m.win;
+
+    /* FINAL 패널 */
+    var py = 182, ph = 212;
+    var g = ctx.createLinearGradient(px, py, px + pw, py + ph);
+    g.addColorStop(0, 'rgba(0,245,196,.10)'); g.addColorStop(.5, 'rgba(9,32,30,.92)'); g.addColorStop(1, 'rgba(6,20,20,.96)');
+    ctx.fillStyle = g;
+    roundRect(ctx, px, py, pw, ph, 28); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,245,196,.32)'; ctx.lineWidth = 1.8;
+    roundRect(ctx, px, py, pw, ph, 28); ctx.stroke();
+
+    ctx.fillStyle = C.mint; ctx.font = scFont(15, 900);
+    ctx.fillText('●  ' + T('summary.finalTag'), px + 30, py + 36);
+    var league = [leagueName(m.league), blockText(m.block), m.bo ? T('mt.bo', { n: m.bo }) : ''].filter(Boolean).join(' · ');
+    if (league) {
+      ctx.font = scFont(16, 800);
+      var lw = ctx.measureText(league).width;
+      ctx.fillStyle = 'rgba(0,245,196,.10)';
+      roundRect(ctx, px + pw - 30 - lw - 30, py + 16, lw + 30, 32, 16); ctx.fill();
+      ctx.strokeStyle = 'rgba(0,245,196,.34)'; ctx.lineWidth = 1.4;
+      roundRect(ctx, px + pw - 30 - lw - 30, py + 16, lw + 30, 32, 16); ctx.stroke();
+      ctx.fillStyle = C.mint; ctx.textAlign = 'center';
+      ctx.fillText(league, px + pw - 30 - lw / 2 - 15, py + 38);
+      ctx.textAlign = 'left';
+    }
+
+    if (logo) {
+      ctx.save();
+      try { ctx.filter = 'brightness(0) invert(1)'; } catch (e) {}
+      ctx.drawImage(logo, px + 66, py + 44, 138, 80);
+      ctx.restore();
+    }
+    ctx.fillStyle = C.ink2; ctx.font = scFont(16, 800); ctx.textAlign = 'center';
+    ctx.fillText((m.dk && m.dk.name) || 'DPLUS KIA', px + 137, py + 150);
+    ctx.textAlign = 'left';
+
+    var cx = px + pw / 2;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = C.dim; ctx.font = scFont(13, 900);
+    ctx.fillText(T('summary.finalScore'), cx, py + 48);
+    ctx.fillStyle = C.ink; ctx.font = scFont(66, 900);
+    ctx.fillText((dkWins == null ? '-' : dkWins) + ' : ' + (opWins == null ? '-' : opWins), cx - 26, py + 114);
+    if (outcome != null) {
+      ctx.font = scFont(16, 900);
+      var wtxt = T(outcome ? 'mt.dkWin' : 'mt.dkLoss');
+      var ww = ctx.measureText(wtxt).width;
+      ctx.fillStyle = outcome ? C.mint : C.red;
+      roundRect(ctx, cx + 52, py + 88, ww + 22, 28, 14); ctx.fill();
+      ctx.fillStyle = '#04120F'; ctx.textAlign = 'left';
+      ctx.fillText(wtxt, cx + 63, py + 108);
+      ctx.textAlign = 'center';
+    }
+    ctx.fillStyle = C.muted; ctx.font = scFont(15, 700);
+    var subline = [m.bo ? T('mt.bo', { n: m.bo }) : '', set ? T('mt.setN', { n: set.number }) + ' · ' + mtDur(set.duration || 0) : ''].filter(Boolean).join(' · ');
+    ctx.fillText(subline, cx, py + 142);
+    ctx.textAlign = 'left';
+
+    var opp = m.opponent || {};
+    scTeamBadge(ctx, C, opp.code || opp.name || 'TBD', px + pw - 212, py + 44, 150, 84, true);
+    ctx.fillStyle = C.ink2; ctx.font = scFont(16, 800); ctx.textAlign = 'center';
+    ctx.fillText(String(opp.name || opp.code || ''), px + pw - 137, py + 150);
+    ctx.textAlign = 'left';
+
+    /* KILL / GOLD / 시간 */
+    ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(px + 24, py + ph - 40); ctx.lineTo(px + pw - 24, py + ph - 40); ctx.stroke();
+    ctx.fillStyle = C.mint; ctx.font = scFont(12, 900);
+    ctx.fillText('VOD', px + 30, py + ph - 15);
+    ctx.fillStyle = C.muted; ctx.font = scFont(14, 700);
+    ctx.fillText(T('summary.watchLine'), px + 78, py + ph - 15);
+    ctx.textAlign = 'right'; ctx.fillStyle = C.ink2; ctx.font = scFont(13, 800);
+    var t = set && set.team && set.team.dk ? set.team.dk : null;
+    var o = set && set.team && set.team.opp ? set.team.opp : null;
+    var objLine = t ? ('K ' + t.kills + ' : ' + (o ? o.kills : '-') + '   GOLD ' + (t.gold / 1000).toFixed(1) + 'k : ' + (o ? (o.gold / 1000).toFixed(1) + 'k' : '-')) : '';
+    ctx.fillText(objLine + (m.time ? '   ·   ' + m.time + ' ' + T('mt.kst') : ''), px + pw - 30, py + ph - 15);
+    ctx.textAlign = 'left';
+
+    /* BAN / PICK 패널 (밴 기록이 없으면 한 줄짜리 안내로 줄입니다) */
+    var hasBans = !!(set && set.bans && ((set.bans.dk && set.bans.dk.length) || (set.bans.opp && set.bans.opp.length)));
+    var by = py + ph + 14, bh = hasBans ? 190 : 118;
+    ctx.fillStyle = 'rgba(13,22,33,.62)';
+    roundRect(ctx, px, by, pw, bh, 24); ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.075)'; ctx.lineWidth = 1.4;
+    roundRect(ctx, px, by, pw, bh, 24); ctx.stroke();
+
+    ctx.fillStyle = C.mint; ctx.font = scFont(14, 900);
+    ctx.fillText('BAN / PICK', px + 26, by + 32);
+    ctx.fillStyle = C.ink; ctx.font = scFont(20, 900);
+    var banTitle = T('mt.banTitle', { n: set ? set.number : 1 });
+    ctx.fillText(banTitle, px + 138, by + 33);
+    ctx.fillStyle = C.dim; ctx.font = scFont(13, 700);
+    ctx.fillText(T('mt.banSub') + (set && set.dkSide ? ' · ' + (set.dkSide === 'blue' ? '🔵 ' + T('mt.blue') : '🔴 ' + T('mt.red')) : ''), px + 26 + 138 + ctx.measureText(banTitle).width + 16, by + 33);
+
+    /* 오른쪽 세트 탭 */
+    var tabs = d.sets || [];
+    var tabW = 86, tabH = 32, gapT = 6;
+    var tx0 = px + pw - 26 - (tabs.length * (tabW + gapT) - gapT);
+    tabs.forEach(function (s, i) {
+      var on = set && Number(s.number) === Number(set.number);
+      var x = tx0 + i * (tabW + gapT);
+      ctx.fillStyle = on ? 'rgba(0,245,196,.22)' : 'rgba(255,255,255,.04)';
+      roundRect(ctx, x, by + 14, tabW, tabH, 9); ctx.fill();
+      ctx.strokeStyle = on ? 'rgba(0,245,196,.5)' : 'rgba(255,255,255,.08)'; ctx.lineWidth = 1.2;
+      roundRect(ctx, x, by + 14, tabW, tabH, 9); ctx.stroke();
+      ctx.fillStyle = on ? C.ink : C.muted; ctx.font = scFont(12, 800); ctx.textAlign = 'center';
+      var label = T('mt.setN', { n: s.number }) + (s.win == null ? '' : ' ' + T(s.win ? 'mt.shortWin' : 'mt.shortLose'));
+      ctx.fillText(label, x + tabW / 2, by + 34);
+      ctx.textAlign = 'left';
+    });
+
+    /* 밴 5:5 */
+    var rowY = by + 64;
+    if (hasBans) {
+      scBanRow(ctx, C, (d.dk && (d.dk.code || 'DK')) || 'DK', px + 26, rowY, set.bans.dk, icons, false);
+      scBanRow(ctx, C, opp.code || opp.name || 'TBD', px + 26, rowY + 62, set.bans.opp, icons, true);
+    } else {
+      ctx.fillStyle = C.dim; ctx.font = scFont(16, 600);
+      ctx.fillText(T('mt.banNone'), px + 26, rowY + 4);
+    }
+
+    /* 5인 경기 스탯 */
+    var ty = by + bh + 44;
+    ctx.font = scFont(38, 900);
+    ctx.fillStyle = C.ink; ctx.fillText('5 ', 64, ty);
+    ctx.fillStyle = C.mint; ctx.fillText(T('mt.statsTitle'), 64 + ctx.measureText('5 ').width, ty);
+    ctx.textAlign = 'right'; ctx.fillStyle = C.muted; ctx.font = scFont(15, 700);
+    ctx.fillText(T('mt.statsSub', { n: set ? set.number : 1 }), 1016, ty);
+    ctx.textAlign = 'left';
+
+    var ry0 = ty + 16, rh = 112, gap2 = 5;
+    var ph2 = rh * 5 + gap2 * 2;
+    var grad = ctx.createLinearGradient(64, ry0, 1016, ry0 + ph2);
+    grad.addColorStop(0, 'rgba(9,38,34,.84)'); grad.addColorStop(1, 'rgba(5,22,22,.80)');
+    ctx.fillStyle = grad;
+    roundRect(ctx, 64, ry0, 952, ph2, 26); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,245,196,.20)'; ctx.lineWidth = 1.6;
+    roundRect(ctx, 64, ry0, 952, ph2, 26); ctx.stroke();
+
+    (set && set.players ? set.players : []).forEach(function (p, i) {
+      var y = ry0 + 6 + i * rh;
+      if (i) {
+        ctx.strokeStyle = 'rgba(255,255,255,.06)'; ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.moveTo(86, y - 3); ctx.lineTo(994, y - 3); ctx.stroke();
+      }
+      var isPick = p.key && p.key === myPick;
+      if (isPick) {
+        ctx.fillStyle = 'rgba(0,245,196,.10)';
+        roundRect(ctx, 70, y + 2, 940, rh - 6, 14); ctx.fill();
+      }
+      var ix = 90, iy = y + 16, isz = 66;
+      var icon = icons && p.champion ? icons[p.champion] : null;
+      if (icon) {
+        ctx.save();
+        roundRect(ctx, ix, iy, isz, isz, 14); ctx.clip();
+        ctx.drawImage(icon, ix, iy, isz, isz);
+        ctx.restore();
+        ctx.strokeStyle = isPick ? 'rgba(0,245,196,.7)' : 'rgba(0,245,196,.34)'; ctx.lineWidth = 1.6;
+        roundRect(ctx, ix, iy, isz, isz, 14); ctx.stroke();
+      } else {
+        ctx.fillStyle = 'rgba(255,255,255,.06)';
+        roundRect(ctx, ix, iy, isz, isz, 14); ctx.fill();
+      }
+      var app = p.key ? calPlayer(p.key) : null;
+      var nm = app ? pName(app) : p.player;
+      ctx.fillStyle = C.ink; ctx.font = scFont(30, 900);
+      ctx.fillText(nm, 186, y + 50);
+      var nw = ctx.measureText(nm).width;
+      if (isPick) {
+        ctx.fillStyle = 'rgba(0,245,196,.16)';
+        roundRect(ctx, 186 + nw + 12, y + 28, 104, 26, 13); ctx.fill();
+        ctx.strokeStyle = 'rgba(0,245,196,.5)'; ctx.lineWidth = 1.2;
+        roundRect(ctx, 186 + nw + 12, y + 28, 104, 26, 13); ctx.stroke();
+        ctx.fillStyle = C.mint; ctx.font = scFont(13, 900);
+        ctx.fillText('★ MY PICK', 186 + nw + 21, y + 46);
+      }
+      ctx.fillStyle = C.muted; ctx.font = scFont(17, 600);
+      ctx.fillText(champText(p.champion) + ' · ' + roleText(p.role), 186, y + 76);
+      if (app) {
+        ctx.fillStyle = C.dim; ctx.font = scFont(13, 800);
+        ctx.fillText(pReal(app), 186, y + 100);
+      }
+
+      /* K/D/A */
+      ctx.textAlign = 'center';
+      var kx = 634;
+      ctx.font = scFont(30, 900);
+      var kstr = String(p.k) + ' / ' + String(p.d) + ' / ' + String(p.a);
+      var kParts = [[String(p.k), C.ink], [' / ', C.dim], [String(p.d), C.red], [' / ', C.dim], [String(p.a), C.ink]];
+      ctx.font = scFont(30, 900);
+      var total = 0;
+      kParts.forEach(function (pp) { total += ctx.measureText(pp[0]).width; });
+      var kx0 = kx - total / 2;
+      kParts.forEach(function (pp) {
+        ctx.fillStyle = pp[1]; ctx.textAlign = 'left';
+        ctx.fillText(pp[0], kx0, y + 60);
+        kx0 += ctx.measureText(pp[0]).width;
+      });
+      ctx.textAlign = 'center'; ctx.fillStyle = C.dim; ctx.font = scFont(11, 800);
+      ctx.fillText('K D A', kx, y + 84);
+
+      /* 딜 비중 */
+      var sx = 716, sw = 268;
+      ctx.textAlign = 'left';
+      ctx.fillStyle = C.mint; ctx.font = scFont(26, 900);
+      ctx.fillText(p.damageShare == null ? '–' : p.damageShare + '%', sx, y + 56);
+      ctx.fillStyle = C.dim; ctx.font = scFont(11, 800);
+      ctx.textAlign = 'right';
+      ctx.fillText(T('mt.share'), sx + sw, y + 50);
+      ctx.textAlign = 'left';
+      ctx.fillStyle = 'rgba(255,255,255,.10)';
+      roundRect(ctx, sx, y + 70, sw, 7, 4); ctx.fill();
+      if (p.damageShare != null) {
+        var wpx = Math.max(4, Math.min(sw, sw * (p.damageShare / 34)));
+        var bg2 = ctx.createLinearGradient(sx, 0, sx + wpx, 0);
+        bg2.addColorStop(0, '#00C49A'); bg2.addColorStop(1, '#00F5C4');
+        ctx.fillStyle = bg2;
+        roundRect(ctx, sx, y + 70, wpx, 7, 4); ctx.fill();
+      }
+      void kstr;
+    });
+
+    /* 꼬리 */
+    var fy = Math.min(1240, ry0 + ph2 + 18);
+    ctx.fillStyle = 'rgba(255,255,255,.035)';
+    roundRect(ctx, 64, fy, 730, 62, 18); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,245,196,.22)'; ctx.lineWidth = 1.4;
+    roundRect(ctx, 64, fy, 730, 62, 18); ctx.stroke();
+    ctx.fillStyle = C.mint; ctx.font = scFont(12, 900);
+    ctx.fillText('SET MVP', 92, fy + 24);
+    var mvp = null;
+    (set && set.players ? set.players : []).forEach(function (p) {
+      if (mvp == null || (p.damageShare || 0) > (mvp.damageShare || 0)) mvp = p;
+    });
+    ctx.fillStyle = C.ink; ctx.font = scFont(19, 800);
+    var mvpApp = mvp && mvp.key ? calPlayer(mvp.key) : null;
+    ctx.fillText(fitText(ctx, mvp ? (mvpApp ? pName(mvpApp) : mvp.player) + ' · ' + champText(mvp.champion) + ' ' + mvp.k + '/' + mvp.d + '/' + mvp.a : '–', 320, 19, 800), 92, fy + 48);
+    ctx.strokeStyle = 'rgba(255,255,255,.08)'; ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(430, fy + 12); ctx.lineTo(430, fy + 50); ctx.stroke();
+    ctx.fillStyle = C.mint; ctx.font = scFont(12, 900);
+    ctx.fillText(T('summary.matchAlert'), 456, fy + 24);
+    ctx.fillStyle = C.ink2; ctx.font = scFont(16, 700);
+    ctx.fillText(fitText(ctx, T('summary.alertBody'), 300, 16, 700), 456, fy + 48);
+
+    ctx.textAlign = 'right';
+    ctx.fillStyle = C.mint; ctx.font = scFont(17, 800);
+    ctx.fillText('dk-signal.vercel.app', 1016, fy + 24);
+    ctx.fillStyle = C.dim; ctx.font = scFont(12, 600);
+    ctx.fillText(T('summary.basis', { time: pad(now.getHours()) + ':' + pad(now.getMinutes()) }), 1016, fy + 48);
+    ctx.textAlign = 'left';
+    return canvas;
+  }
+
+  /* 밴 한 줄: 팀 코드 + 5개 챔피언 (흑백 + 붉은 사선) */
+  function scBanRow(ctx, C, team, x, y, bans, icons, isOpp) {
+    ctx.fillStyle = C.mint; ctx.font = scFont(12, 900);
+    ctx.fillText(String(team || '').toUpperCase(), x, y + 12);
+    ctx.fillStyle = C.dim; ctx.font = scFont(10, 800);
+    ctx.fillText('BAN', x, y + 28);
+    var bx = x + 74, size = 52, gap = 10;
+    var list = bans || [];
+    if (!list.length) {
+      ctx.fillStyle = C.dim; ctx.font = scFont(14, 700);
+      ctx.fillText(T('mt.banEmpty'), bx, y + 16);
+      return;
+    }
+    list.slice(0, 5).forEach(function (b, i) {
+      var ix = bx + i * (size + gap);
+      var icon = icons && b ? icons[b] : null;
+      if (icon) {
+        ctx.save();
+        roundRect(ctx, ix, y - 18, size, size, 11); ctx.clip();
+        try { ctx.filter = 'grayscale(.85) brightness(.9)'; } catch (e) {}
+        ctx.drawImage(icon, ix, y - 18, size, size);
+        ctx.restore();
+      } else {
+        ctx.fillStyle = 'rgba(255,255,255,.06)';
+        roundRect(ctx, ix, y - 18, size, size, 11); ctx.fill();
+      }
+      ctx.strokeStyle = isOpp ? 'rgba(255,107,122,.32)' : 'rgba(0,245,196,.28)'; ctx.lineWidth = 1.2;
+      roundRect(ctx, ix, y - 18, size, size, 11); ctx.stroke();
+      ctx.strokeStyle = 'rgba(255,107,122,.85)'; ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(ix + 8, y - 18 + size - 8);
+      ctx.lineTo(ix + size - 8, y - 18 + 8);
+      ctx.stroke();
+      ctx.fillStyle = C.muted; ctx.font = scFont(11, 600); ctx.textAlign = 'center';
+      ctx.fillText(fitText(ctx, champText(b), size, 11, 600), ix + size / 2, y + 48);
+      ctx.textAlign = 'left';
+    });
+  }
+
   function renderSummaryPreview() {
     var stage = $('#scStage'), img = $('#scImg'), loading = $('#scLoading');
     if (!stage) return;
     if (loading) loading.hidden = false;
     if (img) img.hidden = true;
+
+    var m = summaryMatch();
+    scState.failed = '';
+    if (!m) {
+      scState.mode = 'solo';
+      scState.sets = [];
+      drawSoloPreview();
+      return;
+    }
+    if (m.state !== 'completed') {
+      scState.mode = 'matchday';
+      scState.sets = [];
+      drawMatchDayPreview(m);
+      return;
+    }
+    scState.mode = 'result';
+    var hit = mtCache[m.id];
+    if (hit) {
+      scState.sets = (hit.sets || []).filter(function (s) { return s.state === 'completed'; });
+      scState.idx = Math.min(scState.idx, Math.max(0, scState.sets.length - 1));
+      drawResultPreview(m, hit);
+      return;
+    }
+    if (scState.loading) return;
+    scState.loading = true;
+    apiGet('./api/match?id=' + encodeURIComponent(m.id) + '&lang=' + lang()).then(function (d) {
+      scState.loading = false;
+      if (d && d.ok) {
+        mtCache[m.id] = d;
+        scState.sets = (d.sets || []).filter(function (s) { return s.state === 'completed'; });
+        scState.idx = 0;
+        renderSummaryPreview();
+      } else {
+        scState.failed = T('mt.loadFail');
+        drawMatchDayPreview(m);
+      }
+    }).catch(function () {
+      scState.loading = false;
+      scState.failed = T('mt.loadFail');
+      drawMatchDayPreview(m);
+    });
+  }
+
+  function finishPreview(canvas) {
+    var img = $('#scImg'), loading = $('#scLoading');
+    var url = canvas.toDataURL('image/png');
+    scImage = { canvas: canvas, url: url };
+    if (loading) loading.hidden = true;
+    if (img) { img.src = url; img.hidden = false; }
+    var open = $('#scOpen');
+    if (open) { open.href = url; open.hidden = false; }
+    var save = $('#scSave');
+    if (save) save.disabled = false;
+    renderScSets();
+  }
+
+  function drawSoloPreview() {
     Promise.all([ensureFont(), loadImage('./logo/dpluskia.svg')]).then(function (res) {
       var canvas;
       try {
         canvas = drawSummaryCard(res[1]);
       } catch (e) {
+        var loading = $('#scLoading');
         if (loading) { loading.textContent = T('summary.saveFail'); loading.hidden = false; }
         return;
       }
-      var url = canvas.toDataURL('image/png');
-      scImage = { canvas: canvas, url: url };
-      if (loading) loading.hidden = true;
-      if (img) { img.src = url; img.hidden = false; }
-      var open = $('#scOpen');
-      if (open) { open.href = url; open.hidden = false; }
-      var save = $('#scSave');
-      if (save) save.disabled = false;
+      finishPreview(canvas);
     });
+  }
+
+  function drawMatchDayPreview(m) {
+    Promise.all([ensureFont(), loadImage('./logo/dpluskia.svg')]).then(function (res) {
+      var canvas;
+      try {
+        canvas = drawMatchDayCard(res[1], m, summaryData());
+      } catch (e) {
+        var loading = $('#scLoading');
+        if (loading) { loading.textContent = T('summary.saveFail'); loading.hidden = false; }
+        return;
+      }
+      finishPreview(canvas);
+    });
+  }
+
+  function drawResultPreview(m, d) {
+    var set = summarySet();
+    if (!set) { drawMatchDayPreview(m); return; }
+    var names = [];
+    (d.sets || []).forEach(function (s) {
+      (s.players || []).forEach(function (p) { if (p.champion) names.push(p.champion); });
+      if (s.bans) { s.bans.dk.forEach(function (b) { names.push(b); }); s.bans.opp.forEach(function (b) { names.push(b); }); }
+    });
+    Promise.all([ensureFont(), loadImage('./logo/dpluskia.svg'), loadChampIcons(names)]).then(function (res) {
+      var canvas;
+      try {
+        canvas = drawMatchResultCard(res[1], m, d, set, res[2]);
+      } catch (e) {
+        var loading = $('#scLoading');
+        if (loading) { loading.textContent = T('summary.saveFail'); loading.hidden = false; }
+        return;
+      }
+      finishPreview(canvas);
+    });
+  }
+
+  function renderScSets() {
+    var host = $('#scSets');
+    var note = $('#scNote');
+    if (!host) return;
+    var show = scState.mode === 'result' && scState.sets.length > 0;
+    host.hidden = !show;
+    if (note) {
+      note.textContent = scState.failed || (show ? T('summary.cardHint') : T('summary.note'));
+    }
+    if (!show) { host.innerHTML = ''; return; }
+    host.innerHTML = scState.sets.map(function (s, i) {
+      var on = i === scState.idx;
+      return '<button class="sc-set' + (on ? ' is-on' : '') + '" type="button" role="tab" aria-selected="' + on + '" data-sc-set="' + i + '">' +
+        T('summary.setCard', { n: s.number }) +
+        (s.win == null ? '' : '<em class="' + (s.win ? 'is-w' : 'is-l') + '">' + esc(T(s.win ? 'mt.win' : 'mt.lose')) + '</em>') +
+      '</button>';
+    }).join('');
   }
 
   function openSummary() {
@@ -13764,7 +15655,14 @@ const SPELL_IMG = {
 
   function summaryFileName() {
     var d = new Date();
-    return 'dk-signal-' + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) + '.png';
+    var base = 'dk-signal-' + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate());
+    if (scState.mode === 'result') {
+      var s = summarySet();
+      if (s) base += '-s' + s.number;
+    } else if (scState.mode === 'matchday') {
+      base += '-matchday';
+    }
+    return base + '.png';
   }
 
   function saveSummary() {
@@ -14393,6 +16291,308 @@ const SPELL_IMG = {
     if (title) title.textContent = T('solo.title');
   }
 
+  /* ================= 경기로그: 솔로랭크 | 공식 경기 ================= */
+  var MT_VIEW_KEY = 'dk.signal.matchView';
+  var MT_ID_KEY = 'dk.signal.matchId';
+  var mtCache = {};
+  var mtState = {
+    view: store.get(MT_VIEW_KEY, 'solo') === 'official' ? 'official' : 'solo',
+    id: store.get(MT_ID_KEY, ''),
+    set: 0,
+    loading: false,
+    error: '',
+    tried: {}
+  };
+
+  function mtOfficial() { return LIVE.official && LIVE.official.ok ? LIVE.official : null; }
+
+  /* 최근 공식 경기(최신순) + 아직 안 끝난 다음 경기 */
+  function mtList() {
+    var off = mtOfficial();
+    if (!off) return [];
+    var out = [];
+    var seen = {};
+    function add(g) {
+      if (!g || !g.id || seen[g.id]) return;
+      seen[g.id] = true;
+      out.push(g);
+    }
+    if (off.next) add(off.next);
+    (off.recent || []).forEach(add);
+    return out;
+  }
+  function mtFind(id) {
+    var list = mtList();
+    for (var i = 0; i < list.length; i++) if (String(list[i].id) === String(id)) return list[i];
+    return null;
+  }
+  function mtDefaultId() {
+    var list = mtList();
+    if (!list.length) return '';
+    var done = list.filter(function (g) { return g.state === 'completed'; });
+    return (done[0] || list[0]).id;
+  }
+  function mtCurrentId() {
+    if (mtState.id && mtFind(mtState.id)) return mtState.id;
+    return mtDefaultId();
+  }
+  function mtCurrent() { return mtFind(mtCurrentId()); }
+  function mtDetail() { return mtCache[mtCurrentId()] || null; }
+
+  function mtTeamLabel(code, name) { return code || name || 'TBD'; }
+  function mtHttps(url) { return String(url || '').replace(/^http:\/\//, 'https://'); }
+  function mtLogo(t, cls) {
+    if (!t) return '';
+    var label = mtTeamLabel(t.code, t.name);
+    var img = t.image ? '<img class="' + cls + '" src="' + esc(mtHttps(t.image)) + '" alt="' + esc(label) + '" loading="lazy">' : '';
+    return '<span class="om-team' + (img ? ' has-img' : '') + '"><span class="om-code">' + esc(label) + '</span>' + img + '</span>';
+  }
+  function mtSetWin(set) {
+    if (!set || set.win == null) return '';
+    return '<span class="om-wl ' + (set.win ? 'is-w' : 'is-l') + '">' + esc(T(set.win ? 'mt.win' : 'mt.lose')) + '</span>';
+  }
+
+  function mtPoolHTML() {
+    var list = mtList();
+    if (!list.length) return '';
+    var cur = mtCurrentId();
+    var head = '<div class="om-pool-hd"><b>' + esc(T('mt.poolTitle')) + '</b><span>' + esc(T('mt.poolCount', { n: list.length })) + '</span></div>';
+    var cards = list.map(function (g) {
+      var opp = g.opponent || {};
+      var oppLabel = mtTeamLabel(opp.code, opp.name);
+      var done = g.state === 'completed';
+      var score = done ? String(g.score || '').replace(/\s*:\s*/, ' : ') : T('mt.vsShort');
+      var sub = [g.date, g.weekday ? '(' + g.weekday + ')' : ''].filter(Boolean).join(' ');
+      var tag = g.block || (done ? T('mt.doneTag') : T('mt.nextTag'));
+      return '<button class="om-mc' + (String(g.id) === String(cur) ? ' is-on' : '') + '" type="button" role="tab" aria-selected="' + (String(g.id) === String(cur)) + '" data-om-match="' + esc(g.id) + '">' +
+        '<span class="om-mc-top"><span>' + esc(leagueName(g.league) || 'LCK') + '</span><em>' + esc(tag) + '</em></span>' +
+        '<span class="om-mc-mid"><b class="om-mc-dk">DK</b><b class="om-mc-sc">' + esc(score) + '</b><b class="om-mc-op">' + esc(oppLabel) + '</b></span>' +
+        '<span class="om-mc-bot">' + esc(sub) + '</span>' +
+      '</button>';
+    }).join('');
+    return '<section class="card om-pool-card">' + head + '<div class="om-pool" role="tablist" data-i18n-attr="aria-label:mt.poolAria" aria-label="' + esc(T('mt.poolAria')) + '">' + cards + '</div></section>';
+  }
+
+  function mtBarHTML() {
+    var m = mtCurrent();
+    var d = mtDetail();
+    if (!m) return '';
+    var opp = m.opponent || {};
+    var caption = [leagueName(m.league), blockText(m.block), m.bo ? T('mt.bo', { n: m.bo }) : ''].filter(Boolean).join(' · ');
+    var mid;
+    if (m.state === 'completed' || (d && d.state === 'completed')) {
+      var dkWins = (d && d.dk && d.dk.wins != null) ? d.dk.wins : (m.dk && m.dk.gameWins);
+      var opWins = (d && d.opponent && d.opponent.wins != null) ? d.opponent.wins : (opp.gameWins);
+      var outcome = (d && d.win != null) ? d.win : m.win;
+      var chip = outcome == null ? '' : '<em class="' + (outcome ? 'is-w' : 'is-l') + '">' + esc(T(outcome ? 'mt.dkWin' : 'mt.dkLoss')) + '</em>';
+      mid = '<div class="om-score"><b>' + esc(dkWins == null ? '-' : dkWins) + '</b><i>:</i><b>' + esc(opWins == null ? '-' : opWins) + '</b>' + chip + '</div>';
+    } else {
+      mid = '<div class="om-score is-vs"><b>' + esc(m.time || 'TBD') + '</b><em class="is-live">' + esc(T('mt.kst')) + '</em></div>';
+    }
+    return '<section class="card om-bar-card">' +
+      '<div class="om-bar">' +
+        '<div class="om-side">' + mtLogo(m.dk || { code: 'DK' }, 'om-logo') + '<b>DK</b></div>' +
+        '<div class="om-mid">' + mid + '<div class="om-cap">' + esc(caption || '') + '</div></div>' +
+        '<div class="om-side is-r"><b>' + esc(mtTeamLabel(opp.code, opp.name)) + '</b>' + mtLogo(opp, 'om-logo') + '</div>' +
+      '</div>' +
+    '</section>';
+  }
+
+  function mtSetsHTML() {
+    var d = mtDetail();
+    if (!d || !d.sets || !d.sets.length) return '';
+    var cur = Number(mtState.set) || (d.sets[d.sets.length - 1] || {}).number;
+    return '<div class="om-sets" role="tablist" data-i18n-attr="aria-label:mt.setAria" aria-label="' + esc(T('mt.setAria')) + '">' + d.sets.map(function (s) {
+      var on = Number(s.number) === Number(cur);
+      var side = s.dkSide === 'blue' ? '<span class="om-side-b is-blue">🔵 ' + esc(T('mt.blue')) + '</span>'
+        : (s.dkSide === 'red' ? '<span class="om-side-b is-red">🔴 ' + esc(T('mt.red')) + '</span>' : '');
+      return '<button class="om-set' + (on ? ' is-on' : '') + '" type="button" role="tab" aria-selected="' + on + '" data-om-set="' + esc(s.number) + '">' +
+        '<span class="om-set-l"><b>' + esc(T('mt.setN', { n: s.number })) + '</b>' + mtSetWin(s) + '</span>' +
+        '<span class="om-set-s">' + side + (s.duration ? '<span class="om-dur">' + esc(mtDur(s.duration)) + '</span>' : '') + '</span>' +
+      '</button>';
+    }).join('') + '</div>';
+  }
+
+  function mtDur(sec) {
+    var m = Math.floor(Number(sec) / 60), s = Math.round(Number(sec) % 60);
+    if (!Number.isFinite(m)) return '';
+    return T('mt.duration', { m: m, s: (s < 10 ? '0' : '') + s });
+  }
+
+  function mtBanRow(team, side, bans, cls) {
+    var items = (bans || []).map(function (b) {
+      var key = champKey(b);
+      return '<span class="om-ban"><img class="om-ban-img" src="' + esc(champImg(key)) + '" alt="' + esc(champText(b)) + '" loading="lazy"><i class="om-sl"></i><em>' + esc(champText(b)) + '</em></span>';
+    }).join('');
+    if (!items) items = '<span class="om-ban-empty">' + esc(T('mt.banEmpty')) + '</span>';
+    return '<div class="om-ban-row ' + (cls || '') + '">' +
+      '<span class="om-who">' + mtLogo(team, 'om-mini') + '<b>' + esc(mtTeamLabel(team && team.code, team && team.name)) + '</b><em>' + esc(T('mt.ban')) + '</em></span>' +
+      '<span class="om-bans">' + items + '</span>' +
+    '</div>';
+  }
+
+  function mtBanHTML() {
+    var d = mtDetail();
+    if (!d) return '';
+    var m = mtCurrent() || {};
+    var s = mtSetOf(d);
+    if (!s) return '';
+    var head = '<div class="om-ban-hd"><span class="om-eyebrow">BAN</span><b>' + esc(T('mt.banTitle', { n: s.number })) + '</b><span class="om-ban-sub">' + esc(T('mt.banSub')) + '</span></div>';
+    var body = s.bans
+      ? mtBanRow(d.dk || m.dk, 'dk', s.bans.dk, 'is-dk') + mtBanRow(d.opponent || m.opponent, 'opp', s.bans.opp, 'is-opp')
+      : '<p class="om-note">' + esc(T('mt.banNone')) + '</p>';
+    var foot = s.bans ? '<p class="om-src">' + esc(T('mt.banFrom')) + '</p>' : '';
+    return '<section class="card om-ban-card">' + head + body + foot + '</section>';
+  }
+
+  function mtSetOf(d) {
+    if (!d || !d.sets || !d.sets.length) return null;
+    var cur = Number(mtState.set);
+    for (var i = 0; i < d.sets.length; i++) if (Number(d.sets[i].number) === cur) return d.sets[i];
+    return d.sets[d.sets.length - 1];
+  }
+
+  function mtBoardHTML() {
+    var d = mtDetail();
+    if (!d) return '';
+    var s = mtSetOf(d);
+    if (!s) return '';
+    var m = mtCurrent() || {};
+    var rows = (s.players || []).map(function (p) {
+      var app = p.key ? calPlayer(p.key) : null;
+      var name = app ? pName(app) : p.player;
+      var chip = (p.key && p.key === myPick) ? '<span class="om-chip">★ MY PICK</span>' : '';
+      var share = p.damageShare == null ? null : p.damageShare;
+      var bar = share == null ? '' : '<span class="om-dbar"><i style="width:' + Math.max(2, Math.min(100, share * 2.94)) + '%"></i></span>';
+      return '<div class="om-row' + (p.key && p.key === myPick ? ' is-pick' : '') + '">' +
+        '<span class="om-champ"><img src="' + esc(champImg(champKey(p.champion))) + '" alt="' + esc(champText(p.champion)) + '" loading="lazy"></span>' +
+        '<span class="om-id"><span class="om-nm">' + esc(name) + chip + '</span>' +
+          '<span class="om-sub">' + esc(champText(p.champion)) + ' · ' + esc(roleText(p.role)) + '</span></span>' +
+        '<span class="om-kda"><b>' + esc(p.k) + '</b><i>/</i><b class="d">' + esc(p.d) + '</b><i>/</i><b>' + esc(p.a) + '</b></span>' +
+        '<span class="om-dmg"><b>' + (share == null ? '–' : esc(share) + '%') + '</b><span class="om-dmg-l">' + esc(T('mt.share')) + '</span>' + bar + '</span>' +
+        '<span class="om-extra"><b>KDA ' + esc(p.kda) + '</b><span>' + esc(T('mt.kp', { p: p.kp == null ? '–' : p.kp })) + '</span><span>' + esc(T('mt.csGold', { cs: p.cs, g: (p.gold / 1000).toFixed(1) + 'k' })) + '</span></span>' +
+      '</div>';
+    }).join('');
+    var note = (s.players || []).some(function (p) { return !p.key; }) ? '<p class="om-note">' + esc(T('mt.rosterNote')) + '</p>' : '';
+    var bhead = '<div class="om-bhead" aria-hidden="true"><span></span><span>' + esc(T('mt.colWho')) + '</span><span>' + esc(T('mt.colExtra')) + '</span><span>' + esc(T('mt.kdaLabel')) + '</span><span>' + esc(T('mt.colShare')) + '</span></div>';
+    return '<section class="card om-board-card">' +
+      '<div class="om-board-hd"><b>5 <em>' + esc(T('mt.statsTitle')) + '</em></b><span>' + esc(T('mt.statsSub', { n: s.number })) + '</span></div>' +
+      '<div class="om-board">' + bhead + (rows || '<p class="om-note">' + esc(T('mt.noStats')) + '</p>') + '</div>' + note +
+    '</section>';
+  }
+
+  function mtStripHTML() {
+    var d = mtDetail();
+    var s = d ? mtSetOf(d) : null;
+    if (!s || !s.team || !s.team.dk) return '';
+    var cells = [
+      { k: T('mt.oKill'), a: s.team.dk.kills, b: s.team.opp ? s.team.opp.kills : null },
+      { k: T('mt.oGold'), a: (s.team.dk.gold / 1000).toFixed(1) + 'k', b: s.team.opp ? (s.team.opp.gold / 1000).toFixed(1) + 'k' : null },
+      { k: T('mt.oDragon'), a: s.team.dk.dragons, b: s.team.opp ? s.team.opp.dragons : null },
+      { k: T('mt.oBaron'), a: s.team.dk.barons, b: s.team.opp ? s.team.opp.barons : null }
+    ];
+    return '<div class="om-strip">' + cells.map(function (c) {
+      return '<span class="om-cell"><em>' + esc(c.k) + '</em><b>' + esc(c.a) + '<i>:</i>' + esc(c.b == null ? '-' : c.b) + '</b></span>';
+    }).join('') + '</div>';
+  }
+
+  function mtVodHTML() {
+    var d = mtDetail();
+    if (!d || !d.vod || !d.vod.url) return '';
+    return '<a class="om-vod" href="' + esc(d.vod.url) + '" target="_blank" rel="noopener">' + esc(T('mt.vod')) + ' ↗</a>';
+  }
+
+  function renderOfficialPane() {
+    var host = $('#officialPane');
+    if (!host) return;
+    if (mtState.view !== 'official') return;
+    var list = mtList();
+    if (!LIVE.official) {
+      host.innerHTML = '<section class="card om-empty"><p>' + esc(T('mt.loading')) + '</p></section>';
+      return;
+    }
+    if (!list.length) {
+      host.innerHTML = '<section class="card om-empty"><div class="eyebrow">OFFICIAL MATCH</div><h3 class="card-title">' + esc(T('mt.emptyTitle')) + '</h3>' +
+        '<p class="om-note">' + esc(T('mt.emptyNote')) + '</p>' +
+        '<a class="ghost-btn om-empty-go" href="https://lolesports.com/ko-KR/schedule" target="_blank" rel="noopener">' + esc(T('mt.emptyCta')) + ' ↗</a></section>';
+      return;
+    }
+    var cur = mtCurrent();
+    var need = mtCurrentId();
+    /* 아직 불러오지 않은 경기면 한 번 부릅니다 (renderOfficialPane → loadMatch 는 다시 그리지 않음) */
+    if (need && !mtCache[need] && !mtState.loading && !mtState.tried[need]) {
+      mtState.tried[need] = true;
+      mtState.loading = true;
+      apiGet('./api/match?id=' + encodeURIComponent(need) + '&lang=' + lang()).then(function (d) {
+        mtState.loading = false;
+        if (d && d.ok) mtCache[need] = d;
+        else mtState.error = (d && d.error) || T('mt.loadFail');
+        if (mtCache[need]) mtState.set = (mtCache[need].sets[mtCache[need].sets.length - 1] || {}).number || 0;
+        if (mtState.view === 'official') renderOfficialPane();
+      }).catch(function () {
+        mtState.loading = false;
+        mtState.error = T('mt.loadFail');
+        if (mtState.view === 'official') renderOfficialPane();
+      });
+    }
+    var d = mtDetail();
+    /* 왼쪽 = 경기 목록 · 스코어 · 밴 / 오른쪽 = 세트 · 5인 스탯 (데스크톱 2열) */
+    var left = mtPoolHTML() + mtBarHTML();
+    var right = '';
+    if (mtState.loading && !d) {
+      right = '<section class="card om-empty"><p>' + esc(T('mt.loading')) + '</p></section>';
+    } else if (mtState.error && !d) {
+      right = '<section class="card om-empty"><p>' + esc(mtState.error) + '</p><button class="ghost-btn" type="button" data-om-retry="1">' + esc(T('mt.retry')) + '</button></section>';
+    } else if (d) {
+      if (d.sets && d.sets.length) {
+        right = mtSetsHTML() + mtBoardHTML() + mtStripHTML();
+        left += mtBanHTML();
+      } else {
+        right = '<section class="card om-empty"><p>' + esc(T('mt.beforeNote')) + '</p>' + mtVodHTML() + '</section>';
+      }
+    }
+    var html = '<div class="om-feed"><div class="om-col-a">' + left + '</div><div class="om-col-b">' + right + '</div></div>';
+    if (d && d.vod) html += '<div class="om-vod-row">' + mtVodHTML() + '</div>';
+    if (d) html += '<p class="om-src om-src-foot">' + esc(T('mt.source')) + '</p>';
+    host.innerHTML = html;
+  }
+
+  function renderMatchLog() {
+    var sw = $('#matchSwitch');
+    var solo = $('#soloPane');
+    var off = $('#officialPane');
+    var meta = $('#soloPanelMeta');
+    if (sw) {
+      $$('#matchSwitch [data-match-view]').forEach(function (b) {
+        var on = b.getAttribute('data-match-view') === mtState.view;
+        b.classList.toggle('is-on', on);
+        b.setAttribute('aria-selected', String(on));
+      });
+    }
+    if (meta) meta.textContent = mtState.view === 'official' ? T('mt.panelSub') : T('solo.panelMeta', { name: pName(current()), n: current().matches.length });
+    if (solo) solo.hidden = mtState.view !== 'solo';
+    if (off) off.hidden = mtState.view !== 'official';
+    if (mtState.view === 'official') renderOfficialPane();
+  }
+
+  function mtSetView(view) {
+    mtState.view = view === 'official' ? 'official' : 'solo';
+    store.set(MT_VIEW_KEY, mtState.view);
+    renderMatchLog();
+  }
+
+  function mtSelect(id, opts) {
+    if (!id) return;
+    mtState.id = id;
+    store.set(MT_ID_KEY, id);
+    mtState.error = '';
+    mtState.set = 0;
+    var hit = mtCache[id];
+    if (hit) mtState.set = (hit.sets[hit.sets.length - 1] || {}).number || 0;
+    if (opts && opts.view !== false) mtSetView('official');
+    renderMatchLog();
+  }
+
   function renderRoster() {
     var host = $('#rosterList');
     if (!host) return;
@@ -15013,6 +17213,7 @@ const SPELL_IMG = {
     renderVideoPanel();
     renderCheer();
     renderSolo();
+    renderMatchLog();
     renderRoster();
     renderOfficial();
     renderOfficialView();
@@ -15122,6 +17323,40 @@ const SPELL_IMG = {
       closeAddLink(); return;
     }
     if (e.target.closest('#summaryBtn')) { openSummary(); return; }
+    if (e.target.closest('#summaryBtn2')) { openSummary(); return; }
+    /* 경기로그: 솔로랭크 | 공식 경기 · 경기 선택 · 세트 선택 */
+    var mvBtn = e.target.closest('[data-match-view]');
+    if (mvBtn) { mtSetView(mvBtn.getAttribute('data-match-view')); return; }
+    var omPick = e.target.closest('[data-om-match]');
+    if (omPick) { mtSelect(omPick.getAttribute('data-om-match')); return; }
+    var omSet = e.target.closest('[data-om-set]');
+    if (omSet) {
+      mtState.set = Number(omSet.getAttribute('data-om-set')) || 0;
+      renderOfficialPane();
+      return;
+    }
+    if (e.target.closest('[data-om-retry]')) {
+      var rid = mtCurrentId();
+      delete mtState.tried[rid];
+      delete mtCache[rid];
+      mtState.error = '';
+      renderOfficialPane();
+      return;
+    }
+    var omOpen = e.target.closest('[data-om-open]');
+    if (omOpen) {
+      var oid = omOpen.getAttribute('data-om-open');
+      switchTab('solo');
+      delete mtState.tried[oid];
+      mtSelect(oid);
+      return;
+    }
+    var scSet = e.target.closest('[data-sc-set]');
+    if (scSet) {
+      scState.idx = Number(scSet.getAttribute('data-sc-set')) || 0;
+      renderSummaryPreview();
+      return;
+    }
     if (e.target.closest('#summaryClose') || e.target.closest('#summaryVeil')) { closeSummary(); return; }
     if (e.target.closest('#scSave')) { saveSummary(); return; }
     if (e.target.closest('#scShare')) { shareSummary(); return; }

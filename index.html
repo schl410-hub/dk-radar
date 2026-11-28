@@ -508,33 +508,52 @@
 
     <!-- ================= 경기로그 ================= -->
     <section class="panel" id="panel-solo" role="tabpanel" data-i18n-attr="aria-label:tab.solo" aria-label="경기로그" hidden>
-      <div class="panel-head">
-        <div class="eyebrow">MATCH LOG</div>
-        <h2 class="panel-title" data-i18n="tab.solo">경기로그</h2>
-        <p class="panel-sub" id="soloPanelMeta">선수를 고르면 솔로랭크 최근 경기가 바뀌어요.</p>
+      <div class="panel-head ml-head">
+        <div class="ml-head-l">
+          <div class="eyebrow">MATCH LOG</div>
+          <h2 class="panel-title" data-i18n="tab.solo">경기로그</h2>
+          <p class="panel-sub" id="soloPanelMeta">선수를 고르면 솔로랭크 최근 경기가 바뀌어요.</p>
+        </div>
+        <button class="sum-btn ml-sum" id="summaryBtn2" type="button" data-i18n-attr="aria-label:summary.aria" aria-label="오늘의 DK 요약 카드 만들기">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="6.2" width="18" height="13" rx="3.2" stroke="currentColor" stroke-width="1.8"/><path d="M8.4 6.2 9.7 4.3h4.6l1.3 1.9" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="12" cy="12.6" r="3.5" stroke="currentColor" stroke-width="1.8"/></svg><span data-i18n="summary.btn">오늘 요약 카드</span>
+        </button>
       </div>
-      <div class="pills pills-flat" id="pillsSolo" role="tablist" aria-label="선수 선택"></div>
-      <section class="card solo-card">
-        <div class="card-head">
-          <div>
-            <div class="eyebrow">RANKED SOLO / DUO</div>
-            <h2 class="section-title" id="soloTitle">최근 솔로랭크 전적</h2>
+
+      <div class="view-switch match-switch" id="matchSwitch" role="tablist" data-i18n-attr="aria-label:mt.switchAria" aria-label="경기로그 보기 선택">
+        <button class="vs-btn is-on" type="button" role="tab" aria-selected="true" data-match-view="solo">
+          <span data-i18n="mt.tabSolo">솔로랭크</span><span class="vs-count">5</span>
+        </button>
+        <button class="vs-btn" type="button" role="tab" aria-selected="false" data-match-view="official">
+          <span data-i18n="mt.tabOfficial">공식 경기</span><span class="vs-count">DK</span>
+        </button>
+      </div>
+
+      <div id="soloPane">
+        <div class="pills pills-flat" id="pillsSolo" role="tablist" aria-label="선수 선택"></div>
+        <section class="card solo-card">
+          <div class="card-head">
+            <div>
+              <div class="eyebrow">RANKED SOLO / DUO</div>
+              <h2 class="section-title" id="soloTitle">최근 솔로랭크 전적</h2>
+            </div>
+            <a class="ghost-btn" id="soloOpgg2" href="#" target="_blank" rel="noopener">OP.GG ↗</a>
           </div>
-          <a class="ghost-btn" id="soloOpgg2" href="#" target="_blank" rel="noopener">OP.GG ↗</a>
-        </div>
-        <p class="meta" id="soloMeta2"></p>
-        <div class="link-row" id="soloLinks"></div>
-        <p class="solo-note" id="soloNote"></p>
-        <p class="live-line" id="soloLive"></p>
-        <div class="chip-row" id="filterRow">
-          <button class="chip is-active" type="button" data-filter="all" data-i18n="solo.filter.all">전체</button>
-          <button class="chip" type="button" data-filter="win" data-i18n="solo.filter.win">승리</button>
-          <button class="chip" type="button" data-filter="lose" data-i18n="solo.filter.lose">패배</button>
-        </div>
-        <div class="table-wrap" id="soloTable2"></div>
-        <a class="table-more" id="soloMore2" href="#" target="_blank" rel="noopener">OP.GG에서 전체 전적 보기 ↗</a>
-      </section>
-      <footer class="foot"><p id="soloFooter">솔로랭크 기록은 각 선수 계정의 공개 전적을 기준으로 표시합니다.</p></footer>
+          <p class="meta" id="soloMeta2"></p>
+          <div class="link-row" id="soloLinks"></div>
+          <p class="solo-note" id="soloNote"></p>
+          <p class="live-line" id="soloLive"></p>
+          <div class="chip-row" id="filterRow">
+            <button class="chip is-active" type="button" data-filter="all" data-i18n="solo.filter.all">전체</button>
+            <button class="chip" type="button" data-filter="win" data-i18n="solo.filter.win">승리</button>
+            <button class="chip" type="button" data-filter="lose" data-i18n="solo.filter.lose">패배</button>
+          </div>
+          <div class="table-wrap" id="soloTable2"></div>
+          <a class="table-more" id="soloMore2" href="#" target="_blank" rel="noopener">OP.GG에서 전체 전적 보기 ↗</a>
+        </section>
+        <footer class="foot"><p id="soloFooter">솔로랭크 기록은 각 선수 계정의 공개 전적을 기준으로 표시합니다.</p></footer>
+      </div>
+
+      <div id="officialPane" class="om-pane" hidden></div>
     </section>
 
     <!-- ================= 기록실 ================= -->
@@ -681,6 +700,7 @@
       <b class="lg-title" id="scTitle" data-i18n="summary.prevTitle">오늘 요약 카드 미리보기</b>
       <button class="lg-close" id="summaryClose" type="button" data-i18n-attr="aria-label:summary.close" aria-label="닫기">✕</button>
     </div>
+    <div class="sc-sets" id="scSets" role="tablist" data-i18n-attr="aria-label:summary.setAria" aria-label="저장할 세트 선택" hidden></div>
     <div class="sc-stage" id="scStage" aria-live="polite">
       <p class="sc-loading" id="scLoading" data-i18n="summary.building">카드를 만드는 중…</p>
       <img class="sc-img" id="scImg" alt="" hidden>

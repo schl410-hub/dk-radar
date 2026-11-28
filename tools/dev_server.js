@@ -46,6 +46,7 @@ const MIME = {
 
 const HANDLERS = {
   '/api/official': require('../api/official'),
+  '/api/match': require('../api/match'),
   '/api/solo': require('../api/solo'),
   '/api/config': require('../api/config'),
   '/api/subscribe': require('../api/subscribe'),
@@ -54,6 +55,16 @@ const HANDLERS = {
   '/api/dk-youtube': require('../api/dk-youtube'),
   '/api/notices': require('../api/notices')
 };
+
+/* DK_MATCH_FIXTURE=1: 실제 API 대신 tools/fixtures/match-detail.json 을 돌려줍니다.
+ * 검증(verify_match.py)이 네트워크 상태와 상관없이 같은 화면을 보게 하려는 것입니다. */
+if (process.env.DK_MATCH_FIXTURE === '1') {
+  const body = fs.readFileSync(path.join(FIXTURE_DIR, 'match-detail.json'), 'utf8');
+  HANDLERS['/api/match'] = function (req, res) {
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
+    res.end(body);
+  };
+}
 
 /* DK_LIVE_FAKE=1: 실제 방송이 없을 때도 라이브 배지 UI 를 검증할 수 있게 가짜 상태를 돌려줍니다. */
 if (process.env.DK_LIVE_FAKE === '1' || process.env.DK_LIVE_FAKE === 'off') {

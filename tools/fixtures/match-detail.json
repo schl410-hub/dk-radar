@@ -1,0 +1,386 @@
+{
+ "ok": true,
+ "id": "115660540726095097",
+ "source": "lolesports",
+ "fetchedAt": "2026-11-28T15:00:00.000Z",
+ "state": "completed",
+ "league": {
+  "name": "월드 챔피언십",
+  "slug": "worlds"
+ },
+ "block": "8강",
+ "bo": 5,
+ "startIso": "2026-11-06T07:00:00+09:00",
+ "date": "2026.11.06",
+ "time": "07:00",
+ "weekday": "금",
+ "dk": {
+  "code": "DK",
+  "name": "Dplus KIA",
+  "image": "http://static.lolesports.com/teams/1673260049703_DPlusKIALOGO11.png",
+  "wins": 0
+ },
+ "opponent": {
+  "code": "BLG",
+  "name": "BILIBILI GAMING",
+  "image": "http://static.lolesports.com/teams/1682322954525_Bilibili_Gaming_logo_20211.png",
+  "wins": 3
+ },
+ "score": "0 : 3",
+ "win": false,
+ "sets": [
+  {
+   "number": 1,
+   "gameId": "115660540726095098",
+   "state": "completed",
+   "dkSide": "red",
+   "oppSide": "blue",
+   "win": false,
+   "duration": 2001,
+   "bans": {
+    "dk": [
+     "Renata Glasc",
+     "Nocturne",
+     "Jarvan IV",
+     "Orianna",
+     "Ezreal"
+    ],
+    "opp": [
+     "Vi",
+     "Olaf",
+     "Lee Sin",
+     "Kai'Sa",
+     "Syndra"
+    ]
+   },
+   "bansSource": "leaguepedia",
+   "players": [
+    {
+     "key": "",
+     "player": "Siwoo",
+     "role": "TOP",
+     "champion": "Rumble",
+     "k": 2,
+     "d": 4,
+     "a": 4,
+     "kda": 1.5,
+     "kp": 60,
+     "cs": 274,
+     "gold": 12197,
+     "damageShare": 27.1
+    },
+    {
+     "key": "",
+     "player": "Lucid",
+     "role": "JGL",
+     "champion": "Qiyana",
+     "k": 4,
+     "d": 6,
+     "a": 1,
+     "kda": 0.8,
+     "kp": 50,
+     "cs": 285,
+     "gold": 16304,
+     "damageShare": 26.8
+    },
+    {
+     "key": "showmaker",
+     "player": "ShowMaker",
+     "role": "MID",
+     "champion": "Akali",
+     "k": 2,
+     "d": 5,
+     "a": 2,
+     "kda": 0.8,
+     "kp": 40,
+     "cs": 277,
+     "gold": 11920,
+     "damageShare": 19.3
+    },
+    {
+     "key": "smash",
+     "player": "Smash",
+     "role": "BOT",
+     "champion": "Corki",
+     "k": 1,
+     "d": 4,
+     "a": 5,
+     "kda": 1.5,
+     "kp": 60,
+     "cs": 342,
+     "gold": 14848,
+     "damageShare": 21.3
+    },
+    {
+     "key": "",
+     "player": "Career",
+     "role": "SUP",
+     "champion": "Rell",
+     "k": 0,
+     "d": 5,
+     "a": 7,
+     "kda": 1.4,
+     "kp": 70,
+     "cs": 49,
+     "gold": 8324,
+     "damageShare": 5.5
+    }
+   ],
+   "team": {
+    "dk": {
+     "kills": 10,
+     "gold": 63593,
+     "towers": 3,
+     "barons": 0,
+     "inhibitors": 0,
+     "dragons": 0
+    },
+    "opp": {
+     "kills": 24,
+     "gold": 72389,
+     "towers": 11,
+     "barons": 2,
+     "inhibitors": 3,
+     "dragons": 5
+    }
+   }
+  },
+  {
+   "number": 2,
+   "gameId": "115660540726095099",
+   "state": "completed",
+   "dkSide": "blue",
+   "oppSide": "red",
+   "win": false,
+   "duration": 1931,
+   "bans": {
+    "dk": [
+     "Renata Glasc",
+     "Nocturne",
+     "Jayce",
+     "Locke",
+     "Alistar"
+    ],
+    "opp": [
+     "Vi",
+     "Olaf",
+     "Lucian",
+     "Vayne",
+     "Syndra"
+    ]
+   },
+   "bansSource": "leaguepedia",
+   "players": [
+    {
+     "key": "",
+     "player": "Siwoo",
+     "role": "TOP",
+     "champion": "Kennen",
+     "k": 2,
+     "d": 0,
+     "a": 3,
+     "kda": 5,
+     "kp": 50,
+     "cs": 319,
+     "gold": 11988,
+     "damageShare": 22
+    },
+    {
+     "key": "",
+     "player": "Lucid",
+     "role": "JGL",
+     "champion": "JarvanIV",
+     "k": 2,
+     "d": 4,
+     "a": 8,
+     "kda": 2.5,
+     "kp": 100,
+     "cs": 226,
+     "gold": 11514,
+     "damageShare": 17.8
+    },
+    {
+     "key": "showmaker",
+     "player": "ShowMaker",
+     "role": "MID",
+     "champion": "Ryze",
+     "k": 3,
+     "d": 2,
+     "a": 4,
+     "kda": 3.5,
+     "kp": 70,
+     "cs": 309,
+     "gold": 12412,
+     "damageShare": 23.9
+    },
+    {
+     "key": "smash",
+     "player": "Smash",
+     "role": "BOT",
+     "champion": "Yunara",
+     "k": 2,
+     "d": 5,
+     "a": 7,
+     "kda": 1.8,
+     "kp": 90,
+     "cs": 336,
+     "gold": 13878,
+     "damageShare": 27.4
+    },
+    {
+     "key": "",
+     "player": "Career",
+     "role": "SUP",
+     "champion": "Lulu",
+     "k": 1,
+     "d": 2,
+     "a": 9,
+     "kda": 5,
+     "kp": 100,
+     "cs": 30,
+     "gold": 8075,
+     "damageShare": 8.9
+    }
+   ],
+   "team": {
+    "dk": {
+     "kills": 10,
+     "gold": 57867,
+     "towers": 2,
+     "barons": 0,
+     "inhibitors": 0,
+     "dragons": 0
+    },
+    "opp": {
+     "kills": 13,
+     "gold": 64067,
+     "towers": 8,
+     "barons": 0,
+     "inhibitors": 1,
+     "dragons": 5
+    }
+   }
+  },
+  {
+   "number": 3,
+   "gameId": "115660540726095100",
+   "state": "completed",
+   "dkSide": "blue",
+   "oppSide": "red",
+   "win": false,
+   "duration": 1956,
+   "bans": {
+    "dk": [
+     "Nocturne",
+     "Renata Glasc",
+     "Locke",
+     "Skarner",
+     "Yone"
+    ],
+    "opp": [
+     "Vi",
+     "Caitlyn",
+     "Syndra",
+     "Seraphine",
+     "Rakan"
+    ]
+   },
+   "bansSource": "leaguepedia",
+   "players": [
+    {
+     "key": "",
+     "player": "Siwoo",
+     "role": "TOP",
+     "champion": "Olaf",
+     "k": 1,
+     "d": 7,
+     "a": 3,
+     "kda": 0.6,
+     "kp": 44,
+     "cs": 270,
+     "gold": 11684,
+     "damageShare": 15.1
+    },
+    {
+     "key": "",
+     "player": "Lucid",
+     "role": "JGL",
+     "champion": "Pantheon",
+     "k": 4,
+     "d": 5,
+     "a": 3,
+     "kda": 1.4,
+     "kp": 78,
+     "cs": 187,
+     "gold": 11569,
+     "damageShare": 14.5
+    },
+    {
+     "key": "showmaker",
+     "player": "ShowMaker",
+     "role": "MID",
+     "champion": "Viktor",
+     "k": 3,
+     "d": 3,
+     "a": 3,
+     "kda": 2,
+     "kp": 67,
+     "cs": 272,
+     "gold": 12540,
+     "damageShare": 44.3
+    },
+    {
+     "key": "smash",
+     "player": "Smash",
+     "role": "BOT",
+     "champion": "Aphelios",
+     "k": 1,
+     "d": 7,
+     "a": 4,
+     "kda": 0.7,
+     "kp": 56,
+     "cs": 289,
+     "gold": 13886,
+     "damageShare": 21.5
+    },
+    {
+     "key": "",
+     "player": "Career",
+     "role": "SUP",
+     "champion": "Thresh",
+     "k": 0,
+     "d": 3,
+     "a": 6,
+     "kda": 2,
+     "kp": 67,
+     "cs": 34,
+     "gold": 7889,
+     "damageShare": 4.6
+    }
+   ],
+   "team": {
+    "dk": {
+     "kills": 9,
+     "gold": 57568,
+     "towers": 3,
+     "barons": 0,
+     "inhibitors": 0,
+     "dragons": 1
+    },
+    "opp": {
+     "kills": 25,
+     "gold": 67716,
+     "towers": 9,
+     "barons": 2,
+     "inhibitors": 2,
+     "dragons": 4
+    }
+   }
+  }
+ ],
+ "vod": {
+  "provider": "afreecatv",
+  "url": "https://vod.sooplive.com/player/211866681?change_second=3795"
+ },
+ "bans": "leaguepedia"
+}

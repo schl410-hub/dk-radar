@@ -21,7 +21,7 @@ const pushlog = require('./_lib/pushlog');
 const stats = require('./_lib/stats');
 const { PLAYERS } = require('./_lib/players');
 
-const VERSION = '3.13.0';
+const VERSION = '3.14.0';
 const SUBS_KEY = 'dk:subs';
 const BANNER_KEY = 'dk:banner';
 const DAILY_KEY = stats.KEY;
