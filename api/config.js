@@ -35,6 +35,34 @@ const PUSH_BODY_MAX = 160;
  * 배포 때 ADMIN_PIN_HASH 환경변수를 주면 그 값이 우선합니다. */
 const PIN_HASH = String(process.env.ADMIN_PIN_HASH || '98cbd8bfd02876a7aabefc23e9cf760528b125688f06290512bef47d40c1fc45').toLowerCase();
 
+/* CORS — 관리자 앱은 메인 사이트와 다른 도메인의 독립 PWA 라서,
+ * 브라우저가 보내는 GET·POST·OPTIONS(preflight)에 이 오리진들만 허용합니다.
+ *   · 기본: 독립 관리자 앱(dk-signal-admin.vercel.app) · 메인 앱(dk-signal.vercel.app)
+ *   · ADMIN_ORIGINS 환경변수(쉼표 구분)로 도메인을 바꾸거나 추가할 수 있습니다.
+ *   · Vercel 배포가 아닌 로컬 개발(127.0.0.1·localhost)은 포트와 무관하게 허용합니다. */
+const ADMIN_ORIGINS = String(process.env.ADMIN_ORIGINS || 'https://dk-signal-admin.vercel.app,https://dk-signal.vercel.app')
+  .split(',')
+  .map(function (s) { return s.trim().replace(/\/+$/, ''); })
+  .filter(Boolean);
+
+function isLocalDev(origin) {
+  if (process.env.VERCEL) return false;
+  return /^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(origin);
+}
+
+function corsHeaders(req) {
+  const origin = String(header(req, 'origin') || '').trim().replace(/\/+$/, '');
+  const allowed = !!origin && (ADMIN_ORIGINS.indexOf(origin) > -1 || isLocalDev(origin));
+  const h = { 'Vary': 'Origin' };
+  if (allowed) {
+    h['Access-Control-Allow-Origin'] = origin;
+    h['Access-Control-Allow-Methods'] = 'GET, POST, OPTIONS';
+    h['Access-Control-Allow-Headers'] = 'Content-Type, X-Admin-Pin';
+    h['Access-Control-Max-Age'] = '86400';
+  }
+  return h;
+}
+
 function safeEqual(a, b) {
   const x = String(a || '');
   const y = String(b || '');
@@ -106,8 +134,12 @@ function publicBanner(raw) {
 }
 
 module.exports = async function handler(req, res) {
-  if (req.method === 'OPTIONS') return json(res, 204, {});
-  if (req.method === 'POST') return handlePost(req, res);
+  const cors = corsHeaders(req);
+  const originAllowed = !!cors['Access-Control-Allow-Origin'];
+
+  /* cross-origin preflight — 허용된 관리자 오리진에만 CORS 헤더를 답합니다 */
+  if (req.method === 'OPTIONS') return json(res, 204, {}, cors);
+  if (req.method === 'POST') return handlePost(req, res, cors, originAllowed);
 
   let last = null;
   let subs = [];
@@ -148,8 +180,7 @@ module.exports = async function handler(req, res) {
 
   return json(res, 200, {
     ok: true,
-    version: VERSION,
-    serverTime: new Date().toISOString(),
+    version: VERSION,    serverTime: new Date().toISOString(),
     official: { source: 'lolesports' },
     solo: { source: process.env.RIOT_API_KEY ? 'riot' : 'snapshot' },
     push: {
@@ -173,18 +204,31 @@ module.exports = async function handler(req, res) {
     dailyDelta: daily.delta,
     dailyHistory: daily.history,
     banner: publicBanner(bannerRaw)
-  });
+  }, originAllowed ? cors : {});
 };
 
 /* ───────────── 관리자 전용 POST ───────────── */
 
-async function handlePost(req, res) {
+async function handlePost(req, res, cors, originAllowed) {
+  /* 허용 목록에 없는 오리진이 보낸 POST 는 PIN 검사 전에 끊습니다.
+   * 브라우저의 cross-origin POST 는 항상 Origin 을 붙이므로, Origin 이 없을 때(서버·도구)만
+   * PIN 검사로 넘어갑니다. */
+  const send = function (status, payload) { return json(res, status, payload, cors); };
+
+  const origin = String(header(req, 'origin') || '').trim();
+  if (origin && !originAllowed) {
+    return send(403, {
+      ok: false, error: 'forbidden_origin',
+      message: '허용되지 않은 도메인에서 온 요청이에요.'
+    }, cors);
+  }
+
   const body = (await readBody(req)) || {};
   if (!adminOk(req)) {
-    return json(res, 401, {
+    return send(401, {
       ok: false, error: 'pin_required',
       message: '관리자 PIN 확인이 필요해요. 잠근 뒤 PIN 으로 다시 열어 주세요.'
-    });
+    }, cors);
   }
 
   const action = String(body.action || '');
@@ -194,7 +238,7 @@ async function handlePost(req, res) {
     try {
       const hits = await store.incr('dk:admin:runcheck', 15);
       if (hits > 1) {
-        return json(res, 429, { ok: false, error: 'too_many_requests', message: '점검은 15초에 한 번만 실행할 수 있어요.' });
+        return send(429, { ok: false, error: 'too_many_requests', message: '점검은 15초에 한 번만 실행할 수 있어요.' });
       }
     } catch (e) { /* 저장소가 없으면 중복 방지만 건너뜁니다 */ }
     try {
@@ -202,13 +246,13 @@ async function handlePost(req, res) {
         dry: body.dry === true || body.dry === 1,
         only: only
       });
-      return json(res, 200, {
+      return send(200, {
         ok: true, action: 'runCheck',
         tookMs: summary.tookMs, pushed: summary.pushed, targets: summary.targets,
         daily: summary.daily, summary: summary
       });
     } catch (e) {
-      return json(res, 500, { ok: false, error: 'check_failed', message: String((e && e.message) || e).slice(0, 200) });
+      return send(500, { ok: false, error: 'check_failed', message: String((e && e.message) || e).slice(0, 200) });
     }
   }
 
@@ -217,21 +261,21 @@ async function handlePost(req, res) {
     const enabled = body.enabled !== false && !!text;
     const banner = { enabled: enabled, text: text, updatedAt: new Date().toISOString() };
     try { await store.setJSON(BANNER_KEY, banner); } catch (e) {
-      return json(res, 503, { ok: false, error: 'store_error', message: '공지를 저장하지 못했어요.' });
+      return send(503, { ok: false, error: 'store_error', message: '공지를 저장하지 못했어요.' });
     }
-    return json(res, 200, { ok: true, action: 'setBanner', banner: publicBanner(banner) });
+    return send(200, { ok: true, action: 'setBanner', banner: publicBanner(banner) });
   }
 
   if (action === 'broadcast') {
     const title = cleanText(body.title, PUSH_TITLE_MAX);
     const text = cleanText(body.body, PUSH_BODY_MAX);
     if (!title || !text) {
-      return json(res, 400, { ok: false, error: 'empty', message: '제목과 내용을 모두 입력해 주세요.' });
+      return send(400, { ok: false, error: 'empty', message: '제목과 내용을 모두 입력해 주세요.' });
     }
     try {
       const hits = await store.incr('dk:admin:broadcast', 20);
       if (hits > 1) {
-        return json(res, 429, { ok: false, error: 'too_many_requests', message: '전체 알림은 20초에 한 번만 보낼 수 있어요.' });
+        return send(429, { ok: false, error: 'too_many_requests', message: '전체 알림은 20초에 한 번만 보낼 수 있어요.' });
       }
     } catch (e) { /* 저장소가 없으면 중복 방지만 건너뜁니다 */ }
     const subs = await loadSubs();
@@ -244,7 +288,7 @@ async function handlePost(req, res) {
     };
     const dryRun = body.dry === true || body.dry === 1 || process.env.PUSH_DRY_RUN === '1' || !push.ready();
     if (dryRun) {
-      return json(res, 200, {
+      return send(200, {
         ok: true, action: 'broadcast', dryRun: true,
         targets: subs.length, sent: 0, preview: payload
       });
@@ -271,11 +315,11 @@ async function handlePost(req, res) {
         });
       } catch (e) {}
     }
-    return json(res, 200, {
+    return send(200, {
       ok: true, action: 'broadcast', dryRun: false,
       targets: subs.length, sent: sent.length, gone: gone.length, errors: errors
     });
   }
 
-  return json(res, 400, { ok: false, error: 'unknown_action', message: '알 수 없는 요청이에요.' });
+  return send(400, { ok: false, error: 'unknown_action', message: '알 수 없는 요청이에요.' });
 }

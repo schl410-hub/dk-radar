@@ -17,7 +17,7 @@
 - **웹 푸시 (VAPID)**: 선수별 솔랭 ON/OFF + DK 공식 경기 ON/OFF 설정이 서버 구독 정보와 함께 저장됩니다. 서버가 5분마다 새 랭크 게임(챔피언·KDA·승패)과 새 공식 일정·경기 시작 40분 전을 감지해 구독 기기로 보냅니다. 준비가 안 된 상태에서는 화면에 무엇이 빠졌는지 그대로 표시합니다.
 - **다국어 (KO · EN · JA · ZH · VI)**: 헤더 `KO · EN · JA · ZH · VI` 세그먼트로 즉시 전환. 탭·배지·선수명/실명/포지션/티어·공식 일정·경기표·영상 탭·알림 문구·테스트 알림·날짜 표기·챔피언 이름(Data Dragon zh_CN·vi_VN)까지 화면 전체와 `document.title`·`<html lang>`(zh-CN)·미리보기 문구가 함께 바뀝니다. `localStorage`(`dk.signal.lang`) 저장값 → 없으면 `navigator.language`(vi/zh 계열→vi·zh, ja/en/ko) → 기본 `ko`.
 - **실시간 테마 전환**: 헤더 우측 `다크 / 소프트` 버튼. 선택은 `localStorage`에 저장되고 첫 페인트 전에 적용됩니다.
-- **운영자 한 줄 공지**: 관리자 앱(`/admin`)에서 문구를 켜면 `/api/config` 의 `banner` 로 내려와 메인 상단에 한 줄 공지가 뜹니다(끄면 사라짐). 관리자 대시보드는 구독자·7일 추이·선수 인기·언어 비율·발송 기록·전체 알림까지 한 화면에서 다룹니다.
+- **운영자 한 줄 공지**: 관리자 앱(`dk-signal-admin.vercel.app`)에서 문구를 켜면 `/api/config` 의 `banner` 로 내려와 메인 상단에 한 줄 공지가 뜹니다(끄면 사라짐). 관리자 대시보드는 구독자·7일 추이·선수 인기·언어 비율·발송 기록·전체 알림까지 한 화면에서 다룹니다.
 - **탭 5개**: 홈 / **캘린더** / 영상 / 경기로그 / 기록실 (360~430px 모바일에서도 한 줄 유지), 캘린더 안은 **리스트 · 캘린더 · 투표** 3단 전환
 - **5인 상태 보드**: 도란 · 카나비 · 쇼메이커 · 스매쉬 · 딜라이트 타일을 누르면 최애 포커스 배너·하이라이트·전적표가 함께 바뀝니다. 인게임이면 `인게임` 배지가 붙습니다(키 설정 시).
 - **최애 포커스 배너 + MY PICK 고정**
@@ -69,6 +69,13 @@ curl -s $BASE/api/dk-youtube | head -c 400
 curl -s "$BASE/api/check?dry=1&token=$CHECK_SECRET"
 curl -s "$BASE/api/check?test=1&token=$CHECK_SECRET"   # 잠금화면 알림 확인
 ```
+
+## v3.11 (2026-11-28) — 관리자 앱 독립 사이트 분리
+
+- 관리자 앱을 **별도 저장소 · 별도 도메인**(`dk-signal-admin.vercel.app`)의 독립 PWA 로 분리했습니다. 메인 앱과 오리진이 달라 서비스 워커·캐시·홈 화면 설치가 섞이지 않습니다.
+- 이 저장소에서 `admin.html`·`admin.css`·`admin.js`·`manifest-admin.json`·`admin-sw.js` 와 `vercel.json` 의 `/admin` rewrite 를 제거했습니다. 예전 `/admin` 은 **404** 입니다.
+- `api/config.js` 에 관리자 오리진 전용 CORS 를 넣었습니다 — 허용 오리진(`ADMIN_ORIGINS`)만 preflight/POST 를 통과하고, 다른 오리진 POST 는 `403 forbidden_origin`, PIN 은 그대로 `X-Admin-Pin` 검증.
+- 메인 `sw.js`·`tools/dev_server.js` 에서 `/admin` 특례를 지웠습니다.
 
 ## v3.10 (2026-11-28) — 관리자 대시보드 (민트 테마 · 인기 순위 · 7일 추이 · 언어 비율 · 발송 기록 · 공지 · 전체 알림)
 
@@ -166,34 +173,28 @@ curl -s "$BASE/api/check?test=1&token=$CHECK_SECRET"   # 잠금화면 알림 확
 
 `curl -s https://dk-signal.vercel.app/api/config` 로 언제든 현재 상태를 확인할 수 있습니다.
 
-## 관리자 앱 (`/admin`) — 메인 앱에 붙는 바로가기
+## 관리자 앱 — 별도 사이트·별도 PWA로 분리 (`dk-signal-admin.vercel.app`)
 
-운영 상태를 보고 알림·공지를 직접 다루는 **관리자 전용 화면**입니다. 메인 앱(딮기 시그널)과 파일·서비스 워커를 분리했고,
-색은 메인 앱과 같은 **검정 + 민트**입니다(아이콘은 방패·열쇠 구멍·`ADMIN` 표기로 구분).
-설치는 별도 PWA가 아니라 **홈 화면 바로가기**로만 합니다(아래 ‘설치 방법’ 참고).
+운영 상태를 보고 알림·공지를 직접 다루는 **관리자 전용 앱**은 이 저장소에서 나가 **독립 저장소·독립 도메인**으로 분리했습니다
+(2026-11-28). 메인 앱과 오리진·서비스 워커·설치가 완전히 달라, 홈 화면에 각각 다른 앱으로 설치됩니다.
 
-- **주소**: `/admin` (= `admin.html`, `vercel.json` rewrite) · 메인 화면 어디에도 링크를 두지 않습니다.
-- **잠금**: 4자리 PIN(숫자 키패드) → SHA-256 해시 비교. 해제 상태는 `localStorage`(`dk.admin.auth.v1`)에 저장돼 다음 실행에는 바로 대시보드가 열리고,
-  우측 상단 **잠금** 버튼으로 다시 잠급니다(6회 실패 시 30초 대기).
-- **대시보드** (`/api/config` 하나를 60초마다 자동 갱신 + 새로고침 버튼)
-  - **구독자 현황**: 총 구독 기기 + `오늘 +N명` 배지(오늘 처음 관측한 수 기준) · 공식경기/라이브/방송공지/솔랭 선택 합계
-  - **최근 7일 구독자**: KST 날짜별 막대 그래프(기록이 없는 날은 `–`, 오늘은 민트로 강조)
-  - **선수별 알림 인기**: 5인 솔랭 알림 기기 수 순위 + 비율 막대(개인정보 없이 숫자만)
-  - **언어별 구독자**: KO·EN·JA·ZH·VI + `미기록`(언어를 아직 안 보낸 기기) 비율 막대·목록
-  - **시스템 · 크론 상태**: 마지막 점검 시각(KST)·소요 시간·직전 발송·저장소·Riot API·앱 버전 + **지금 바로 점검** 버튼
-  - **최근 알림 발송 기록**: 실제로 나간 알림 10건(시간·종류·제목·발송 건수). 없으면 "오늘 이후 나가는 알림부터 여기에 기록돼요"
-  - **전체 알림 보내기**: 제목·내용 입력 → **확인 창**("정말 전체 구독자 N명에게 알림을 보낼까요?") → 확인해야만 발송
-  - **메인 화면 한 줄 공지**: 문구 + 켜기/끄기 → 메인 앱 상단에 그대로 표시
-  - **선수별 최신 수집 현황**: 5인 라이브/인게임/최신 솔랭 매치 ID/방송공지 제목
+- **주소**: `https://dk-signal-admin.vercel.app` · **저장소**: `github.com/schl410-hub/dk-signal-admin`
+- **이 저장소에는 `/admin` 경로가 없습니다** — `admin.html`·`admin.css`·`admin.js`·`manifest-admin.json`·`admin-sw.js` 와 `vercel.json` 의 `/admin` rewrite 를 모두 제거했고, 예전 `/admin` 주소는 **404** 입니다. 메인 앱 화면 어디에도 관리자 링크는 없습니다.
+- **데이터**: 관리자 앱은 이 서버의 `https://dk-signal.vercel.app/api/config` 를 직접 부릅니다(60초 자동 갱신).
+- **대시보드 카드**: 구독자 현황(오늘 +N명) · 최근 7일 구독자 · 선수별 알림 인기 · 언어별 구독자 · 시스템·크론 상태(지금 바로 점검) · 최근 알림 발송 기록 · 전체 알림 보내기(확인 창) · 메인 화면 한 줄 공지 · 선수별 최신 수집 현황
 - **저장 키**: `dk:subs`(구독) · `dk:pushlog`(최근 15건, GET 은 10건) · `dk:stats:daily`(오늘 기준값 + 최근 7일) · `dk:banner`(한 줄 공지)
-- **관리자 동작 보호**: `runCheck`·`setBanner`·`broadcast` 는 모두 `X-Admin-Pin`(관리자 PIN SHA-256) 헤더가 맞아야 실행됩니다.
-  배포 때 `ADMIN_PIN_HASH` 환경변수를 넣으면 그 값이 우선합니다(넣지 않으면 앱에 들어 있는 기본 해시).
+- **잠금**: 4자리 PIN(숫자 키패드, SHA-256 해시 비교). 해제 상태는 관리자 앱 오리진의 `localStorage`(`dk.admin.auth.v1`)에 저장됩니다.
   ※ 공개 주소 + 4자리 PIN 이라 화면 잠금은 강한 인증이 아닙니다. 개인 운영용 전제이고, 더 조이려면 `ADMIN_PIN_HASH` 로 더 긴 PIN 해시를 쓰세요.
-- **설치 방법**: 관리자 페이지는 **별도 PWA(WebAPK)로 설치하지 않습니다.** `admin.html` 에 manifest 를 연결하지 않아 크롬이 **'홈 화면에 추가(바로가기)'** 로만 추가하고, 같은 오리진의 메인 앱(`딮기 시그널` · scope `/`) WebAPK 를 `딮기 관리자` 로 덮어 쓰지 않습니다.
-  아이콘은 `icons/admin-192.png`(`apple-touch-icon`·`favicon`)를 바로가기 아이콘으로 씁니다.
-  브라우저 탭으로 열면 **본문 맨 아래**에 "크롬 메뉴(⋮) → 홈 화면에 추가(바로가기)를 누르면 기존 딮기 시그널 앱과 별도 아이콘으로 추가돼요" 안내가 보입니다(화면을 가리지 않음).
-- **정리**: 예전 버전은 `manifest-admin.json` + `admin-sw.js`(범위 `/admin`)로 설치했는데, 그 조합이 메인 앱 WebAPK 를 덮어썼습니다. 지금은 **등록하지 않고**, 페이지를 열면 남아 있는 `/admin-sw.js` 등록과 `dk-admin-*` 캐시를 해제합니다(`admin.html` 인라인 스크립트 + `admin.js`). `manifest-admin.json`·`admin-sw.js` 파일은 참조되지 않는 예전 자산으로만 남겨 둡니다.
-- **분리**: 메인 `sw.js` 는 `/admin`·`admin.js`·`admin.css`·`admin-sw.js`·`manifest-admin.json` 을 가로채지 않습니다(오프라인 폴백이 `index.html` 로 새지 않게).
+
+### 관리자 앱 CORS (이 서버 쪽)
+
+관리자 앱은 다른 오리진이라, `api/config.js` 가 관리자 오리진에만 CORS 헤더를 답합니다.
+
+- **허용 오리진**: `https://dk-signal-admin.vercel.app`, `https://dk-signal.vercel.app` (기본값) — `ADMIN_ORIGINS` 환경변수(쉼표 구분)로 바꾸거나 추가합니다.
+- **preflight**(`OPTIONS`): 허용 오리진에만 `Access-Control-Allow-Origin`(그 오리진) · `Allow-Methods: GET, POST, OPTIONS` · `Allow-Headers: Content-Type, X-Admin-Pin` · `Max-Age: 86400`.
+- **POST**: `Origin` 이 허용 목록 밖이면 **403 `forbidden_origin`** 으로 PIN 검사 전에 끊고, 통과해도 `X-Admin-Pin`(PIN SHA-256)이 맞아야 실행됩니다(`ADMIN_PIN_HASH` 로 교체 가능).
+- **GET**: 공개 집계(숫자)라 어떤 오리진에서도 읽히지만, 관리자 오리진에는 그 오리진으로 ACAO 를 답합니다.
+- 로컬 개발(Vercel 이 아닌 환경)은 `http://127.0.0.1:*`·`http://localhost:*` 를 허용합니다.
 
 ## 환경변수 (Vercel → Settings → Environment Variables)
 
@@ -237,11 +238,6 @@ api/_lib/matchups.js  끝난 경기 참가자 비교로 듀오/내전/프로 매
 api/_lib/champions.js Riot 숫자 id → 챔피언·스펠 영어 이름 (tools/make_riot_names.js 로 생성)
 manifest.json         PWA 설정 (manifest.webmanifest 와 동일 내용)
 icons/shortcut-*-192.png  홈 화면 숏컷 4종 아이콘(tools/make_shortcut_icons.py)
-admin.html            관리자 앱 화면 (잠금 화면 + 대시보드)
-admin.css             관리자 앱 전용 스타일 (검정 + 민트)
-admin.js              잠금(PIN 해시·localStorage) · 실시간 대시보드 · 7개 카드 · 점검/공지/전체 알림(PIN 헤더)
-manifest-admin.json   (미사용 예전 자산) 관리자 PWA 설정 — WebAPK 덮어쓰기 문제로 더 이상 연결하지 않음
-admin-sw.js           (미사용 예전 자산) 관리자 전용 SW — 페이지를 열면 등록 해제됨
 api/official.js       DK 공식 일정
 api/solo.js           솔로랭크
 api/config.js         프론트용 공개 설정 + 관리자 집계(GET) + 관리자 동작(POST · PIN 검증)
@@ -251,7 +247,7 @@ api/live.js           선수 라이브 방송 상태(SOOP·CHZZK)
 api/_lib/stats.js     구독자 일별 통계(dk:stats:daily · 오늘 기준값 + 최근 7일)
 api/_lib/pushlog.js   실제 발송 기록(dk:pushlog · 최대 15건 · 개인정보 없음)
 api/_lib/             공식 일정·Riot·저장소·푸시·HTTP 유틸, 스냅샷(자동 생성)
-vercel.json           Cron(하루 1회) · 함수 실행시간 · /api 캐시 금지 헤더
+vercel.json           Cron(하루 1회) · 함수 실행시간 · /api 캐시 금지 헤더 (관리자 /admin rewrite 제거됨)
 package.json          의존성(web-push)
 tools/dev_server.js   로컬 서버(정적 + /api) · 픽스처 모드 · DK_LIVE_FAKE 라이브 배지 검증
 tools/fixtures/       검증용 고정 일정(다음 경기 없음/있음)
@@ -266,9 +262,7 @@ tools/make_vapid.js   VAPID 키 생성
 tools/make_dk_youtube_snapshot.js  /api/dk-youtube 폴백 스냅샷 생성
 tools/make_preview.py 단일 파일 프리뷰 빌드
 tools/make_icons.py   아이콘 생성
-tools/make_admin_icons.py  관리자 앱 아이콘(민트 방패 · ADMIN) 생성
-tools/verify_admin.py 관리자 앱 검증(잠금·PIN·대시보드·설치 조건 39항목)
-tools/mockup_admin.py 관리자 앱 시안 캡처(390×844) → downloads/dk-signal-v3
+(관리자 앱 자산·검증 도구는 분리된 `dk-signal-admin` 저장소의 tools/ 로 옮겼습니다)
 tools/make_font.py    Pretendard 서브셋 생성
 ```
 
@@ -281,7 +275,9 @@ node tools/api_smoke.js                    # 서버 함수 164항목 (실제 LoL
 LD_LIBRARY_PATH=... PLAYWRIGHT_BROWSERS_PATH=... python3 tools/verify.py       # 104/104
 LD_LIBRARY_PATH=... PLAYWRIGHT_BROWSERS_PATH=... python3 tools/verify_api.py   # 31/31
 LD_LIBRARY_PATH=... python3 tools/verify_v3.py                                 # 512/512 (다국어 5종·재생목록·아카이브·인앱 플레이어·라이브·설치 가이드)
-LD_LIBRARY_PATH=... python3 tools/verify_admin.py                              # 133/133 (관리자 잠금·PIN·7개 카드·관리자 동작·메인 공지)
+# 관리자 앱(독립 사이트) 검증은 별도 저장소에서:
+#   python3 tools/verify_standalone.py   # 라이브 헤더·manifest·SW·CORS·잠금/대시보드
+#   python3 tools/local_check.py         # 로컬 서버 + 실제 API 로 잠금→대시보드 확인
 ```
 
 - `verify_highlights.py` 는 `data.js` 의 영상 45편과 재생목록 6종을 YouTube oEmbed 로 하나씩 확인하고, 챔피언 태그 정합성·한 줄 포인트·경기명·대회명 5개 국어(ko/en/ja/zh/vi)·중복 ID 까지 봅니다(영상이 내려가면 여기서 먼저 걸립니다).

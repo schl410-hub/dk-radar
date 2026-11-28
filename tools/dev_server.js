@@ -86,8 +86,6 @@ if (process.env.DK_LIVE_FAKE === '1' || process.env.DK_LIVE_FAKE === 'off') {
 function serveStatic(req, res, pathname) {
   let rel = decodeURIComponent(pathname.split('?')[0]);
   if (rel === '/' || rel === '') rel = '/index.html';
-  /* Vercel rewrite 와 같은 규칙: /admin → admin.html (관리자 전용 PWA) */
-  if (rel === '/admin' || rel === '/admin/') rel = '/admin.html';
   const file = path.join(root, rel);
   if (!file.startsWith(root)) { res.writeHead(403); return res.end('forbidden'); }
   fs.stat(file, function (err, stat) {

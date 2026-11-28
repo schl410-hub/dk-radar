@@ -46,12 +46,8 @@ self.addEventListener('fetch', (event) => {
   /* 서버 API 는 항상 실시간 값을 씁니다(캐시 금지) */
   if (url.pathname.indexOf('/api/') > -1) return;
 
-  /* 관리자 전용 앱(/admin · manifest-admin.json · admin-sw.js)은 별도 PWA 라서
-   * 메인 서비스 워커가 가로채지 않습니다(오프라인 폴백이 index.html 로 새면 안 됨). */
-  if (url.pathname === '/admin' || url.pathname === '/admin/' ||
-      url.pathname === '/admin.html' || url.pathname === '/admin.js' ||
-      url.pathname === '/admin.css' || url.pathname === '/admin-sw.js' ||
-      url.pathname === '/manifest-admin.json') return;
+  /* 관리자 앱은 지금 별도 저장소·별도 도메인(dk-signal-admin.vercel.app)의 독립 PWA 입니다.
+   * 이 저장소에는 /admin 경로가 없으므로 여기서 가로챌 것도 없습니다. */
 
   if (req.mode === 'navigate') {
     event.respondWith(
