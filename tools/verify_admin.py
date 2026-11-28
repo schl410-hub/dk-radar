@@ -602,6 +602,18 @@ def source_tests():
     check("manifest.webmanifest 도 같은 숏컷 이름",
           [s.get("name") for s in json.loads((ROOT / "manifest.webmanifest").read_text(encoding="utf-8"))["shortcuts"]]
           == [s.get("name") for s in main_man.get("shortcuts", [])])
+    short_icons = [(s.get("icons") or [{}])[0] for s in main_man.get("shortcuts", [])]
+    check("숏컷마다 192x192 PNG 아이콘", all(
+        i.get("sizes") == "192x192" and i.get("type") == "image/png" and (i.get("src") or "").endswith(".png")
+        for i in short_icons), short_icons)
+    check("숏컷 아이콘 파일이 모두 있다", all((ROOT / (i.get("src") or "").lstrip("./" )).exists() for i in short_icons),
+          [i.get("src") for i in short_icons if not (ROOT / (i.get("src") or "").lstrip("./")).exists()])
+    check("숏컷 아이콘이 서로 다르다", len({i.get("src") for i in short_icons}) == 4)
+    for key, fn in [("calendar", "shortcut-calendar-192.png"), ("video", "shortcut-video-192.png"),
+                    ("solo", "shortcut-solo-192.png"), ("records", "shortcut-records-192.png")]:
+        check(f"숏컷 아이콘 {fn} 192x192 PNG",
+              (ROOT / "icons" / fn).exists() and open(ROOT / "icons" / fn, "rb").read(8)[1:4] == b"PNG")
+    check("숏컷 아이콘 생성기", (ROOT / "tools" / "make_shortcut_icons.py").exists())
 
     cfg = (ROOT / "api" / "config.js").read_text(encoding="utf-8")
     check("config.js 는 기존 파일을 확장만 한다", cfg.count("module.exports") == 1 and "exports.runCheck" not in cfg)

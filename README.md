@@ -44,6 +44,7 @@
 - **📢 선수 SOOP 방송국 공지 알림**: `/api/check` 가 `chapi.sooplive.co.kr/api/{id}/home` 의 `boards`(공지사항)를 읽어 Redis `dk:state.notices` 의 마지막 `title_no` 와 비교하고, 새 공지가 올라오면 `📢 {선수} 방송 공지: {제목}` 푸시(클릭 시 `ch.sooplive.co.kr/{id}/post/{title_no}`)를 보냅니다. **처음 보는 방송국은 기존 공지를 보내지 않고 최신 `title_no` 만 저장(시딩)** 한 뒤 다음 공지부터 알립니다.
 - **기록실 탭**: 2026 시즌 대회별 세트 전적, 월즈 결과
 - **PWA**: manifest + 서비스 워커 오프라인 캐시(`/api/*` 는 캐시하지 않음), 푸시·알림 클릭·구독 갱신 핸들러, 로고 기반 아이콘
+- **홈 화면 숏컷 4개**: 아이콘 길게 누르기 → `캘린더`·`영상`·`경기로그`·`기록실`(`?tab=` 딥링크). 각 숏컷에 전용 **192×192 PNG**(`icons/shortcut-*-192.png`, 앱과 같은 딥네이비+민트·탭 바와 같은 글리프)를 달아 안드로이드에서 뜨던 **하얀 네모 아이콘**을 없앴습니다(`tools/make_shortcut_icons.py` 로 재생성).
 
 ## 서버 함수 (`/api/*`)
 
@@ -165,10 +166,11 @@ curl -s "$BASE/api/check?test=1&token=$CHECK_SECRET"   # 잠금화면 알림 확
 
 `curl -s https://dk-signal.vercel.app/api/config` 로 언제든 현재 상태를 확인할 수 있습니다.
 
-## 관리자 앱 (`/admin`) — 별도 PWA
+## 관리자 앱 (`/admin`) — 메인 앱에 붙는 바로가기
 
-운영 상태를 보고 알림·공지를 직접 다루는 **관리자 전용 앱**입니다. 메인 앱(딮기 시그널)과 완전히 분리된 설치형 PWA 이고,
+운영 상태를 보고 알림·공지를 직접 다루는 **관리자 전용 화면**입니다. 메인 앱(딮기 시그널)과 파일·서비스 워커를 분리했고,
 색은 메인 앱과 같은 **검정 + 민트**입니다(아이콘은 방패·열쇠 구멍·`ADMIN` 표기로 구분).
+설치는 별도 PWA가 아니라 **홈 화면 바로가기**로만 합니다(아래 ‘설치 방법’ 참고).
 
 - **주소**: `/admin` (= `admin.html`, `vercel.json` rewrite) · 메인 화면 어디에도 링크를 두지 않습니다.
 - **잠금**: 4자리 PIN(숫자 키패드) → SHA-256 해시 비교. 해제 상태는 `localStorage`(`dk.admin.auth.v1`)에 저장돼 다음 실행에는 바로 대시보드가 열리고,
@@ -234,6 +236,7 @@ api/_lib/pros.js      타 팀 프로 계정 표(21명) + PUUID 미리 받기(30�
 api/_lib/matchups.js  끝난 경기 참가자 비교로 듀오/내전/프로 매치업 판정
 api/_lib/champions.js Riot 숫자 id → 챔피언·스펠 영어 이름 (tools/make_riot_names.js 로 생성)
 manifest.json         PWA 설정 (manifest.webmanifest 와 동일 내용)
+icons/shortcut-*-192.png  홈 화면 숏컷 4종 아이콘(tools/make_shortcut_icons.py)
 admin.html            관리자 앱 화면 (잠금 화면 + 대시보드)
 admin.css             관리자 앱 전용 스타일 (검정 + 민트)
 admin.js              잠금(PIN 해시·localStorage) · 실시간 대시보드 · 7개 카드 · 점검/공지/전체 알림(PIN 헤더)
